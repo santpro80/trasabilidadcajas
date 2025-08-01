@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Números de Serie | Sistema de Trazabilidad</title>
+    <style>
+        /* Estilos específicos para numeros-de-serie.html */
+        body {
+            font-family: 'Inter', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background: linear-gradient(135deg, #6e8efb, #a777e3); /* Fondo degradado original */
+            color: #2c3e50;
+            text-align: center;
+        }
+
+        /* Animación global de aparición */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Encabezado de la aplicación */
+        .app-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background-color: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(5px);
+            padding: 10px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            box-sizing: border-box;
+            z-index: 1000;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .small-logo .logo {
+            width: 35px;
+            height: auto;
+            margin-right: 5px;
+        }
+
+        .btn-back {
+            background-color: #f0f4f8;
+            color: #4285F4;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.95em;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+
+        .btn-back:hover {
+            background-color: #e2eaf2;
+            transform: translateY(-1px);
+        }
+
+        .btn-back svg {
+            stroke: #4285F4;
+            width: 18px;
+            height: 18px;
+        }
+
+        .user-email {
+            font-weight: 500;
+            color: #2c3e50;
+            font-size: 0.9em;
+            white-space: nowrap;
+        }
+
+        /* Estilos para el botón de cerrar sesión */
+        .logout-btn {
+            background-color: #dc3545 !important; /* Color rojo característico, forzado */
+            color: white !important; /* Color de texto blanco, forzado */
+            padding: 6px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: background-color 0.3s ease;
+            white-space: nowrap;
+            line-height: 1.2;
+            height: fit-content;
+            min-height: 28px;
+        }
+
+        .logout-btn:hover {
+            background-color: #c82333 !important; /* Rojo más oscuro al pasar el ratón, forzado */
+        }
+
+        .logout-btn svg {
+            stroke: white;
+            width: 16px;
+            height: 16px;
+        }
+
+        /* Contenido principal */
+        .main-content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 100px 20px 20px;
+            width: 100%;
+            box-sizing: border-box;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        /* Contenedores de Tarjetas y Listas */
+        .card-container {
+            background-color: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(5px);
+            border-radius: 15px;
+            padding: 40px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            width: 90%;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            animation: fadeIn 0.8s ease-out;
+            box-sizing: border-box;
+        }
+
+        .title-card {
+            background-color: #ffffff;
+            border-radius: 12px;
+            padding: 20px 30px;
+            margin-bottom: 25px;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .title-card h1 {
+            color: #4285F4;
+            margin: 0;
+            font-size: 2.2em;
+            font-weight: 700;
+            margin-bottom: 15px;
+        }
+
+        .search-bar-container {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .search-bar-container input[type="text"] {
+            flex-grow: 1;
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .search-bar-container input[type="text"]:focus {
+            outline: none;
+            border-color: #6e8efb;
+            box-shadow: 0 0 0 3px rgba(110, 142, 251, 0.2);
+        }
+
+        .list-container {
+            background-color: #ffffff;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            box-sizing: border-box;
+            max-height: 70vh; /* Ajustado para ser más grande */
+            overflow-y: auto;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .item-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .list-item {
+            background-color: #f9f9f9;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 15px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 5px;
+            cursor: pointer; /* Mantener cursor pointer aunque no sea clickeable para navegar */
+            transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease, color 0.2s ease; /* Añadido color a la transición */
+            text-align: left;
+            position: relative;
+            color: #2c3e50; /* Color de texto inicial */
+        }
+
+        .list-item:hover {
+            background-color: #e0eaf2; /* Color de fondo al pasar el ratón */
+            transform: translateY(-2px); /* Pequeña elevación */
+            box-shadow: 0 0 15px rgba(66, 133, 244, 0.6), 0 4px 12px rgba(0, 0, 0, 0.1); /* Sombra azul y sombra normal */
+            color: #4285F4; /* Cambio de color de texto a azul */
+        }
+
+        .item-detail-line {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            font-size: 0.95em;
+            /* color: #555; Esto se sobrescribirá con el color del .list-item */
+        }
+
+        .item-label {
+            font-weight: 600;
+            /* color: #333; Esto se sobrescribirá con el color del .list-item */
+        }
+
+        .item-value-text {
+            /* No se necesitan estilos adicionales */
+        }
+
+        /* Estados de Carga, Error y Vacío */
+        .loading-state, .error-state, .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 30px;
+            text-align: center;
+            color: #666;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(110, 142, 251, 0.3);
+            border-radius: 50%;
+            border-top-color: #6e8efb;
+            animation: spin 1s ease-in-out infinite;
+            margin-bottom: 15px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .error-icon {
+            width: 60px;
+            height: 60px;
+            margin-bottom: 15px;
+            opacity: 0.7;
+        }
+
+        .btn-link {
+            background: none;
+            border: none;
+            color: #4285F4;
+            cursor: pointer;
+            text-decoration: underline;
+            padding: 0;
+            font-size: 1em;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .app-header {
+                padding: 5px 15px;
+            }
+
+            .user-email {
+                font-size: 0.8em;
+            }
+
+            .logout-btn {
+                padding: 2px 5px;
+                font-size: 0.6em;
+                gap: 2px;
+            }
+
+            .logout-btn svg {
+                width: 10px;
+                height: 10px;
+            }
+
+            .main-content {
+                padding: 80px 10px 10px;
+            }
+
+            .card-container, .title-card, .list-container {
+                padding: 20px;
+            }
+
+            .title-card h1 {
+                font-size: 1.8em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="app-header">
+        <div class="header-left">
+            <button id="back-btn" class="btn-back">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M19 12H5"></path>
+                    <path d="M12 19l-7-7 7-7"></path>
+                </svg>
+                Volver
+            </button>
+        </div>
+        <div class="user-info">
+            <span class="user-email" id="user-email"></span>
+            <button id="logout-btn" class="btn-logout">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+                Cerrar sesión
+            </button>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <!-- Título del modelo/campo seleccionado -->
+        <div class="title-card">
+            <h1 id="model-name-display">Cargando Números de Serie...</h1>
+        </div>
+
+        <!-- Contenedor para la lista de números de serie -->
+        <div class="list-container">
+            <!-- Estado de carga -->
+            <div id="loading-state" class="loading-state" style="display: none;">
+                <div class="spinner"></div>
+                <p>Cargando números de serie...</p>
+            </div>
+
+            <!-- Estado de error -->
+            <div id="error-state" class="error-state" style="display: none;">
+                <img src="assets/error-icon.svg" alt="Error" class="error-icon">
+                <p>Error al cargar los números de serie. Por favor, <button id="retry-btn" class="btn-link">intenta de nuevo</button>.</p>
+            </div>
+
+            <!-- Lista de números de serie -->
+            <ul id="serialNumbersList" class="item-list" style="display: none;">
+                <!-- Los números de serie se cargarán aquí dinámicamente -->
+            </ul>
+
+            <!-- Estado vacío (si no hay números de serie) -->
+            <div id="empty-state" class="empty-state" style="display: none;">
+                <img src="assets/empty-box.svg" alt="Sin números de serie" style="width: 80px; margin-bottom: 15px;">
+                <p>No hay números de serie registrados para este campo.</p>
+            </div>
+        </div>
+    </main>
+
+    <script type="module" src="js/numeros-de-serie.js"></script>
+</body>
+</html>

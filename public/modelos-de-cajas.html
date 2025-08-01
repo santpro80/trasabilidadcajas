@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modelos de Cajas | Sistema de Trazabilidad</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <!-- Encabezado de la aplicación, ahora con la clase app-header para estilos globales -->
+    <header class="app-header">
+        <div class="header-left">
+            <button id="back-btn" class="btn-back">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M19 12H5"></path>
+                    <path d="M12 19l-7-7 7-7"></path>
+                </svg>
+                Menú Principal
+            </button>
+        </div>
+        <div class="user-info">
+            <span class="user-email" id="user-email"></span>
+            <button id="logout-btn" class="logout-btn">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+                Cerrar sesión
+            </button>
+        </div>
+    </header>
+
+    <!-- Contenido principal, usando main-content para el padding superior y centrado -->
+    <main class="main-content">
+        <!-- Título en recuadro -->
+        <div class="title-card">
+            <h1>Modelos de Cajas</h1>
+        </div>
+
+        <!-- Contenedor de modelos -->
+        <div class="list-container" id="modelos-container">
+            <!-- Estado de carga -->
+            <div id="loading-state" class="loading-state">
+                <div class="spinner"></div>
+                <p>Cargando modelos...</p>
+            </div>
+
+            <!-- Estado de error -->
+            <div id="error-state" class="error-state" style="display: none;">
+                <img src="assets/error-icon.svg" alt="Error" class="error-icon">
+                <p>Error al cargar los modelos. Por favor, <button id="retry-btn" class="btn-link">intenta de nuevo</button>.</p>
+            </div>
+
+            <!-- Lista de modelos -->
+            <ul id="modelos-list" class="item-list" style="display: none;">
+                <!-- Los modelos se cargarán aquí dinámicamente -->
+            </ul>
+
+            <!-- Estado vacío (si no hay modelos) - AHORA ES UN HERMANO DE LA LISTA -->
+            <div id="empty-state" class="empty-state" style="display: none;">
+                <img src="assets/empty-box.svg" alt="Sin modelos">
+                <p>No hay modelos registrados</p>
+            </div>
+        </div>
+    </main>
+    <script type="module" src="js/modelos-de-cajas.js"></script>
+</body>
+</html>
