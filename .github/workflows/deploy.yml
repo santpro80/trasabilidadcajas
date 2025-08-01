@@ -1,0 +1,52 @@
+# Nombre del workflow, aparecerá en la pestaña 'Actions' de GitHub
+name: Deploy to GitHub Pages
+
+# Define cuándo se ejecutará este workflow
+on:
+  # Se ejecuta cuando hay un push en la rama 'main'
+  push:
+    branches:
+      - main
+  # Permite ejecutar el workflow manualmente desde la interfaz de GitHub
+  workflow_dispatch:
+
+# Permisos necesarios para el workflow
+permissions:
+  contents: read # Permite leer el contenido del repositorio
+  pages: write   # Permite escribir en GitHub Pages
+  id-token: write # Necesario para la autenticación en OIDC
+
+# Trabajos que se ejecutarán en este workflow
+jobs:
+  # Trabajo de despliegue
+  deploy:
+    environment:
+      name: github-pages # Nombre del entorno de despliegue
+      url: ${{ steps.deployment.outputs.page_url }} # URL del sitio desplegado
+    runs-on: ubuntu-latest # Sistema operativo donde se ejecutará el trabajo
+    steps:
+      # Paso 1: Descargar el código del repositorio
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Paso 2: Configurar Node.js (necesario para algunas herramientas web, aunque no lo uses directamente ahora)
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20' # Puedes ajustar la versión de Node.js si lo necesitas
+
+      # Paso 3: Configurar GitHub Pages
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      # Paso 4: Subir los artefactos (los archivos de tu sitio)
+      # Aquí es donde le decimos a GitHub que la carpeta a subir es 'public'
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './public' # ¡Esta es la clave! Le dice que suba el contenido de la carpeta 'public'
+
+      # Paso 5: Desplegar el sitio en GitHub Pages
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
