@@ -1,93 +1,94 @@
-// js/register.js
-import { registerUser } from './auth.js'; // Importa la función de registro desde auth.js
-
+// Este código se ejecutará una vez que toda la página HTML esté cargada.
 document.addEventListener('DOMContentLoaded', () => {
-    const form = document.getElementById("registerForm");
-    const submitBtn = document.getElementById("submit-btn");
-    const btnText = document.getElementById("btn-text");
-    const spinner = document.getElementById("spinner");
-    const roleSelect = document.getElementById("role");
-    const passwordSupervisorGroup = document.getElementById("password-supervisor-group");
-    const messageArea = document.getElementById("message-area"); // Asumiendo que tienes un área para mensajes
+    // Obtenemos una referencia al formulario de registro.
+    const registerForm = document.getElementById('registerForm');
+    // Obtenemos una referencia al botón de envío para manejar su estado.
+    const submitBtn = document.getElementById('submit-btn');
+    const btnText = document.getElementById('btn-text');
+    const spinner = document.getElementById('spinner');
+    // Área para mostrar mensajes al usuario.
+    const messageArea = document.getElementById('message-area');
 
-    // Función para mostrar mensajes
-    const showMessage = (msg, type = 'info') => {
-        if (messageArea) {
-            messageArea.textContent = msg;
-            messageArea.className = `message-area ${type}`;
-            messageArea.style.display = 'block';
-        }
-    };
+    // Obtenemos el campo de selección de rol y el grupo de contraseña de supervisor.
+    const roleSelect = document.getElementById('role');
+    const supervisorPasswordGroup = document.getElementById('password-supervisor-group');
+    const supervisorPasswordInput = document.getElementById('supervisor-password');
 
-    // Función para limpiar mensajes
-    const clearMessage = () => {
-        if (messageArea) {
-            messageArea.textContent = '';
-            messageArea.className = 'message-area';
-            messageArea.style.display = 'none';
-        }
-    };
-
-    // Mostrar campo de contraseña solo para supervisor
-    if (roleSelect && passwordSupervisorGroup) {
-        roleSelect.addEventListener("change", () => {
-            passwordSupervisorGroup.style.display = roleSelect.value === "supervisor" ? "block" : "none";
-            if (roleSelect.value !== "supervisor") {
-                document.getElementById("supervisor-password").value = "";
+    // Lógica para mostrar/ocultar el campo de contraseña de supervisor.
+    if (roleSelect) {
+        roleSelect.addEventListener('change', () => {
+            if (roleSelect.value === 'supervisor') {
+                supervisorPasswordGroup.style.display = 'block';
+                supervisorPasswordInput.setAttribute('required', 'true');
+            } else {
+                supervisorPasswordGroup.style.display = 'none';
+                supervisorPasswordInput.removeAttribute('required');
+                supervisorPasswordInput.value = ''; // Limpiar el campo si se oculta
             }
         });
-    } else {
-        console.warn("Elementos 'roleSelect' o 'password-supervisor-group' no encontrados.");
     }
-    
-    if (form) {
-        form.addEventListener("submit", async (e) => {
-            e.preventDefault();
-            clearMessage(); // Limpiar mensajes anteriores
 
+    // Agregamos un "escuchador de eventos" al formulario cuando se envía.
+    if (registerForm) {
+        registerForm.addEventListener('submit', async (event) => {
+            // Prevenimos el comportamiento por defecto del formulario (recargar la página).
+            event.preventDefault();
+
+            // Mostramos el spinner y deshabilitamos el botón.
+            submitBtn.disabled = true;
+            btnText.hidden = true;
+            spinner.hidden = false;
+            hideMessage(); // Ocultar mensajes anteriores
+
+            // Aquí iría la lógica real de registro (por ejemplo, con Firebase Authentication).
+            // Por ahora, simularemos un registro exitoso con un pequeño retraso.
             try {
-                // Mostrar spinner
-                if (submitBtn) submitBtn.disabled = true;
-                if (btnText) btnText.hidden = true;
-                if (spinner) spinner.hidden = false;
-                
-                const userData = {
-                    name: form.querySelector("#name")?.value.trim(),
-                    email: form.querySelector("#email")?.value.trim(),
-                    password: form.querySelector("#password")?.value,
-                    role: form.querySelector("#role")?.value
-                };
-                
-                // Validación para supervisor
-                if (userData.role === "supervisor") {
-                    const supervisorPasswordInput = form.querySelector("#supervisor-password");
-                    const supervisorPassword = supervisorPasswordInput ? supervisorPasswordInput.value : '';
-                    if (supervisorPassword !== "48482094") { // Contraseña de supervisor hardcodeada
-                        throw new Error("Contraseña de supervisor incorrecta");
-                    }
+                // Simulación de una llamada a un servidor o a Firebase para registrar al usuario.
+                // En un caso real, aquí iría tu código de autenticación, por ejemplo:
+                // await createUserWithEmailAndPassword(auth, email, password);
+
+                // Si el rol es supervisor y la contraseña de supervisor es incorrecta (simulación)
+                if (roleSelect.value === 'supervisor' && supervisorPasswordInput.value !== 'superclave') {
+                    throw new Error('Contraseña de supervisor incorrecta.');
                 }
+
+                await new Promise(resolve => setTimeout(resolve, 2000)); // Simula un retraso de 2 segundos
+
+                // Si todo fue exitoso:
+                showMessage('¡Registro exitoso! Redirigiendo al inicio de sesión...', 'success');
+
+                // *** CAMBIO CLAVE AQUÍ: Redirigimos a login.html ***
+                // Después de un breve retraso para que el usuario vea el mensaje de éxito.
+                setTimeout(() => {
+                    window.location.href = 'login.html';
+                }, 1500); // Redirige después de 1.5 segundos
                 
-                // Validación general
-                if (!userData.role) throw new Error("Selecciona un rol");
-                
-                await registerUser(userData.email, userData.password, userData.name, userData.role);
-                
-                // La redirección ya está manejada en auth.js si el registro es exitoso
             } catch (error) {
-                console.error("Error en registro:", error.message);
-                showMessage("Error en registro: " + error.message, 'error');
-                if (form.querySelector("#password")) form.querySelector("#password").value = "";
-                if (userData.role === "supervisor" && form.querySelector("#supervisor-password")) {
-                    form.querySelector("#supervisor-password").value = "";
-                }
+                // Si hubo un error durante el registro (simulado o real).
+                console.error('Error durante el registro:', error.message);
+                showMessage(`Error al registrar: ${error.message}`, 'error');
             } finally {
-                // Restaurar botón
-                if (submitBtn) submitBtn.disabled = false;
-                if (btnText) btnText.hidden = false;
-                if (spinner) spinner.hidden = true;
+                // Siempre ocultamos el spinner y habilitamos el botón al finalizar.
+                submitBtn.disabled = false;
+                btnText.hidden = false;
+                spinner.hidden = true;
             }
         });
     } else {
-        console.error("Error: Elemento 'registerForm' no encontrado.");
+        console.error('Error: No se encontró el formulario con el ID "registerForm".');
+    }
+
+    // Función para mostrar mensajes al usuario.
+    function showMessage(message, type) {
+        messageArea.textContent = message;
+        messageArea.className = `message-area ${type}`; // Añade la clase 'success' o 'error'
+        messageArea.style.display = 'block';
+    }
+
+    // Función para ocultar mensajes.
+    function hideMessage() {
+        messageArea.style.display = 'none';
+        messageArea.textContent = '';
+        messageArea.className = 'message-area';
     }
 });
