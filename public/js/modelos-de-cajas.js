@@ -1,18 +1,22 @@
-import { getFirestore, collection, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { app } from './firebase-config.js';
+// public/js/modelos-de-cajas.js
 
-const db = getFirestore(app);
-const auth = getAuth(app);
+// Importa las instancias de Firebase desde el archivo de configuración centralizado
+import { app, auth, db } from './firebase-config.js'; 
+import { getFirestore, collection, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js"; // Actualizada la versión de Firebase SDK
+import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js"; // Actualizada la versión de Firebase SDK
+
+// Ya no necesitamos inicializar app, auth, db aquí, se importan de firebase-config.js
+// const db = getFirestore(app);
+// const auth = getAuth(app);
 
 // DOM elements
-const userEmailDisplay = document.getElementById('user-email');
+const userEmailDisplay = document.getElementById('user-email'); // Este ID debería ser user-display-name para el nombre
 const logoutBtn = document.getElementById('logout-btn');
 const backBtn = document.getElementById('back-btn');
 const modelosList = document.getElementById('modelos-list');
 const loadingState = document.getElementById('loading-state');
 const errorState = document.getElementById('error-state');
-const emptyState = document.getElementById('empty-state'); // Selected directly by ID
+const emptyState = document.getElementById('empty-state'); 
 
 // Function to show/hide states
 const showState = (stateElement) => {
@@ -35,7 +39,8 @@ const showState = (stateElement) => {
 const loadModelos = () => {
     showState(loadingState);
 
-    const q = query(collection(db, "Cajas"));
+    // Asegúrate de que la colección 'Cajas' exista en tu Firestore
+    const q = query(collection(db, "Cajas")); 
 
     onSnapshot(q, (snapshot) => {
         modelosList.innerHTML = '';
@@ -57,8 +62,16 @@ const loadModelos = () => {
                 infoDiv.classList.add('list-item-info');
 
                 const modelName = document.createElement('h3');
-                modelName.textContent = modelo.id;
+                modelName.textContent = modelo.id; // Asume que el ID del documento es el nombre del modelo
                 infoDiv.appendChild(modelName);
+                
+                // Opcional: Si los modelos tienen otras propiedades que quieres mostrar, añádelas aquí
+                // Por ejemplo:
+                // if (modelo.descripcion) {
+                //     const description = document.createElement('p');
+                //     description.textContent = modelo.descripcion;
+                //     infoDiv.appendChild(description);
+                // }
                 
                 listItem.appendChild(infoDiv);
 
@@ -79,7 +92,18 @@ const loadModelos = () => {
 document.addEventListener('DOMContentLoaded', () => {
     onAuthStateChanged(auth, (user) => {
         if (user) {
-            if (userEmailDisplay) userEmailDisplay.textContent = user.email;
+            // CAMBIO AQUI: Usar user.email si userEmailDisplay existe, o user-display-name si lo agregas
+            // Para mostrar el nombre del usuario logueado en la cabecera
+            const userDisplayNameElement = document.getElementById('user-display-name'); 
+            if (userDisplayNameElement) {
+                // Si el elemento para el nombre existe, lo actualizamos
+                // Necesitarías cargar el nombre desde Firestore aquí o pasarlo de alguna manera
+                // Por ahora, mostramos el email como fallback
+                userDisplayNameElement.textContent = user.email; 
+            } else if (userEmailDisplay) { // Si solo tienes el user-email
+                userEmailDisplay.textContent = user.email;
+            }
+            
             loadModelos();
         } else {
             window.location.href = 'login.html';

@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Historial de Movimiento - Programa de Trazabilidad</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        /* Estilos específicos para lista-historial.html */
+        body {
+            font-family: 'Inter', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background: linear-gradient(135deg, #6e8efb, #a777e3); /* Fondo degradado original */
+            color: #2c3e50;
+            text-align: center;
+            justify-content: center; /* Centrar contenido verticalmente */
+            align-items: center; /* Centrar contenido horizontalmente */
+        }
+
+        .auth-container { /* Reutilizamos la clase auth-container para el estilo general */
+            background-color: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(5px);
+            border-radius: 15px;
+            padding: 40px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            width: 90%;
+            max-width: 600px; /* Ancho máximo para el contenedor */
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            animation: fadeIn 0.8s ease-out;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .header-container {
+            width: 100%;
+            background-color: #4285F4;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap; /* Permite que los elementos se envuelvan en pantallas pequeñas */
+        }
+
+        .header-container h1 {
+            color: white;
+            margin: 0;
+            font-size: 1.8em;
+            flex-grow: 1; /* Permite que el título ocupe el espacio disponible */
+            text-align: left;
+        }
+
+        .header-user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 0.9em;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .header-user-info span {
+            font-weight: 600;
+        }
+
+        .logout-btn {
+            background-color: #dc3545;
+            color: white;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: background-color 0.3s ease;
+        }
+
+        .logout-btn:hover {
+            background-color: #c82333;
+        }
+
+        .list-container {
+            width: 100%;
+            margin-top: 20px;
+            background-color: #f9f9f9;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            padding: 20px;
+            box-sizing: border-box;
+            max-height: 400px; /* Altura máxima para la lista con scroll */
+            overflow-y: auto; /* Habilita el scroll vertical */
+        }
+
+        .list-item {
+            background-color: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            text-align: left;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s ease;
+        }
+
+        .list-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .list-item strong {
+            color: #4285F4;
+            display: inline-block;
+            min-width: 100px; /* Para alinear las etiquetas */
+        }
+
+        .list-item p {
+            margin: 5px 0;
+            line-height: 1.5;
+            color: #555;
+        }
+
+        .btn-secondary {
+            background-color: #6c757d; /* Color gris */
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            margin-top: 20px; /* Espacio superior */
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .btn-secondary:hover {
+            background-color: #5a6268;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Animación global de aparición */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Responsive Design para pantallas pequeñas */
+        @media (max-width: 768px) {
+            .auth-container {
+                padding: 20px;
+                width: 95%;
+            }
+            .header-container {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            .header-container h1 {
+                font-size: 1.5em;
+                text-align: center;
+                width: 100%;
+            }
+            .header-user-info {
+                flex-direction: column;
+                align-items: flex-start;
+                width: 100%;
+            }
+            .logout-btn {
+                width: 100%;
+            }
+            .list-item {
+                padding: 10px;
+                font-size: 0.9em;
+            }
+            .list-item strong {
+                min-width: 70px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <div class="header-container">
+            <h1>Historial de Movimiento</h1>
+            <div class="header-user-info">
+                <span id="user-display-name">Cargando...</span>
+                <button class="logout-btn" id="logout-btn">Cerrar sesión</button>
+            </div>
+        </div>
+        
+        <div class="list-container" id="history-list-container">
+            <!-- Los elementos del historial se cargarán aquí -->
+            <p>Cargando historial...</p>
+            <!-- Ejemplo de un item de historial (será generado por JS) -->
+            <!--
+            <div class="list-item">
+                <p><strong>Fecha:</strong> 2023-10-26 10:30</p>
+                <p><strong>Usuario:</strong> Juan Pérez</p>
+                <p><strong>Acción:</strong> Caja "BLOQUEADO 3,5" movida a "Almacén A"</p>
+                <p><strong>Detalle:</strong> Serie: AX2002, Cantidad: 1</p>
+            </div>
+            -->
+        </div>
+
+        <button class="btn-secondary" id="back-to-menu-btn">Volver al Menú</button>
+    </div>
+
+    <script type="module" src="js/lista-historial.js"></script>
+</body>
+</html>

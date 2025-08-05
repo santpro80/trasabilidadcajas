@@ -1,12 +1,14 @@
-import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { app } from './firebase-config.js';
+// public/js/modelado-caja.js
 
-const db = getFirestore(app);
-const auth = getAuth(app);
+// Importa las instancias de Firebase desde el archivo de configuración centralizado
+import { app, auth, db } from './firebase-config.js'; 
+import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js"; // Actualizada la versión de Firebase SDK
+import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js"; // Actualizada la versión de Firebase SDK
 
 // DOM elements
-const userEmailDisplay = document.getElementById('user-email');
+// CAMBIO: Usaremos user-display-name para el nombre del usuario
+const userDisplayNameElement = document.getElementById('user-display-name'); 
+const userEmailDisplay = document.getElementById('user-email'); // Mantener si aún se muestra el email
 const logoutBtn = document.getElementById('logout-btn');
 const backBtn = document.getElementById('back-btn');
 const modelNameDisplay = document.getElementById('model-name-display');
@@ -108,10 +110,32 @@ const loadModelDetails = async () => {
 
 document.addEventListener('DOMContentLoaded', () => {
     console.log("DOMContentLoaded fired for modelado-caja.js");
-    onAuthStateChanged(auth, (user) => {
+    onAuthStateChanged(auth, async (user) => { // Agregado 'async' para poder usar await
         console.log("onAuthStateChanged triggered for modelado-caja.js. User:", user ? user.email : 'null');
         if (user) {
-            if (userEmailDisplay) userEmailDisplay.textContent = user.email;
+            // CAMBIO: Obtener el nombre del usuario de Firestore para mostrarlo
+            try {
+                const userDocRef = doc(db, "users", user.uid);
+                const userDocSnap = await getDoc(userDocRef);
+                if (userDocSnap.exists()) {
+                    const userData = userDocSnap.data();
+                    if (userDisplayNameElement) {
+                        userDisplayNameElement.textContent = userData.name || user.email;
+                    }
+                } else {
+                    if (userDisplayNameElement) {
+                        userDisplayNameElement.textContent = user.email; // Fallback al email
+                    }
+                }
+            } catch (error) {
+                console.error("Error al obtener el nombre del usuario en modelado-caja.js:", error);
+                if (userDisplayNameElement) {
+                    userDisplayNameElement.textContent = user.email; // Fallback al email en caso de error
+                }
+            }
+            // FIN CAMBIO
+
+            if (userEmailDisplay) userEmailDisplay.textContent = user.email; // Mantener si aún se usa este ID
             loadModelDetails(); // Cargar detalles del modelo al autenticarse
         } else {
             console.log("No user authenticated, redirecting to login.html");

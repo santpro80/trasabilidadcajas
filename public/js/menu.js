@@ -1,20 +1,44 @@
-import { 
-    getAuth, 
-    onAuthStateChanged, 
-    signOut 
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { app } from './firebase-config.js';
+// public/js/menu.js
 
-const auth = getAuth(app);
+// Importa las instancias de Firebase desde el archivo de configuración centralizado
+import { app, auth, db } from './firebase-config.js'; 
+import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { doc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Configurar email de usuario
-    onAuthStateChanged(auth, (user) => {
-        const userEmail = document.getElementById('user-email');
+    // Configurar nombre de usuario en lugar de email
+    onAuthStateChanged(auth, async (user) => {
+        const userDisplayElement = document.getElementById('user-display-name'); // Nuevo ID para el nombre
+        const userEmailElement = document.getElementById('user-email'); // Si aún quieres mostrar el email
+
         if (!user) {
             window.location.href = 'login.html';
-        } else if (userEmail) {
-            userEmail.textContent = user.email;
+        } else {
+            // Obtenemos el nombre del usuario desde Firestore
+            try {
+                const userDocRef = doc(db, "users", user.uid);
+                const userDocSnap = await getDoc(userDocRef);
+
+                if (userDocSnap.exists()) {
+                    const userData = userDocSnap.data();
+                    if (userDisplayElement) {
+                        userDisplayElement.textContent = userData.name || user.email; // Muestra nombre o email si no hay nombre
+                    }
+                    if (userEmailElement) { // Si mantienes un elemento para el email
+                        userEmailElement.textContent = user.email;
+                    }
+                } else {
+                    if (userDisplayElement) {
+                        userDisplayElement.textContent = user.email; // Si no hay datos en Firestore, muestra el email
+                    }
+                    console.warn("Datos de usuario no encontrados en Firestore para UID:", user.uid);
+                }
+            } catch (error) {
+                console.error("Error al obtener datos del usuario de Firestore:", error);
+                if (userDisplayElement) {
+                    userDisplayElement.textContent = user.email; // En caso de error, muestra el email
+                }
+            }
         }
     });
 
@@ -34,16 +58,14 @@ document.addEventListener('DOMContentLoaded', () => {
         window.location.href = 'modelos-de-cajas.html'; // Redirige a la página de modelos de cajas
     });
 
+    // CAMBIO AQUI: Redirige a la nueva página de historial
     document.getElementById('btn-historial')?.addEventListener('click', () => {
-        // window.location.href = 'historial.html'; // Descomentar cuando exista
-        // Considera usar un modal personalizado en lugar de alert()
-        console.log('Sección de Historial - En desarrollo');
+        window.location.href = 'lista-historial.html'; 
     });
 
+    // Redirige a la página de cuenta
     document.getElementById('btn-cuenta')?.addEventListener('click', () => {
-        // window.location.href = 'cuenta.html'; // Descomentar cuando exista
-        // Considera usar un modal personalizado en lugar de alert()
-        console.log('Sección de Cuenta - En desarrollo');
+        window.location.href = 'cuenta.html'; 
     });
 
     // Nuevo event listener para el botón de Importar Datos

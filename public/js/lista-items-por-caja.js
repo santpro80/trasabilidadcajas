@@ -1,50 +1,34 @@
-import { getFirestore, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { app } from './firebase-config.js';
+// public/js/lista-items-por-caja.js
 
-const db = getFirestore(app);
-const auth = getAuth(app);
+// Importa las instancias de Firebase desde el archivo de configuración centralizado
+import { app, auth, db } from './firebase-config.js'; 
+import { getFirestore, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js"; 
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js"; 
 
 // DOM elements
-const boxSerialNumberDisplay = document.getElementById('box-serial-number-display');
-console.log('boxSerialNumberDisplay:', boxSerialNumberDisplay); // DEBUG LOG
-const itemsList = document.getElementById('itemsList');
-console.log('itemsList:', itemsList); // DEBUG LOG
-const loadingState = document.getElementById('loading-state');
-console.log('loadingState:', loadingState); // DEBUG LOG
-const errorState = document.getElementById('error-state');
-console.log('errorState:', errorState); // DEBUG LOG
-const emptyState = document.getElementById('empty-state');
-console.log('emptyState:', emptyState); // DEBUG LOG
-const retryBtn = document.getElementById('retry-btn');
-console.log('retryBtn:', retryBtn); // DEBUG LOG
-const userEmailDisplay = document.getElementById('user-email');
-console.log('userEmailDisplay:', userEmailDisplay); // DEBUG LOG
+const userDisplayNameElement = document.getElementById('user-display-name'); 
+const userEmailDisplay = document.getElementById('user-email'); 
 const logoutBtn = document.getElementById('logout-btn');
-console.log('logoutBtn:', logoutBtn); // DEBUG LOG
 const backBtn = document.getElementById('back-btn');
-console.log('backBtn:', backBtn); // DEBUG LOG
-const searchInput = document.getElementById('searchInput');
-console.log('searchInput:', searchInput); // DEBUG LOG
+const boxSerialNumberDisplay = document.getElementById('box-serial-number-display');
+const itemsList = document.getElementById('itemsList');
+const loadingState = document.getElementById('loading-state');
+const errorState = document.getElementById('error-state');
+const emptyState = document.getElementById('empty-state');
+const retryBtn = document.getElementById('retry-btn');
+const searchInput = document.getElementById('searchInput'); // Elemento de búsqueda
 
 // Modal elements
 const editSerialModal = document.getElementById('editSerialModal');
-console.log('editSerialModal:', editSerialModal); // DEBUG LOG
-const modalItemCodeDescription = document.getElementById('modalItemCodeDescription');
-console.log('modalItemCodeDescription:', modalItemCodeDescription); // DEBUG LOG
-const newSerialNumberInput = document.getElementById('newSerialNumberInput');
-console.log('newSerialNumberInput:', newSerialNumberInput); // DEBUG LOG
+const modalItemCodeDescription = document.getElementById('modalItemCodeDescription'); // Ahora mostrará el código/descripción del ítem
+const newSerialNumberInput = document.getElementById('newSerialNumberInput'); // Input para el nuevo N° de Serie del ítem
 const cancelEditBtn = document.getElementById('cancelEditBtn');
-console.log('cancelEditBtn:', cancelEditBtn); // DEBUG LOG
 const confirmEditBtn = document.getElementById('confirmEditBtn');
-console.log('confirmEditBtn:', confirmEditBtn); // DEBUG LOG
 const modalMessage = document.getElementById('modalMessage');
-console.log('modalMessage:', modalMessage); // DEBUG LOG
 const modalSpinner = document.getElementById('modalSpinner');
-console.log('modalSpinner:', modalSpinner); // DEBUG LOG
 
 let allLoadedItemsData = {}; // Variable para almacenar todos los ítems cargados sin filtrar
-let currentSelectedSerialNumber = ''; // Para saber qué número de serie estamos viendo (el ID del documento principal en 'Items')
+let currentSelectedSerialNumber = ''; // El ID del documento principal en 'Items' (ej. AX2002)
 let currentEditingItem = null; // Para almacenar el ítem completo que se está editando
 
 console.log("lista-items-por-caja.js: Script loaded.");
@@ -93,14 +77,12 @@ const showModalLoading = (show) => {
     if (show) clearModalMessage();
 };
 
-
 // Function to show/hide states
 const showState = (stateElement) => {
     console.log(`showState called: attempting to show ${stateElement ? stateElement.id : 'null'}`);
-    // Asegurarse de que todos los elementos existan antes de intentar acceder a su estilo
     const elementsToControl = [loadingState, errorState, emptyState, itemsList];
     elementsToControl.forEach(el => {
-        if (el) { // Solo si el elemento no es null
+        if (el) { 
             el.style.display = 'none';
         } else {
             console.warn(`Element with ID corresponding to ${el} is null. Cannot set display style.`);
@@ -110,7 +92,7 @@ const showState = (stateElement) => {
     if (stateElement) {
         stateElement.style.display = (stateElement === itemsList) ? 'flex' : 'block';
         if (stateElement === itemsList) {
-            itemsList.style.flexDirection = 'column'; // Ensure the list displays items in a column
+            itemsList.style.flexDirection = 'column'; 
         }
     }
     console.log(`  -> Display style for ${stateElement ? stateElement.id : 'null'} set to: ${stateElement ? stateElement.style.display : 'none'}`);
@@ -124,7 +106,7 @@ const renderFilteredItems = (itemsData, searchTerm = '') => {
 
     if (lowerCaseSearchTerm) {
         filteredItemKeys = filteredItemKeys.filter(itemFieldName => {
-            const itemValue = itemsData[itemFieldName];
+            const itemValue = itemsData[itemFieldName]; // Esto es el N° de Serie del ítem
             const firstSpaceIndex = itemFieldName.indexOf(' ');
             const itemCode = firstSpaceIndex !== -1 ? itemFieldName.substring(0, firstSpaceIndex) : itemFieldName;
             const description = firstSpaceIndex !== -1 ? itemFieldName.substring(firstSpaceIndex + 1) : '';
@@ -149,7 +131,7 @@ const renderFilteredItems = (itemsData, searchTerm = '') => {
 
     if (filteredItemKeys.length > 0) {
         filteredItemKeys.forEach(itemFieldName => {
-            const itemValue = itemsData[itemFieldName];
+            const itemValue = itemsData[itemFieldName]; // Esto es el N° de Serie del ítem
             const listItem = document.createElement('li');
             listItem.classList.add('list-item');
 
@@ -179,14 +161,14 @@ const renderFilteredItems = (itemsData, searchTerm = '') => {
             // Add click listener to open modal for editing
             listItem.addEventListener('click', () => {
                 currentEditingItem = {
-                    id: itemFieldName, // Este es el nombre del campo en Firestore
+                    id: itemFieldName, // Este es el nombre del campo en Firestore (ej. "42-118-01 PLACA...")
                     itemCode: itemCode,
                     description: description,
-                    serialNumber: itemValue,
-                    serialNumberDocumentId: currentSelectedSerialNumber // El ID del documento padre en 'Items'
+                    serialNumber: itemValue, // El N° de Serie actual del ítem
+                    serialNumberDocumentId: currentSelectedSerialNumber // El ID del documento padre en 'Items' (ej. AX2002)
                 };
                 if (modalItemCodeDescription) modalItemCodeDescription.textContent = `Ítem: ${itemCode} - ${description}`;
-                if (newSerialNumberInput) newSerialNumberInput.value = itemValue;
+                if (newSerialNumberInput) newSerialNumberInput.value = itemValue; // Pre-llenar con el N° de Serie actual del ítem
                 if (editSerialModal) editSerialModal.style.display = 'flex'; // Show the modal
                 clearModalMessage(); // Clear any previous modal messages
             });
@@ -256,8 +238,7 @@ const loadItemsForSerialNumber = async () => {
     } catch (error) {
         console.error("Error al cargar los ítems para el número de serie:", error);
         showState(errorState);
-        if (errorState) errorState.querySelector('p').innerHTML = `Error al cargar los ítems: ${error.message}. Por favor, <button id="retry-btn-error" class="btn-link">intenta de nuevo</button>.`;
-        document.getElementById('retry-btn-error')?.addEventListener('click', loadItemsForSerialNumber);
+        if (errorState) errorState.querySelector('p').innerHTML = `Error al cargar los ítems: ${error.message}. Por favor, <button id="retry-btn" class="btn-link">intenta de nuevo</button>.`;
     }
 };
 
@@ -298,9 +279,11 @@ const updateItemSerialNumber = async () => {
     // --- FIN NUEVA VALIDACIÓN ---
 
     try {
+        // Referencia al documento del número de serie en la colección 'Items'
         const serialDocRef = doc(db, "Items", decodeURIComponent(currentEditingItem.serialNumberDocumentId));
         
         // MODIFICACIÓN CLAVE AQUÍ: Sanitizar el nombre del campo antes de usarlo
+        // currentEditingItem.id es el nombre del campo en Firestore (ej. "42-118-01 PLACA...")
         const fieldToUpdate = sanitizeFieldName(currentEditingItem.id); 
         
         console.log("DEBUG: Intentando actualizar Firebase...");
@@ -341,10 +324,32 @@ const updateItemSerialNumber = async () => {
 document.addEventListener('DOMContentLoaded', () => {
     console.log("DOMContentLoaded fired for lista-items-por-caja.js");
     
-    onAuthStateChanged(auth, (user) => {
+    onAuthStateChanged(auth, async (user) => { // Agregado async aquí
         console.log("onAuthStateChanged triggered for lista-items-por-caja.js. User:", user ? user.email : 'null');
         if (user) {
-            if (userEmailDisplay) userEmailDisplay.textContent = user.email;
+            // CAMBIO: Obtener el nombre del usuario de Firestore para mostrarlo
+            try {
+                const userDocRef = doc(db, "users", user.uid);
+                const userDocSnap = await getDoc(userDocRef);
+                if (userDocSnap.exists()) {
+                    const userData = userDocSnap.data();
+                    if (userDisplayNameElement) {
+                        userDisplayNameElement.textContent = userData.name || user.email;
+                    }
+                } else {
+                    if (userDisplayNameElement) {
+                        userDisplayNameElement.textContent = user.email; // Fallback al email
+                    }
+                }
+            } catch (error) {
+                console.error("Error al obtener el nombre del usuario en lista-items-por-caja.js:", error);
+                if (userDisplayNameElement) {
+                    userDisplayNameElement.textContent = user.email; // Fallback al email en caso de error
+                }
+            }
+            // FIN CAMBIO
+
+            if (userEmailDisplay) userEmailDisplay.textContent = user.email; 
             loadItemsForSerialNumber(); // Load items upon authentication
         } else {
             console.log("No user authenticated, redirecting to login.html from lista-items-por-caja.js");

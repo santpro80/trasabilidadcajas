@@ -85,7 +85,8 @@
             height: 18px;
         }
 
-        .user-email {
+        /* CAMBIO: Nuevo estilo para user-display-name */
+        .user-display-name {
             font-weight: 500;
             color: #2c3e50;
             font-size: 0.9em;
@@ -212,50 +213,79 @@
             gap: 10px;
         }
 
+        /* Estilos para los ítems de la lista */
         .list-item {
             background-color: #f9f9f9;
             border: 1px solid #e0e0e0;
             border-radius: 10px;
             padding: 15px 20px;
-            display: flex; /* Changed to flex for horizontal alignment */
-            align-items: center; /* Align items vertically in the center */
-            justify-content: flex-start; /* Align content to the start */
-            gap: 10px; /* Space between text and button */
-            cursor: pointer; /* Changed to pointer as the whole cell is clickable */
-            transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
+            display: flex; /* Contenedor principal para Código/Descripción y N° de Serie */
+            flex-direction: row; /* Elementos en fila */
+            align-items: flex-end; /* Alinea los elementos al final (abajo) del contenedor */
+            justify-content: space-between; /* Empuja el N° de Serie a la derecha */
+            gap: 10px; /* Espacio entre las dos secciones principales */
+            cursor: pointer; 
+            transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease; /* Quitamos el color de la transición aquí */
             text-align: left;
             position: relative;
-            color: #2c3e50;
+            color: #2c3e50; /* Color base del texto */
         }
 
         .list-item:hover {
             background-color: #e0eaf2;
             transform: translateY(-2px);
             box-shadow: 0 0 15px rgba(66, 133, 244, 0.6), 0 4px 12px rgba(0, 0, 0, 0.1);
-            color: #4285F4;
+            /* CAMBIO CLAVE: Aplicar el color azul a los elementos de texto dentro del list-item en hover */
+            color: #4285F4; /* Color azul para el texto principal del item */
         }
 
-        .item-info-container { /* New container for text details */
-            display: flex;
-            flex-direction: column;
-            flex-grow: 1; /* Allow text to take available space */
-            gap: 5px;
+        .list-item:hover .item-label,
+        .list-item:hover .item-value-text {
+            color: #4285F4; /* Asegura que las etiquetas y valores también se pongan azules */
         }
 
-        .item-detail-line {
+
+        /* Contenedor para Código y Descripción */
+        .item-main-details {
             display: flex;
-            flex-wrap: wrap;
-            gap: 5px;
+            flex-direction: column; /* Apilar Código y Descripción */
+            flex-grow: 1; /* Permite que ocupe el espacio restante */
+            gap: 5px; /* Espacio entre Código y Descripción */
+            align-items: flex-start; /* Alinea el contenido a la izquierda */
+        }
+
+        /* Contenedores para cada línea de detalle (Código, Descripción, N° de Serie) */
+        .item-detail-group { /* Nuevo contenedor para agrupar etiqueta y valor */
+            display: flex;
+            flex-direction: column; /* Apilar etiqueta sobre valor */
+            gap: 2px; /* Espacio entre etiqueta y valor */
             font-size: 0.95em;
+            text-align: left; /* Asegurar que el texto esté alineado a la izquierda */
         }
 
         .item-label {
             font-weight: 600;
+            color: #555; /* Un color ligeramente más sutil para las etiquetas */
+            white-space: nowrap; /* Evitar que la etiqueta se rompa */
         }
 
         .item-value-text {
-            /* No se necesitan estilos adicionales */
+            color: #2c3e50; /* Color principal para los valores */
+            white-space: normal; /* Permitir que el texto del valor se envuelva */
+            word-break: break-word; /* Romper palabras largas */
         }
+
+        /* Ajustes específicos para el N° de Serie */
+        .item-detail-serial {
+            flex-shrink: 0; /* Evita que se encoja */
+            text-align: right; /* Alinea su contenido a la derecha */
+            margin-left: 10px; /* Margen para separarlo de la descripción */
+            align-self: flex-end; /* Asegura que se alinee al final de su contenedor flex */
+        }
+        .item-detail-serial .item-label {
+            text-align: right; /* Asegura que la etiqueta también esté a la derecha */
+        }
+
 
         /* Estados de Carga, Error y Vacío */
         .loading-state, .error-state, .empty-state {
@@ -306,12 +336,12 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.6); /* Fondo semi-transparente oscuro */
+            background-color: rgba(0, 0, 0, 0.6); 
             display: flex;
             justify-content: center;
             align-items: center;
-            z-index: 2000; /* Asegura que esté por encima de todo */
-            animation: fadeIn 0.3s ease-out; /* Animación de aparición del overlay */
+            z-index: 2000; 
+            animation: fadeIn 0.3s ease-out; 
         }
 
         .modal-content {
@@ -320,10 +350,10 @@
             padding: 30px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
             width: 90%;
-            max-width: 450px; /* Ancho máximo para el modal */
+            max-width: 450px; 
             text-align: center;
-            animation: scaleIn 0.3s ease-out; /* Animación de escala para el modal */
-            position: relative; /* Para posicionar elementos internos si es necesario */
+            animation: scaleIn 0.3s ease-out; 
+            position: relative; 
         }
 
         @keyframes scaleIn {
@@ -357,7 +387,7 @@
         }
 
         .modal-content input[type="text"] {
-            width: calc(100% - 30px); /* Ajustar ancho para padding */
+            width: calc(100% - 30px); 
             padding: 12px 15px;
             border: 1px solid #ddd;
             border-radius: 8px;
@@ -398,7 +428,7 @@
             font-weight: 600;
             transition: background-color 0.3s ease, transform 0.2s ease;
             width: 100%;
-            max-width: 250px; /* Ancho fijo para el botón de subir */
+            max-width: 250px; 
             box-sizing: border-box;
         }
 
@@ -409,13 +439,13 @@
         }
 
         /* MODIFICACIÓN CLAVE AQUÍ: Posicionamiento del spinner */
-        .modal-overlay .spinner { /* Selector más específico */
-            position: absolute; /* Posicionamiento absoluto respecto al overlay */
+        .modal-overlay .spinner { 
+            position: absolute; 
             top: 50%;
             left: 50%;
-            transform: translate(-50%, -50%); /* Centrado perfecto */
-            margin: 0; /* Eliminar cualquier margen que pueda desplazarlo */
-            z-index: 2001; /* Asegurar que esté por encima del contenido del modal */
+            transform: translate(-50%, -50%); 
+            margin: 0; 
+            z-index: 2001; 
         }
 
         .modal-content .message-area {
@@ -444,7 +474,7 @@
                 padding: 5px 15px;
             }
 
-            .user-email {
+            .user-email, .user-display-name { /* Aplicar a ambos */
                 font-size: 0.8em;
             }
 
@@ -489,12 +519,21 @@
                 gap: 10px;
             }
 
+            /* En pantallas pequeñas, apilamos los elementos principales verticalmente */
             .list-item {
-                flex-direction: column; /* Stack on small screens */
-                align-items: flex-start;
+                flex-direction: column; 
+                align-items: flex-start; /* Alinea todo el contenido a la izquierda */
             }
-            .item-detail-line {
-                width: 100%; /* Take full width on small screens */
+            .item-main-details {
+                width: 100%; /* Ocupa todo el ancho */
+            }
+            .item-detail-serial {
+                width: 100%; /* Ocupa todo el ancho */
+                text-align: left; /* Alinea a la izquierda en móviles */
+                align-self: flex-start; /* Alinea al inicio de su contenedor flex */
+            }
+            .item-detail-serial .item-label {
+                text-align: left; /* Asegura que la etiqueta también esté a la izquierda */
             }
         }
     </style>
@@ -511,7 +550,10 @@
             </button>
         </div>
         <div class="user-info">
-            <span class="user-email" id="user-email"></span>
+            <!-- CAMBIO: Elemento para mostrar el nombre del usuario -->
+            <span class="user-display-name" id="user-display-name"></span>
+            <!-- Puedes mantener user-email si lo necesitas, o eliminarlo -->
+            <!-- <span class="user-email" id="user-email"></span> -->
             <button id="logout-btn" class="btn-logout">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                     <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
