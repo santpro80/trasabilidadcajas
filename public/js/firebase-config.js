@@ -1,6 +1,5 @@
 // public/js/firebase-config.js
 
-// 1. IMPORTAMOS TODO DESDE FIREBASE AQUÍ, Y SOLO AQUÍ
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
 import { 
     getAuth, 
@@ -17,13 +16,18 @@ import {
     doc, 
     getDoc, 
     setDoc,
+    updateDoc,
+    arrayUnion,
+    deleteField,
+    deleteDoc, // <-- HERRAMIENTA AÑADIDA AQUÍ
     collection,
     query,
     orderBy,
+    onSnapshot,
     getDocs
 } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
-// 2. CONFIGURACIÓN DE TU PROYECTO
+// Configuración de tu proyecto
 const firebaseConfig = {
     apiKey: "AIzaSyBtj9fa0St2IMZgo4jfNPsz_3EMVtioyGU",
     authDomain: "cajas-secuela.firebaseapp.com",
@@ -34,17 +38,14 @@ const firebaseConfig = {
     measurementId: "G-SZDRGMZS4X"
 };
 
-// 3. INICIALIZAMOS Y EXPORTAMOS LAS INSTANCIAS
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
 export { 
-    // INSTANCIAS
     app, 
     auth, 
     db,
-    // FUNCIONES DE AUTH
     onAuthStateChanged,
     signOut,
     signInWithEmailAndPassword,
@@ -52,12 +53,16 @@ export {
     updatePassword,
     reauthenticateWithCredential,
     EmailAuthProvider,
-    // FUNCIONES DE FIRESTORE
     doc,
     getDoc,
     setDoc,
+    updateDoc,
+    arrayUnion,
+    deleteField,
+    deleteDoc, // <-- Y LA EXPORTAMOS AQUÍ
     collection,
     query,
     orderBy,
+    onSnapshot,
     getDocs
 };

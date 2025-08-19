@@ -1,9 +1,5 @@
-// ==========================================================================
-//      importar-datos.js - VERSIÓN COMPLETA Y CORREGIDA
-// ==========================================================================
+// public/js/importar-datos.js
 
-// 1. IMPORTACIÓN CENTRALIZADA
-// Se importa todo lo necesario desde firebase-config.js para evitar conflictos.
 import {
     db,
     auth,
@@ -14,8 +10,14 @@ import {
     setDoc
 } from './firebase-config.js';
 
+// ==================================================================
+// MODIFICACIÓN CLAVE: Función de sanitización final y robusta
+// ==================================================================
+function sanitizeFieldName(name) {
+    // Reemplaza la barra, puntos y comas con secuencias de texto únicas
+    return name.replace(/\//g, '_slash_').replace(/\./g, '_dot_').replace(/,/g, '_comma_');
+}
 
-// 2. ELEMENTOS DEL DOM
 const csvFileInput = document.getElementById('csvFileInput');
 const uploadCsvBtn = document.getElementById('uploadCsvBtn');
 const messageDiv = document.getElementById('message');
@@ -24,10 +26,6 @@ const userDisplayName = document.getElementById('user-display-name');
 const logoutBtn = document.getElementById('logout-btn');
 const backBtn = document.getElementById('back-btn');
 
-
-// 3. FUNCIONES AUXILIARES (showMessage, showLoading, etc.)
-
-// Muestra mensajes de estado al usuario
 const showMessage = (msg, type = 'info') => {
     if (messageDiv) {
         messageDiv.textContent = msg;
@@ -36,7 +34,6 @@ const showMessage = (msg, type = 'info') => {
     }
 };
 
-// Limpia los mensajes
 const clearMessage = () => {
     if (messageDiv) {
         messageDiv.textContent = '';
@@ -45,7 +42,6 @@ const clearMessage = () => {
     }
 };
 
-// Muestra u oculta el spinner de carga y deshabilita botones
 const showLoading = (show) => {
     if (loadingSpinner) {
         loadingSpinner.style.display = show ? 'block' : 'none';
@@ -57,9 +53,6 @@ const showLoading = (show) => {
         clearMessage();
     }
 };
-
-
-// 4. LÓGICA PRINCIPAL PARA PROCESAR Y SUBIR EL CSV
 
 const processAndUploadCsv = async (file) => {
     showLoading(true);
@@ -81,7 +74,6 @@ const processAndUploadCsv = async (file) => {
                 return;
             }
 
-            // Agrupa todos los ítems por su `boxSerialNumber`
             const itemsByBox = new Map();
 
             results.data.forEach(row => {
@@ -91,7 +83,7 @@ const processAndUploadCsv = async (file) => {
                 const serialNumber = row['serialNumber']?.trim();
 
                 if (!boxSerialNumber || !itemCode || !description || !serialNumber) {
-                    return; // Ignora las filas que no tengan todos los datos necesarios
+                    return;
                 }
 
                 if (!itemsByBox.has(boxSerialNumber)) {
@@ -99,23 +91,18 @@ const processAndUploadCsv = async (file) => {
                 }
 
                 const boxItems = itemsByBox.get(boxSerialNumber);
-                const fieldName = `${itemCode} ${description}`;
+                const originalFieldName = `${itemCode};${description}`;
                 
-                // Asigna el número de serie directamente al campo.
-                // Esto crea la estructura que el resto de tu app espera.
-                boxItems[fieldName] = serialNumber;
+                const sanitizedName = sanitizeFieldName(originalFieldName);
+                boxItems[sanitizedName] = serialNumber;
             });
-
 
             let successfulUploads = 0;
             let failedUploads = 0;
 
-            // Itera sobre cada caja y sube sus ítems a Firestore
             for (const [boxId, items] of itemsByBox.entries()) {
                 try {
                     const docRef = doc(db, "Items", boxId);
-                    // Usa `setDoc` con `{ merge: true }` para añadir/actualizar los ítems
-                    // sin borrar otros que ya existieran en esa caja.
                     await setDoc(docRef, items, { merge: true });
                     successfulUploads++;
                 } catch (error) {
@@ -124,14 +111,13 @@ const processAndUploadCsv = async (file) => {
                 }
             }
 
-            // Muestra el resultado final al usuario
             if (successfulUploads > 0) {
                 showMessage(`Importación completada: ${successfulUploads} cajas actualizadas/creadas. ${failedUploads > 0 ? `${failedUploads} fallaron.` : ''}`, 'success');
             } else {
                 showMessage(`No se pudo importar ningún dato. ${failedUploads > 0 ? `${failedUploads} fallaron.` : 'Verifica el formato del CSV.'}`, 'error');
             }
             showLoading(false);
-            csvFileInput.value = ''; // Limpia el input de archivo
+            csvFileInput.value = '';
         },
         error: (err) => {
             showMessage(`Error crítico al leer el archivo: ${err.message}`, 'error');
@@ -140,14 +126,9 @@ const processAndUploadCsv = async (file) => {
     });
 };
 
-
-// 5. EVENTO PRINCIPAL QUE EJECUTA TODO CUANDO LA PÁGINA CARGA
-
 document.addEventListener('DOMContentLoaded', () => {
-    // Verificación de autenticación
     onAuthStateChanged(auth, async (user) => {
         if (user) {
-            // Si tienes una colección 'users', puedes obtener el nombre
             const userDocRef = doc(db, "users", user.uid);
             const userDocSnap = await getDoc(userDocRef);
             if (userDocSnap.exists() && userDisplayName) {
@@ -156,12 +137,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 userDisplayName.textContent = user.email;
             }
         } else {
-            // Si no hay usuario, redirigir al login
             window.location.href = 'login.html';
         }
     });
 
-    // Event listener para el botón de subir CSV
     if (uploadCsvBtn) {
         uploadCsvBtn.addEventListener('click', () => {
             if (csvFileInput && csvFileInput.files.length > 0) {
@@ -172,14 +151,12 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Event listener para el botón de volver
     if (backBtn) {
         backBtn.addEventListener('click', () => {
-            window.location.href = 'menu.html';
+            window.location.href = 'redir-import.html';
         });
     }
 
-    // Event listener para el botón de cerrar sesión
     if (logoutBtn) {
         logoutBtn.addEventListener('click', async () => {
             try {

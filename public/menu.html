@@ -5,258 +5,42 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Menú Principal - Sistema de Cajas</title>
     <link rel="stylesheet" href="css/styles.css">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap">
+    <link rel="icon" href="assets/logo.png" type="image/png">
     <style>
-        /* Estilos específicos para menu.html */
-        body {
-            font-family: 'Inter', Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            background: linear-gradient(135deg, #6e8efb, #a777e3); /* Fondo degradado original */
-            color: #2c3e50;
-            text-align: center;
-        }
-
-        /* Animación global de aparición */
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* Encabezado de la aplicación */
+        body { font-family: 'Inter', Arial, sans-serif; margin: 0; min-height: 100vh; display: flex; flex-direction: column; background: linear-gradient(135deg, #6e8efb, #a777e3); color: #2c3e50; }
         .app-header {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            background-color: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(5px);
-            padding: 10px 25px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-            width: 100%;
-            box-sizing: border-box;
-            z-index: 1000;
+            position: fixed; top: 0; left: 0; right: 0;
+            background-color: rgba(255, 255, 255, 0.9); backdrop-filter: blur(5px);
+            padding: 10px 25px; display: flex; justify-content: space-between;
+            align-items: center; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); z-index: 1000;
         }
-
-        .header-left {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .user-info {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .small-logo .logo {
-            width: 35px;
-            height: auto;
-            margin-right: 5px;
-        }
-
-        .btn-back {
-            background-color: #f0f4f8;
-            color: #4285F4;
-            padding: 8px 15px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 0.95em;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            transition: background-color 0.3s ease, transform 0.2s ease;
-        }
-
-        .btn-back:hover {
-            background-color: #e2eaf2;
-            transform: translateY(-1px);
-        }
-
-        .btn-back svg {
-            stroke: #4285F4;
-            width: 18px;
-            height: 18px;
-        }
-
-        .user-email {
-            font-weight: 500;
-            color: #2c3e50;
-            font-size: 0.9em;
-            white-space: nowrap;
-        }
-
+        .header-left { display: flex; align-items: center; gap: 10px; }
+        .user-info { display: flex; align-items: center; gap: 10px; }
+        .small-logo img { width: 35px; height: auto; }
+        .user-display-name { font-weight: 500; font-size: 0.9em; }
         .logout-btn {
-            background-color: #dc3545;
-            color: white;
-            padding: 6px 15px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 0.9em;
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            transition: background-color 0.3s ease;
-            white-space: nowrap;
-            line-height: 1.2;
-            height: fit-content;
-            min-height: 28px;
+            background-color: #dc3545; color: white; padding: 6px 15px;
+            border: none; border-radius: 5px; cursor: pointer; font-size: 0.9em;
+            display: inline-flex; align-items: center; gap: 5px;
         }
-
-        .logout-btn:hover {
-            background-color: #c82333;
-        }
-
-        .logout-btn svg {
-            stroke: white;
-            width: 16px;
-            height: 16px;
-        }
-
-        /* Contenido principal */
-        .main-content {
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-start;
-            padding: 100px 20px 20px;
-            width: 100%;
-            box-sizing: border-box;
-            max-width: 800px;
-            margin: 0 auto;
-        }
-
-        /* Estilos específicos para el menú principal */
+        .logout-btn svg { stroke: white; width: 16px; height: 16px; }
+        .main-content { flex-grow: 1; display: flex; align-items: center; justify-content: center; padding: 80px 20px; }
         .menu-card {
-            background-color: #ffffff;
-            border-radius: 15px;
-            padding: 30px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-            width: 90%;
-            max-width: 500px;
-            margin: 0 auto;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            animation: fadeIn 0.8s ease-out;
-            box-sizing: border-box;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 20px;
+            background-color: #ffffff; border-radius: 15px; padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2); width: 100%; max-width: 500px;
         }
-
-        .menu-card h1 {
-            color: #4285F4;
-            margin: 0;
-            font-size: 2.2em;
-            font-weight: 700;
-        }
-
-        .menu-nav {
-            width: 100%;
-        }
-
-        .menu-nav ul {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
+        .menu-card h1 { color: #4285F4; margin-top: 0; margin-bottom: 25px; }
+        .menu-nav ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 15px; }
         .menu-nav button {
-            background-color: #f0f4f8;
-            color: #2c3e50; /* Color inicial del texto */
-            padding: 15px 20px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 1.1em;
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            justify-content: flex-start;
-            gap: 10px;
-            width: 100%;
-            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease, color 0.3s ease; /* Añadido 'color' a la transición */
-            box-shadow: 0 2px 4px rgba(0,0,0,0.08); /* Sombra sutil inicial */
+            background-color: #f0f4f8; color: #2c3e50; padding: 15px 20px;
+            border: none; border-radius: 10px; cursor: pointer; font-size: 1.1em;
+            font-weight: 500; display: flex; align-items: center; gap: 15px; width: 100%;
+            text-align: left; transition: all 0.2s ease;
         }
-
-        .menu-nav button:hover {
-            background-color: #e2eaf2;
-            transform: translateY(-2px);
-            box-shadow: 0 0 15px rgba(66, 133, 244, 0.6), 0 4px 8px rgba(0, 0, 0, 0.15); /* Sombra azul y sombra normal */
-            color: #4285F4; /* Color del texto al pasar el mouse */
-        }
-
-        .menu-nav button svg {
-            width: 24px;
-            height: 24px;
-            stroke: #4285F4; /* Color inicial del ícono */
-            transition: stroke 0.3s ease; /* Transición para el color del ícono */
-        }
-
-        .menu-nav button:hover svg {
-            stroke: #3367D6; /* Color del ícono al pasar el mouse (un azul un poco más oscuro para contraste) */
-        }
-
-        .menu-nav button span {
-            flex-grow: 1;
-            text-align: left;
-        }
-
-        /* Responsive Design */
-        @media (max-width: 768px) {
-            .app-header {
-                padding: 5px 15px;
-            }
-
-            .user-email {
-                font-size: 0.8em;
-            }
-
-            .logout-btn {
-                padding: 2px 5px;
-                font-size: 0.6em;
-                gap: 2px;
-            }
-
-            .logout-btn svg {
-                width: 10px;
-                height: 10px;
-            }
-
-            .main-content {
-                padding: 80px 10px 10px;
-            }
-
-            .menu-card {
-                padding: 20px;
-            }
-
-            .menu-card h1 {
-                font-size: 1.8em;
-            }
-
-            .menu-nav button {
-                padding: 12px 15px;
-                font-size: 1em;
-            }
-
-            .menu-nav button svg {
-                width: 20px;
-                height: 20px;
-            }
+        .menu-nav button:hover { background-color: #e2eaf2; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); color: #4285F4; }
+        .menu-nav button svg { width: 24px; height: 24px; stroke: #4285F4; flex-shrink: 0; }
+        #li-historial, #li-importar-datos {
+            display: none;
         }
     </style>
 </head>
@@ -264,15 +48,15 @@
     <header class="app-header">
         <div class="header-left">
             <div class="small-logo">
-                <img src="assets/logo.png" alt="Logo" class="logo">
+                <img src="assets/logo.png" alt="Logo">
             </div>
-            <div class="user-email" id="user-email"></div>
+            <div class="user-display-name" id="user-display-name">Cargando...</div>
         </div>
         <button id="logout-btn" class="logout-btn">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M9 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <polyline points="17 16 22 12 17 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <line x1="22" y1="12" x2="10" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <polyline points="16 17 21 12 16 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></polyline>
+                <line x1="21" y1="12" x2="9" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></line>
             </svg>
             Cerrar sesión
         </button>
@@ -285,16 +69,16 @@
                 <ul>
                     <li>
                         <button id="btn-cajas">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <rect x="2" y="7" width="20" height="15" rx="2" ry="2"></rect>
                                 <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
                             </svg>
                             <span>Gestión de Cajas</span>
                         </button>
                     </li>
-                    <li>
+                    <li id="li-historial">
                         <button id="btn-historial">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <circle cx="12" cy="12" r="10"></circle>
                                 <polyline points="12 6 12 12 16 14"></polyline>
                             </svg>
@@ -303,17 +87,16 @@
                     </li>
                     <li>
                         <button id="btn-cuenta">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                                 <circle cx="12" cy="7" r="4"></circle>
                             </svg>
                             <span>Cuenta</span>
                         </button>
                     </li>
-                    <!-- Nuevo botón para Importar Datos -->
-                    <li>
+                    <li id="li-importar-datos">
                         <button id="btn-importar-datos">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                                 <polyline points="7 10 12 15 17 10"></polyline>
                                 <line x1="12" y1="15" x2="12" y2="3"></line>
@@ -326,6 +109,62 @@
         </div>
     </main>
 
-    <script type="module" src="js/menu.js"></script>
+    <script type="module">
+        import { auth, db, onAuthStateChanged, signOut, doc, getDoc } from './js/firebase-config.js';
+
+        const userDisplayElement = document.getElementById('user-display-name');
+        const logoutBtn = document.getElementById('logout-btn');
+        const btnCajas = document.getElementById('btn-cajas');
+        const btnHistorial = document.getElementById('btn-historial');
+        const btnCuenta = document.getElementById('btn-cuenta');
+        const btnImportarDatos = document.getElementById('btn-importar-datos');
+
+        const manageMenuVisibility = (role) => {
+            if (role === 'supervisor') {
+                const liHistorial = document.getElementById('li-historial');
+                const liImportarDatos = document.getElementById('li-importar-datos');
+                if (liHistorial) liHistorial.style.display = 'list-item';
+                if (liImportarDatos) liImportarDatos.style.display = 'list-item';
+            }
+        };
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                try {
+                    const userDocRef = doc(db, "users", user.uid);
+                    const userDocSnap = await getDoc(userDocRef);
+                    let userRole = 'operario';
+                    if (userDocSnap.exists()) {
+                        const userData = userDocSnap.data();
+                        if (userDisplayElement) userDisplayElement.textContent = userData.name || user.email;
+                        userRole = userData.role || 'operario';
+                    } else {
+                        if (userDisplayElement) userDisplayElement.textContent = user.email;
+                    }
+                    manageMenuVisibility(userRole);
+                } catch (error) {
+                    console.error("Error al obtener datos del usuario:", error);
+                    if (userDisplayElement) userDisplayElement.textContent = user.email;
+                    manageMenuVisibility('operario');
+                }
+            } else {
+                window.location.href = 'login.html';
+            }
+        });
+
+        logoutBtn?.addEventListener('click', async () => {
+            try {
+                await signOut(auth);
+                window.location.href = 'login.html';
+            } catch (error) {
+                console.error('Error al cerrar sesión: ', error);
+            }
+        });
+
+        btnCajas?.addEventListener('click', () => { window.location.href = 'modelos-de-cajas.html'; });
+        btnHistorial?.addEventListener('click', () => { window.location.href = 'lista-historial.html'; });
+        btnCuenta?.addEventListener('click', () => { window.location.href = 'cuenta.html'; });
+        btnImportarDatos?.addEventListener('click', () => { window.location.href = 'redir-import.html'; });
+    </script>
 </body>
 </html>

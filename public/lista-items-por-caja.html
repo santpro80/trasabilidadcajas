@@ -4,623 +4,179 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Items de Caja | Sistema de Trazabilidad</title>
+    <link rel="icon" href="assets/logo.png" type="image/png">
     <style>
-        /* Estilos específicos para lista-items-por-caja.html */
         body {
-            font-family: 'Inter', Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            background: linear-gradient(135deg, #6e8efb, #a777e3); /* Fondo degradado original */
-            color: #2c3e50;
-            text-align: center;
+            font-family: 'Inter', Arial, sans-serif; margin: 0; min-height: 100vh;
+            display: flex; flex-direction: column;
+            background: linear-gradient(135deg, #6e8efb, #a777e3);
+            color: #2c3e50; text-align: center;
         }
-
-        /* Animación global de aparición */
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* Encabezado de la aplicación */
         .app-header {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            background-color: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(5px);
-            padding: 10px 25px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-            width: 100%;
-            box-sizing: border-box;
-            z-index: 1000;
+            position: fixed; top: 0; left: 0; right: 0;
+            background-color: rgba(255, 255, 255, 0.9); backdrop-filter: blur(5px);
+            padding: 10px 25px; display: flex; justify-content: space-between;
+            align-items: center; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            width: 100%; box-sizing: border-box; z-index: 1000;
         }
-
-        .header-left {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .user-info {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .small-logo .logo {
-            width: 35px;
-            height: auto;
-            margin-right: 5px;
-        }
-
-        .btn-back {
-            background-color: #f0f4f8;
-            color: #4285F4;
-            padding: 8px 15px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 0.95em;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            transition: background-color 0.3s ease, transform 0.2s ease;
-        }
-
-        .btn-back:hover {
-            background-color: #e2eaf2;
-            transform: translateY(-1px);
-        }
-
-        .btn-back svg {
-            stroke: #4285F4;
-            width: 18px;
-            height: 18px;
-        }
-
-        /* CAMBIO: Nuevo estilo para user-display-name */
-        .user-display-name {
-            font-weight: 500;
-            color: #2c3e50;
-            font-size: 0.9em;
-            white-space: nowrap;
-        }
-
-        .logout-btn {
-            background-color: #dc3545 !important; /* Color rojo característico, forzado */
-            color: white !important; /* Color de texto blanco, forzado */
-            padding: 6px 15px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 0.9em;
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            transition: background-color 0.3s ease;
-            white-space: nowrap;
-            line-height: 1.2;
-            height: fit-content;
-            min-height: 28px;
-        }
-
-        .logout-btn:hover {
-            background-color: #c82333 !important; /* Rojo más oscuro al pasar el ratón, forzado */
-        }
-
-        .logout-btn svg {
-            stroke: white;
-            width: 16px;
-            height: 16px;
-        }
-
-        /* Contenido principal */
+        .header-left, .user-info { display: flex; align-items: center; gap: 10px; }
+        .btn-back { background-color: #f0f4f8; color: #4285F4; padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer; }
+        .user-display-name { font-weight: 500; }
+        .logout-btn { background-color: #dc3545 !important; color: white !important; padding: 6px 15px; border: none; border-radius: 5px; cursor: pointer; }
         .main-content {
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-start;
-            padding: 80px 20px 20px; /* Ajustado el padding superior */
-            width: 100%;
-            box-sizing: border-box;
-            max-width: 800px;
-            margin: 0 auto;
+            flex-grow: 1; display: flex; flex-direction: column;
+            align-items: center; padding: 80px 20px 20px;
+            width: 100%; box-sizing: border-box; max-width: 800px; margin: 0 auto;
         }
-
-        /* Contenedores de Tarjetas y Listas */
-        .card-container {
-            background-color: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(5px);
-            border-radius: 15px;
-            padding: 40px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-            width: 90%;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            animation: fadeIn 0.8s ease-out;
-            box-sizing: border-box;
-        }
-
         .title-card {
-            background-color: #ffffff;
-            border-radius: 12px;
-            padding: 20px 30px;
-            margin-bottom: 15px; /* Ajustado el margen inferior */
-            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
-            text-align: center;
-            width: 100%;
-            box-sizing: border-box;
+            background-color: #ffffff; border-radius: 12px; padding: 20px 30px;
+            margin-bottom: 15px; box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+            text-align: center; width: 100%; box-sizing: border-box;
         }
-
-        .title-card h1 {
-            color: #4285F4;
-            margin: 0;
-            font-size: 2.2em;
-            font-weight: 700;
-            margin-bottom: 15px;
+        .title-card h1 { color: #4285F4; margin: 0 0 15px 0; }
+        .search-add-container { display: flex; gap: 10px; align-items: center; }
+        .search-bar-container { flex-grow: 1; }
+        .search-bar-container input {
+            width: 100%; padding: 10px 15px;
+            border: 1px solid #ddd; border-radius: 8px; font-size: 1em; box-sizing: border-box;
         }
-
-        .search-bar-container {
-            display: flex;
-            gap: 10px;
-            width: 100%;
-            max-width: 500px;
-            margin: 0 auto;
+        .btn-add-item {
+            background-color: #28a745; color: white; border: none;
+            width: 44px; height: 44px; border-radius: 50%;
+            font-size: 24px; font-weight: bold; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0; transition: all 0.2s ease;
         }
-
-        .search-bar-container input[type="text"] {
-            flex-grow: 1;
-            padding: 10px 15px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            font-size: 1em;
-            box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
-            transition: border-color 0.3s ease, box-shadow 0.3s ease;
-        }
-
-        .search-bar-container input[type="text"]:focus {
-            outline: none;
-            border-color: #6e8efb;
-            box-shadow: 0 0 0 3px rgba(110, 142, 251, 0.2);
-        }
-
+        .btn-add-item:hover { background-color: #218838; transform: scale(1.1); }
         .list-container {
-            background-color: #ffffff;
-            border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
-            width: 100%;
-            box-sizing: border-box;
-            max-height: 70vh; /* Ajustado para ser más grande */
-            overflow-y: auto;
-            max-width: 800px;
-            margin: 0 auto;
+            background-color: #ffffff; border-radius: 12px; padding: 20px;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1); width: 100%;
+            box-sizing: border-box; max-height: 70vh; overflow-y: auto;
         }
-
-        .item-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        /* Estilos para los ítems de la lista */
+        .item-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; }
         .list-item {
-            background-color: #f9f9f9;
-            border: 1px solid #e0e0e0;
-            border-radius: 10px;
-            padding: 15px 20px;
-            display: flex; /* Contenedor principal para Código/Descripción y N° de Serie */
-            flex-direction: row; /* Elementos en fila */
-            align-items: flex-end; /* Alinea los elementos al final (abajo) del contenedor */
-            justify-content: space-between; /* Empuja el N° de Serie a la derecha */
-            gap: 10px; /* Espacio entre las dos secciones principales */
-            cursor: pointer; 
-            transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease; /* Quitamos el color de la transición aquí */
-            text-align: left;
-            position: relative;
-            color: #2c3e50; /* Color base del texto */
+            background-color: #f9f9f9; border: 1px solid #e0e0e0; border-radius: 10px;
+            padding: 15px 20px; display: flex; align-items: center; gap: 15px;
+            transition: all 0.2s ease;
         }
-
-        .list-item:hover {
-            background-color: #e0eaf2;
-            transform: translateY(-2px);
-            box-shadow: 0 0 15px rgba(66, 133, 244, 0.6), 0 4px 12px rgba(0, 0, 0, 0.1);
-            /* CAMBIO CLAVE: Aplicar el color azul a los elementos de texto dentro del list-item en hover */
-            color: #4285F4; /* Color azul para el texto principal del item */
+        .list-item:hover { background-color: #e0eaf2; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); }
+        .item-main-details-container {
+            flex-grow: 1; text-align: left; cursor: pointer; min-width: 0;
         }
-
-        .list-item:hover .item-label,
-        .list-item:hover .item-value-text {
-            color: #4285F4; /* Asegura que las etiquetas y valores también se pongan azules */
+        .item-main-details-container:hover { opacity: 0.7; }
+        .item-detail-group { display: flex; flex-direction: column; gap: 2px; }
+        .item-label { font-weight: 600; color: #555; }
+        .item-value-text { color: #2c3e50; word-break: break-word; }
+        .btn-delete-item {
+            background-color: #dc3545; color: white; border: none; width: 36px;
+            height: 36px; border-radius: 50%; cursor: pointer; display: flex;
+            align-items: center; justify-content: center; flex-shrink: 0;
+            transition: all 0.3s ease;
         }
-
-
-        /* Contenedor para Código y Descripción */
-        .item-main-details {
-            display: flex;
-            flex-direction: column; /* Apilar Código y Descripción */
-            flex-grow: 1; /* Permite que ocupe el espacio restante */
-            gap: 5px; /* Espacio entre Código y Descripción */
-            align-items: flex-start; /* Alinea el contenido a la izquierda */
+        .btn-delete-item:hover { background-color: #c82333; transform: scale(1.1); }
+        .btn-delete-item svg { width: 18px; height: 18px; stroke: white; }
+        .dynamic-item-row { border: 2px dashed #17a2b8; }
+        .dynamic-item-selectors { display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap;}
+        .dynamic-item-selectors select { flex: 1; padding: 8px; border-radius: 5px; border: 1px solid #ccc; min-width: 150px;}
+        .dynamic-row-actions { display: flex; gap: 10px; margin-top: 10px; justify-content: flex-end; }
+        .item-code-display { margin-top: 10px; padding: 8px; background-color: #e9ecef; border-radius: 5px; font-family: monospace; }
+        .item-code-display .label { font-weight: bold; }
+        .manual-code-input { margin-top: 10px; padding: 8px; width: 100%; box-sizing: border-box; border-radius: 5px; border: 1px solid #ccc; }
+        #notification-toast {
+            position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%);
+            padding: 15px 25px; border-radius: 8px; color: white; font-weight: bold;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2); z-index: 3000;
+            transition: bottom 0.5s ease-in-out;
         }
-
-        /* Contenedores para cada línea de detalle (Código, Descripción, N° de Serie) */
-        .item-detail-group { /* Nuevo contenedor para agrupar etiqueta y valor */
-            display: flex;
-            flex-direction: column; /* Apilar etiqueta sobre valor */
-            gap: 2px; /* Espacio entre etiqueta y valor */
-            font-size: 0.95em;
-            text-align: left; /* Asegurar que el texto esté alineado a la izquierda */
-        }
-
-        .item-label {
-            font-weight: 600;
-            color: #555; /* Un color ligeramente más sutil para las etiquetas */
-            white-space: nowrap; /* Evitar que la etiqueta se rompa */
-        }
-
-        .item-value-text {
-            color: #2c3e50; /* Color principal para los valores */
-            white-space: normal; /* Permitir que el texto del valor se envuelva */
-            word-break: break-word; /* Romper palabras largas */
-        }
-
-        /* Ajustes específicos para el N° de Serie */
-        .item-detail-serial {
-            flex-shrink: 0; /* Evita que se encoja */
-            text-align: right; /* Alinea su contenido a la derecha */
-            margin-left: 10px; /* Margen para separarlo de la descripción */
-            align-self: flex-end; /* Asegura que se alinee al final de su contenedor flex */
-        }
-        .item-detail-serial .item-label {
-            text-align: right; /* Asegura que la etiqueta también esté a la derecha */
-        }
-
-
-        /* Estados de Carga, Error y Vacío */
-        .loading-state, .error-state, .empty-state {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 30px;
-            text-align: center;
-            color: #666;
-        }
-
-        .spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid rgba(110, 142, 251, 0.3);
-            border-radius: 50%;
-            border-top-color: #6e8efb;
-            animation: spin 1s ease-in-out infinite;
-            margin-bottom: 15px;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        .error-icon {
-            width: 60px;
-            height: 60px;
-            margin-bottom: 15px;
-            opacity: 0.7;
-        }
-
-        .btn-link {
-            background: none;
-            border: none;
-            color: #4285F4;
-            cursor: pointer;
-            text-decoration: underline;
-            padding: 0;
-            font-size: 1em;
-        }
-
-        /* Estilos del Modal */
+        #notification-toast.show { bottom: 30px; }
+        #notification-toast.success { background-color: #28a745; }
+        #notification-toast.error { background-color: #dc3545; }
         .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.6); 
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 2000; 
-            animation: fadeIn 0.3s ease-out; 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.6); display: none;
+            justify-content: center; align-items: center; z-index: 2000;
         }
-
         .modal-content {
-            background-color: #ffffff;
-            border-radius: 15px;
-            padding: 30px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-            width: 90%;
-            max-width: 450px; 
-            text-align: center;
-            animation: scaleIn 0.3s ease-out; 
-            position: relative; 
+            background-color: #ffffff; border-radius: 15px; padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3); width: 90%; max-width: 450px;
         }
-
-        @keyframes scaleIn {
-            from { transform: scale(0.9); opacity: 0; }
-            to { transform: scale(1); opacity: 1; }
+        .modal-content h2 { color: #4285F4; margin-top: 0; }
+        .modal-content p { font-size: 0.9em; color: #555; margin-bottom: 5px; text-align: left; word-break: break-all;}
+        .modal-content .form-group { margin: 20px 0; }
+        .modal-content input {
+            width: 100%; padding: 12px 15px; border: 1px solid #ddd;
+            border-radius: 8px; font-size: 1.1em; box-sizing: border-box; text-align: center;
         }
-
-        .modal-content h2 {
-            color: #4285F4;
-            margin-top: 0;
-            margin-bottom: 20px;
-            font-size: 1.8em;
+        .modal-actions { display: flex; justify-content: center; gap: 15px; margin-top: 20px; }
+        .btn-secondary { background-color: #6c757d; color: white; padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; }
+        .btn-primary { background-color: #4285F4; color: white; padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; }
+        .btn-danger { background-color: #dc3545; color: white; padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; }
+        .spinner {
+            width: 40px; height: 40px; border: 4px solid rgba(110, 142, 251, 0.3);
+            border-radius: 50%; border-top-color: #6e8efb;
+            animation: spin 1s ease-in-out infinite; margin: 0 auto 15px auto;
         }
-
-        .modal-content p {
-            color: #555;
-            margin-bottom: 20px;
-            font-size: 1em;
-        }
-
-        .modal-content .form-group {
-            margin-bottom: 25px;
-        }
-
-        .modal-content label {
-            display: block;
-            text-align: left;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #2c3e50;
-        }
-
-        .modal-content input[type="text"] {
-            width: calc(100% - 30px); 
-            padding: 12px 15px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            font-size: 1em;
-            box-sizing: border-box;
-        }
-
-        .modal-actions {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            margin-top: 20px;
-        }
-
-        .btn-secondary {
-            background-color: #6c757d;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 1em;
-            transition: background-color 0.3s ease;
-        }
-
-        .btn-secondary:hover {
-            background-color: #5a6268;
-        }
-
-        .btn-primary {
-            background-color: #4285F4;
-            color: white;
-            padding: 12px 25px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 1.1em;
-            font-weight: 600;
-            transition: background-color 0.3s ease, transform 0.2s ease;
-            width: 100%;
-            max-width: 250px; 
-            box-sizing: border-box;
-        }
-
-        .btn-primary:hover {
-            background-color: #3367D6;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        /* MODIFICACIÓN CLAVE AQUÍ: Posicionamiento del spinner */
-        .modal-overlay .spinner { 
-            position: absolute; 
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%); 
-            margin: 0; 
-            z-index: 2001; 
-        }
-
-        .modal-content .message-area {
-            margin-top: 15px;
-            padding: 10px;
-            border-radius: 8px;
-            font-size: 0.9em;
-        }
-
-        .modal-content .message-area.success {
-            background-color: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-
-        .modal-content .message-area.error {
-            background-color: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-
-
-        /* Responsive Design */
-        @media (max-width: 768px) {
-            .app-header {
-                padding: 5px 15px;
-            }
-
-            .user-email, .user-display-name { /* Aplicar a ambos */
-                font-size: 0.8em;
-            }
-
-            .logout-btn {
-                padding: 2px 5px;
-                font-size: 0.6em;
-                gap: 2px;
-            }
-
-            .logout-btn svg {
-                width: 10px;
-                height: 10px;
-            }
-
-            .main-content {
-                padding: 80px 10px 10px;
-            }
-
-            .card-container, .title-card, .list-container {
-                padding: 20px;
-            }
-
-            .title-card h1 {
-                font-size: 1.8em;
-            }
-
-            .search-bar-container {
-                flex-direction: column;
-                gap: 8px;
-            }
-
-            .modal-content {
-                padding: 20px;
-            }
-
-            .modal-content h2 {
-                font-size: 1.5em;
-            }
-
-            .modal-actions {
-                flex-direction: column;
-                gap: 10px;
-            }
-
-            /* En pantallas pequeñas, apilamos los elementos principales verticalmente */
-            .list-item {
-                flex-direction: column; 
-                align-items: flex-start; /* Alinea todo el contenido a la izquierda */
-            }
-            .item-main-details {
-                width: 100%; /* Ocupa todo el ancho */
-            }
-            .item-detail-serial {
-                width: 100%; /* Ocupa todo el ancho */
-                text-align: left; /* Alinea a la izquierda en móviles */
-                align-self: flex-start; /* Alinea al inicio de su contenedor flex */
-            }
-            .item-detail-serial .item-label {
-                text-align: left; /* Asegura que la etiqueta también esté a la izquierda */
-            }
-        }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
     <header class="app-header">
         <div class="header-left">
-            <button id="back-btn" class="btn-back">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <path d="M19 12H5"></path>
-                    <path d="M12 19l-7-7 7-7"></path>
-                </svg>
-                Volver
-            </button>
+            <button id="back-btn" class="btn-back">Volver</button>
         </div>
         <div class="user-info">
-            <!-- CAMBIO: Elemento para mostrar el nombre del usuario -->
-            <span class="user-display-name" id="user-display-name"></span>
-            <!-- Puedes mantener user-email si lo necesitas, o eliminarlo -->
-            <!-- <span class="user-email" id="user-email"></span> -->
-            <button id="logout-btn" class="btn-logout">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                    <polyline points="16 17 21 12 16 7"></polyline>
-                    <line x1="21" y1="12" x2="9" y2="12"></line>
-                </svg>
-                Cerrar sesión
-            </button>
+            <span id="user-display-name" class="user-display-name"></span>
+            <button id="logout-btn" class="logout-btn">Cerrar sesión</button>
         </div>
     </header>
 
     <main class="main-content">
-        <!-- Título de la caja de ítems -->
         <div class="title-card">
             <h1 id="box-serial-number-display">Cargando Items...</h1>
-            
-            <!-- Barra de búsqueda (sin botón) -->
-            <div class="search-bar-container">
-                <input type="text" id="searchInput" placeholder="Buscar por código o N° de serie">
+            <div class="search-add-container">
+                <div class="search-bar-container">
+                    <input type="text" id="searchInput" placeholder="Buscar por código o N° de serie">
+                </div>
+                <button id="add-item-btn" class="btn-add-item" title="Agregar nuevo ítem">+</button>
             </div>
         </div>
-
-        <!-- Contenedor para la lista de ítems -->
         <div class="list-container">
-            <!-- Estado de carga -->
-            <div id="loading-state" class="loading-state" style="display: none;">
-                <div class="spinner"></div>
-                <p>Cargando ítems...</p>
-            </div>
-
-            <!-- Estado de error -->
-            <div id="error-state" class="error-state" style="display: none;">
-                <img src="assets/error-icon.svg" alt="Error" class="error-icon">
-                <p>Error al cargar los ítems. Por favor, <button id="retry-btn" class="btn-link">intenta de nuevo</button>.</p>
-            </div>
-
-            <!-- Lista de ítems -->
-            <ul id="itemsList" class="item-list" style="display: none;">
-                <!-- Los ítems se cargarán aquí dinámicamente -->
-            </ul>
-
-            <!-- Estado vacío (si no hay ítems) -->
-            <div id="empty-state" class="empty-state" style="display: none;">
-                <img src="assets/empty-box.svg" alt="Sin ítems" style="width: 80px; margin-bottom: 15px;">
-                <p>No hay ítems registrados para este número de serie.</p>
-            </div>
+            <div id="loading-state" class="loading-state"><div class="spinner"></div><p>Cargando ítems...</p></div>
+            <div id="error-state" class="error-state" style="display: none;"><p>Error al cargar los ítems.</p></div>
+            <ul id="itemsList" class="item-list"></ul>
+            <div id="empty-state" class="empty-state" style="display: none;"><p>No hay ítems registrados.</p></div>
         </div>
     </main>
 
-    <!-- Modal para editar el número de serie -->
-    <div id="editSerialModal" class="modal-overlay" style="display: none;">
+    <div id="editSerialModal" class="modal-overlay">
         <div class="modal-content">
             <h2>Editar Número de Serie</h2>
-            <p id="modalItemCodeDescription"></p>
             <div class="form-group">
-                <label for="newSerialNumberInput">Nuevo N° de Serie:</label>
-                <input type="text" id="newSerialNumberInput" placeholder="Introduce el nuevo número de serie">
+                <p id="modalItemCodeDescription">Ítem...</p>
+                <input type="text" id="newSerialNumberInput" placeholder="Nuevo N° de Serie">
             </div>
             <div class="modal-actions">
                 <button id="cancelEditBtn" class="btn-secondary">Cancelar</button>
                 <button id="confirmEditBtn" class="btn-primary">Confirmar Edición</button>
             </div>
             <div id="modalMessage" class="message-area" style="display: none;"></div>
+            <div id="modalSpinner" class="spinner" style="display: none;"></div>
         </div>
-        <!-- SPINNER MOVIDO AQUÍ, FUERA del modal-content pero dentro del modal-overlay -->
-        <div id="modalSpinner" class="spinner" style="display: none;"></div>
     </div>
+
+    <div id="deleteConfirmModal" class="modal-overlay">
+        <div class="modal-content">
+            <h2 style="text-align: center;">Confirmar Eliminación</h2>
+            <p id="delete-modal-text" style="text-align: center; font-size: 1.1em; margin: 20px 0;"></p>
+            <div id="delete-modal-spinner" class="spinner" style="display: none;"></div>
+            <div class="modal-actions">
+                <button id="cancel-delete-btn" class="btn-secondary">Cancelar</button>
+                <button id="confirm-delete-btn" class="btn-danger">Eliminar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="notification-toast"></div>
 
     <script type="module" src="js/lista-items-por-caja.js"></script>
 </body>
