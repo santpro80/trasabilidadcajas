@@ -2,7 +2,8 @@
 
 import {
     db, auth, onAuthStateChanged, signOut,
-    doc, getDoc, updateDoc, deleteField
+    doc, getDoc, updateDoc, deleteField,
+    onSnapshot // <-- IMPORTANTE: Importamos onSnapshot
 } from './firebase-config.js';
 
 function sanitizeFieldName(name) {
@@ -100,6 +101,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (stateElement) { stateElement.style.display = 'block'; }
     };
 
+    // =========================================================================
+    // ===== CAMBIO PRINCIPAL: Se modifica esta función para usar onSnapshot =====
+    // =========================================================================
     const loadInitialData = async () => {
         showState(loadingState);
         const urlParams = new URLSearchParams(window.location.search);
@@ -110,17 +114,30 @@ document.addEventListener('DOMContentLoaded', () => {
             showState(errorState); return;
         }
         boxSerialNumberDisplay.textContent = `Items para Caja: ${currentSelectedSerialNumber}`;
+        
         try {
-            const itemDocRef = doc(db, "Items", currentSelectedSerialNumber);
+            // 1. Leemos el esquema UNA SOLA VEZ (no cambia a menudo)
             const schemaDocRef = doc(db, "esquemas_modelos", modelName);
-            const [itemDocSnap, schemaDocSnap] = await Promise.all([getDoc(itemDocRef), getDoc(schemaDocRef)]);
-            allLoadedItemsData = itemDocSnap.exists() ? itemDocSnap.data() : {};
+            const schemaDocSnap = await getDoc(schemaDocRef);
             if (schemaDocSnap.exists()) {
                 const itemNames = Object.keys(schemaDocSnap.data());
                 buildSchemaMap(itemNames);
                 parseSchemaForOptions(itemNames);
             }
-            renderFilteredItems(allLoadedItemsData, '');
+
+            // 2. Creamos la escucha en TIEMPO REAL para los ítems de la caja
+            const itemDocRef = doc(db, "Items", currentSelectedSerialNumber);
+            onSnapshot(itemDocRef, (itemDocSnap) => {
+                console.log("Datos actualizados en tiempo real!"); // Mensaje para verificar en consola
+                allLoadedItemsData = itemDocSnap.exists() ? itemDocSnap.data() : {};
+                // Re-renderizamos la lista cada vez que haya un cambio
+                renderFilteredItems(allLoadedItemsData, searchInput.value);
+            }, (error) => {
+                // Función para manejar errores de la escucha
+                console.error("Error en la escucha de datos en tiempo real:", error);
+                showState(errorState);
+            });
+
         } catch (error) {
             console.error("Error al cargar datos iniciales:", error);
             showState(errorState);
@@ -255,8 +272,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const itemDocRef = doc(db, "Items", currentSelectedSerialNumber);
             await updateDoc(itemDocRef, { [sanitizedFieldName]: newSerial });
-            allLoadedItemsData[sanitizedFieldName] = newSerial;
-            renderFilteredItems(allLoadedItemsData, '');
+            // No es necesario actualizar allLoadedItemsData manualmente, onSnapshot lo hará
             showNotification('Ítem agregado con éxito.', 'success');
         } catch (error) {
             console.error("Error al guardar el nuevo ítem:", error);
@@ -287,8 +303,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const itemDocRef = doc(db, "Items", currentSelectedSerialNumber);
             const fieldToUpdate = sanitizeFieldName(currentEditingItemOriginalName);
             await updateDoc(itemDocRef, { [fieldToUpdate]: newSerial });
-            allLoadedItemsData[fieldToUpdate] = newSerial;
-            renderFilteredItems(allLoadedItemsData, searchInput.value);
+            // No es necesario actualizar allLoadedItemsData ni re-renderizar, onSnapshot lo hará
             showModalMessage('Movimientos realizados con éxito.', 'success');
             setTimeout(() => { closeEditModal(); showModalLoading(false); }, 1500);
         } catch (error) {
@@ -315,8 +330,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const itemDocRef = doc(db, "Items", currentSelectedSerialNumber);
             await updateDoc(itemDocRef, { [itemToDelete.sanitized]: deleteField() });
-            delete allLoadedItemsData[itemToDelete.sanitized];
-            renderFilteredItems(allLoadedItemsData, searchInput.value);
+            // onSnapshot se encargará de re-renderizar la lista
             closeDeleteModal();
         } catch (error) {
             console.error("Error al eliminar el ítem:", error);
