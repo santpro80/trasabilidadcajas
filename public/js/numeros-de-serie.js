@@ -28,7 +28,17 @@ document.addEventListener('DOMContentLoaded', () => {
     let userRole = 'operario'; // Rol por defecto por seguridad
 
     let notificationTimeout;
-    const showNotification = (message, type = 'success') => { /* ... (código sin cambios) ... */ };
+    const showNotification = (message, type = 'success') => {
+        const toast = document.getElementById('notification-toast');
+        if (!toast) return;
+        clearTimeout(notificationTimeout);
+        toast.textContent = message;
+        toast.className = 'show';
+        toast.classList.add(type === 'success' ? 'success' : 'error');
+        notificationTimeout = setTimeout(() => {
+            toast.classList.remove('show');
+        }, 3000);
+    };
 
     onAuthStateChanged(auth, async (user) => {
         if (!user) { window.location.href = 'login.html'; return; }
@@ -41,19 +51,23 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             if (userDisplayName) { userDisplayName.textContent = userDocSnap.exists() ? userDocSnap.data().name : user.email; }
             
-            // --- APLICAR RESTRICCIONES DE ROL ---
-            if (userRole !== 'supervisor') {
-                addCajaBtn.style.display = 'none'; // Ocultar botón de agregar caja
+            // ===== CAMBIO AQUÍ: Lógica para MOSTRAR el botón si es supervisor =====
+            if (userRole === 'supervisor') {
+                if(addCajaBtn) addCajaBtn.style.display = 'block';
             }
 
             loadSerialNumbers();
         } catch (error) {
             console.error("Error al obtener rol del usuario:", error);
-            loadSerialNumbers(); // Cargar la vista de operario incluso si hay error
+            // El botón ya está oculto por defecto, así que no es necesario hacer nada en caso de error
+            loadSerialNumbers();
         }
     });
 
-    const showState = (stateElement) => { /* ... (código sin cambios) ... */ };
+    const showState = (stateElement) => {
+        [loadingState, errorState, emptyState, serialNumbersList].forEach(el => el.style.display = 'none');
+        if (stateElement) { stateElement.style.display = 'block'; }
+    };
 
     const loadSerialNumbers = async () => {
         showState(loadingState);
@@ -82,7 +96,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         const li = document.createElement('li');
                         li.className = 'list-item';
                         
-                        // --- LÓGICA PARA MOSTRAR BOTÓN DE BORRADO SOLO A SUPERVISORES ---
                         let deleteButtonHtml = '';
                         if (userRole === 'supervisor') {
                             deleteButtonHtml = `
@@ -106,7 +119,6 @@ document.addEventListener('DOMContentLoaded', () => {
                             window.location.href = url;
                         });
                         
-                        // Adjuntar listener de borrado solo si el botón existe
                         const deleteButton = li.querySelector('.btn-delete-caja');
                         if (deleteButton) {
                             deleteButton.addEventListener('click', () => {
@@ -125,14 +137,69 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
     
-    // --- Lógica del modal de borrado (sin cambios) ---
-    const openDeleteModal = (serial) => { /* ... */ };
-    const closeDeleteModal = () => { /* ... */ };
-    const deleteCaja = async () => { /* ... */ };
+    const openDeleteModal = (serial) => {
+        serialToDelete = serial;
+        deleteModalText.textContent = `¿Estás seguro de que deseas eliminar la caja "${serial}" y todos sus ítems? Esta acción es permanente.`;
+        deleteConfirmModal.style.display = 'flex';
+    };
+
+    const closeDeleteModal = () => {
+        deleteConfirmModal.style.display = 'none';
+        serialToDelete = null;
+    };
+
+    const deleteCaja = async () => {
+        if (!serialToDelete) return;
+        
+        modalSpinner.style.display = 'block';
+        confirmDeleteBtn.disabled = true;
+        cancelDeleteBtn.disabled = true;
+
+        try {
+            const itemDocRef = doc(db, "Items", serialToDelete);
+            await deleteDoc(itemDocRef);
+
+            const zonaDocRef = doc(db, "Cajas", currentZonaName);
+            const zonaDocSnap = await getDoc(zonaDocRef);
+            if (zonaDocSnap.exists()) {
+                const zonaData = zonaDocSnap.data();
+                const serialsString = zonaData[currentModelName] || "";
+                const serialsArray = serialsString.split(',').map(s => s.trim()).filter(Boolean);
+                const updatedSerialsArray = serialsArray.filter(s => s !== serialToDelete);
+                await updateDoc(zonaDocRef, {
+                    [currentModelName]: updatedSerialsArray.join(',')
+                });
+            }
+            
+            showNotification(`Caja "${serialToDelete}" eliminada con éxito.`, 'success');
+            
+            closeDeleteModal();
+            loadSerialNumbers();
+
+        } catch (error) {
+            console.error("Error al eliminar la caja:", error);
+            showNotification("Ocurrió un error al eliminar la caja.", 'error');
+        } finally {
+            modalSpinner.style.display = 'none';
+            confirmDeleteBtn.disabled = false;
+            cancelDeleteBtn.disabled = false;
+        }
+    };
     
+    // --- EVENT LISTENERS RESTAURADOS ---
     cancelDeleteBtn.addEventListener('click', closeDeleteModal);
     confirmDeleteBtn.addEventListener('click', deleteCaja);
-    addCajaBtn.addEventListener('click', () => { /* ... */ });
-    backBtn.addEventListener('click', () => { /* ... */ });
-    logoutBtn.addEventListener('click', async () => { /* ... */ });
+
+    addCajaBtn.addEventListener('click', () => {
+        window.location.href = `agregar-caja.html?modelName=${encodeURIComponent(currentModelName)}&zonaName=${encodeURIComponent(currentZonaName)}`;
+    });
+    
+    backBtn.addEventListener('click', () => {
+        window.location.href = `modelado-caja.html?zonaName=${encodeURIComponent(currentZonaName)}`;
+    });
+
+    logoutBtn.addEventListener('click', async () => {
+        await signOut(auth);
+        window.location.href = 'login.html';
+    });
 });
