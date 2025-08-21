@@ -1,8 +1,9 @@
-import { db, auth, onAuthStateChanged, signOut, doc, getDoc, setDoc, updateDoc } from './firebase-config.js';
+import { db, auth, onAuthStateChanged, signOut, doc, getDoc, setDoc, updateDoc, registrarHistorial } from './firebase-config.js';
 
 function sanitizeFieldName(name) { return name.replace(/\//g, '_slash_').replace(/\./g, '_dot_').replace(/,/g, '_comma_'); }
 
 document.addEventListener('DOMContentLoaded', () => {
+    // ... (la declaración de elementos del DOM no cambia)
     const formTitle = document.getElementById('form-title');
     const itemsContainer = document.getElementById('items-container');
     const saveCajaBtn = document.getElementById('save-caja-btn');
@@ -11,7 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const backBtn = document.getElementById('back-btn');
     const logoutBtn = document.getElementById('logout-btn');
     const userDisplayName = document.getElementById('user-display-name');
-
+    
     let modelName = '', zonaName = '';
     let placaTypes = new Set(), placaDiams = new Set(), placaOrificios = new Set();
     let schemaMap = new Map();
@@ -23,6 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
         loadSchemaAndBuildForm();
     });
 
+    // ... (El resto de funciones como buildSchemaMap, parseSchemaForOptions, applyEnterNavigation, renderItemRow y handleDropdownChange no cambian)
     const buildSchemaMap = (itemNames) => {
         schemaMap.clear();
         itemNames.forEach(itemName => {
@@ -30,7 +32,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (code && description) { schemaMap.set(description.trim(), code.trim()); }
         });
     };
-
     const parseSchemaForOptions = (itemNames) => {
         let successfulMatches = 0;
         placaTypes.clear(); placaDiams.clear(); placaOrificios.clear();
@@ -46,7 +47,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         return successfulMatches > 0;
     };
-
     const applyEnterNavigation = () => {
         const allInputs = document.querySelectorAll('#cajaSerialInput, .item-serial-input');
         allInputs.forEach((input, index) => {
@@ -60,7 +60,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
     };
-
     const renderItemRow = (itemName, isDynamic = false) => {
         const formGroup = document.createElement('div');
         formGroup.className = 'form-group';
@@ -116,7 +115,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
     };
-
     const handleDropdownChange = (rowElement) => {
         const type = rowElement.querySelector('.item-part-type').value;
         const diam = rowElement.querySelector('.item-part-diam').value;
@@ -137,7 +135,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     };
-
     const loadSchemaAndBuildForm = async () => {
         const urlParams = new URLSearchParams(window.location.search);
         modelName = urlParams.get('modelName');
@@ -161,10 +158,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } catch (error) { console.error("Error al cargar el esquema:", error); }
     };
-    
-    addItemBtn.addEventListener('click', () => { renderItemRow(null, true); applyEnterNavigation(); });
 
     saveCajaBtn.addEventListener('click', async () => {
+        // ... (la lógica de validación y recolección de datos no cambia)
         messageDiv.textContent = '';
         const newCajaSerial = document.getElementById('cajaSerialInput').value.trim();
         if (!newCajaSerial) { messageDiv.textContent = "El N° de Serie de la caja es obligatorio."; messageDiv.style.color = "red"; return; }
@@ -218,6 +214,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     await updateDoc(zonaDocRef, { [modelName]: serials.join(',') });
                 }
             }
+
+            // --- REGISTRO DE HISTORIAL ---
+            registrarHistorial('CREACIÓN DE CAJA', {
+                cajaSerie: newCajaSerial,
+                modelo: modelName,
+                zona: zonaName,
+                numItems: Object.keys(itemsData).length,
+                mensaje: `Se creó la nueva caja "${newCajaSerial}" (Modelo: ${modelName}) con ${Object.keys(itemsData).length} ítems.`
+            });
+
             messageDiv.textContent = "¡Caja guardada con éxito!";
             messageDiv.style.color = "green";
             setTimeout(() => { window.location.href = `numeros-de-serie.html?modelName=${encodeURIComponent(modelName)}&zonaName=${encodeURIComponent(zonaName)}`; }, 2000);
@@ -228,6 +234,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    addItemBtn.addEventListener('click', () => { renderItemRow(null, true); applyEnterNavigation(); });
     if (backBtn) backBtn.addEventListener('click', () => window.history.back());
     if (logoutBtn) logoutBtn.addEventListener('click', () => signOut(auth).then(() => window.location.href = 'login.html'));
 });

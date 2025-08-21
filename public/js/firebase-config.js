@@ -19,12 +19,15 @@ import {
     updateDoc,
     arrayUnion,
     deleteField,
-    deleteDoc, // <-- HERRAMIENTA AÑADIDA AQUÍ
+    deleteDoc,
     collection,
     query,
     orderBy,
     onSnapshot,
-    getDocs
+    getDocs,
+    addDoc,
+    serverTimestamp,
+    where // <-- AÑADIDO AQUÍ
 } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
 // Configuración de tu proyecto
@@ -41,6 +44,33 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+
+export const registrarHistorial = async (accion, detalles) => {
+    try {
+        const user = auth.currentUser;
+        if (!user) {
+            console.log("No hay usuario autenticado para registrar el historial.");
+            return;
+        }
+
+        const userDocRef = doc(db, "users", user.uid);
+        const userDocSnap = await getDoc(userDocRef);
+        const userName = userDocSnap.exists() ? userDocSnap.data().name : user.email;
+
+        const historialDoc = {
+            timestamp: serverTimestamp(),
+            usuarioEmail: user.email,
+            usuarioNombre: userName,
+            accion: accion,
+            detalles: detalles
+        };
+
+        await addDoc(collection(db, "historial"), historialDoc);
+
+    } catch (error) {
+        console.error("Error al registrar en el historial:", error);
+    }
+};
 
 export { 
     app, 
@@ -59,10 +89,11 @@ export {
     updateDoc,
     arrayUnion,
     deleteField,
-    deleteDoc, // <-- Y LA EXPORTAMOS AQUÍ
+    deleteDoc,
     collection,
     query,
     orderBy,
     onSnapshot,
-    getDocs
+    getDocs,
+    where // <-- AÑADIDO AQUÍ
 };

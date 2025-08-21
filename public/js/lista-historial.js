@@ -1,154 +1,132 @@
 // public/js/lista-historial.js
 
-// Importa las instancias de Firebase desde el archivo de configuración centralizado
-import { app, auth, db } from './firebase-config.js'; 
-import { 
-    onAuthStateChanged, 
-    signOut 
-} from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
-import { doc, getDoc, collection, query, orderBy, getDocs } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js'; // Importa getDocs y orderBy
+import { auth, db, onAuthStateChanged, signOut, doc, getDoc, collection, query, orderBy, getDocs, where } from './firebase-config.js';
 
 document.addEventListener('DOMContentLoaded', () => {
-    const userDisplayName = document.getElementById('user-display-name');
+    // --- Elementos del DOM ---
+    const userDisplayNameElement = document.getElementById('user-display-name');
     const logoutBtn = document.getElementById('logout-btn');
-    const historyListContainer = document.getElementById('history-list-container');
-    const backToMenuBtn = document.getElementById('back-to-menu-btn');
+    const backBtn = document.getElementById('back-btn');
+    const historyTableContainer = document.getElementById('history-table-container');
+    const historyTbody = document.getElementById('history-tbody');
+    const loadingState = document.getElementById('loading-state');
+    const emptyState = document.getElementById('empty-state');
+    
+    const searchInput = document.getElementById('search-input');
+    const startDateInput = document.getElementById('start-date');
+    const endDateInput = document.getElementById('end-date');
+    const filterBtn = document.getElementById('filter-btn');
+    const clearFilterBtn = document.getElementById('clear-filter-btn');
 
-    // Función para mostrar mensajes (aunque no hay un message-area específico aquí, es buena práctica)
-    const showMessage = (message, type) => {
-        console.log(`Mensaje (${type}): ${message}`);
-        // Si quisieras un message-area aquí, tendrías que agregarlo al HTML
+    let allHistoryItems = [];
+
+    const showState = (state) => {
+        loadingState.style.display = 'none';
+        emptyState.style.display = 'none';
+        historyTableContainer.style.display = 'none';
+        if(state) state.style.display = 'block';
     };
 
-    // Escucha los cambios en el estado de autenticación
     onAuthStateChanged(auth, async (user) => {
         if (user) {
-            // Usuario logueado, carga su nombre y el historial
             try {
                 const userDocRef = doc(db, "users", user.uid);
                 const userDocSnap = await getDoc(userDocRef);
-
-                if (userDocSnap.exists()) {
-                    const userData = userDocSnap.data();
-                    userDisplayName.textContent = userData.name || user.email;
-                } else {
-                    userDisplayName.textContent = user.email;
-                    console.warn("Datos de usuario no encontrados en Firestore para UID:", user.uid);
-                }
-
-                // Cargar y mostrar historial de movimientos
-                await loadHistoryData();
-
+                userDisplayNameElement.textContent = userDocSnap.exists() ? userDocSnap.data().name : user.email;
+                loadHistoryData();
             } catch (error) {
-                console.error("Error al cargar datos de usuario o historial:", error);
-                userDisplayName.textContent = 'Error';
-                showMessage('Error al cargar la información del usuario o el historial.', 'error');
+                console.error("Error al cargar datos de usuario:", error);
             }
         } else {
-            // Usuario no logueado, redirige a la página de login
             window.location.href = 'login.html';
         }
     });
-
-    // Función para cargar y mostrar el historial de movimientos
-    async function loadHistoryData() {
-        historyListContainer.innerHTML = '<p>Cargando historial...</p>'; // Mensaje de carga
-
+    
+    const loadHistoryData = async (filters = {}) => {
+        showState(loadingState);
         try {
-            // Simulación de datos de historial
-            const dummyHistoryData = [
-                {
-                    date: '2023-10-26 10:30',
-                    user: 'Juan Pérez',
-                    action: 'Caja "BLOQUEADO 3,5" movida a "Almacén A"',
-                    detail: 'Serie: AX2002, Cantidad: 1'
-                },
-                {
-                    date: '2023-10-25 15:00',
-                    user: 'María Gómez',
-                    action: 'Caja "BLOQUEADO 4,5" registrada',
-                    detail: 'Nueva caja creada'
-                },
-                {
-                    date: '2023-10-24 09:15',
-                    user: 'Juan Pérez',
-                    action: 'Item "CALCANEO" añadido a "BLOQUEADO 3,5"',
-                    detail: 'Item ID: ITEM001'
-                },
-                {
-                    date: '2023-10-23 11:45',
-                    user: 'Carlos Ruiz',
-                    action: 'Caja "FEMUR DISTAL" eliminada',
-                    detail: 'Motivo: Dañada'
-                },
-                {
-                    date: '2023-10-22 14:00',
-                    user: 'María Gómez',
-                    action: 'Caja "HUMERO DISTAL" verificada',
-                    detail: 'Estado: OK'
-                }
-            ];
+            const historyRef = collection(db, "historial");
+            let q = query(historyRef, orderBy("timestamp", "desc"));
 
-            // En un futuro, aquí iría la lógica para obtener datos de Firestore.
-            // Ejemplo (descomentar y adaptar cuando tengas la colección 'history'):
-            /*
-            const historyCollectionRef = collection(db, "history");
-            const q = query(historyCollectionRef, orderBy("timestamp", "desc")); // Ordenar por fecha descendente
+            if (filters.startDate) {
+                q = query(q, where("timestamp", ">=", filters.startDate));
+            }
+            if (filters.endDate) {
+                const endOfDay = new Date(filters.endDate);
+                endOfDay.setHours(23, 59, 59, 999);
+                q = query(q, where("timestamp", "<=", endOfDay));
+            }
+
             const querySnapshot = await getDocs(q);
-
-            const historyItems = [];
-            querySnapshot.forEach((doc) => {
-                historyItems.push(doc.data());
-            });
-            renderHistory(historyItems);
-            */
-
-            // Por ahora, renderizamos los datos de ejemplo
-            renderHistory(dummyHistoryData);
+            allHistoryItems = querySnapshot.docs.map(doc => doc.data());
+            renderHistory(allHistoryItems);
 
         } catch (error) {
-            console.error("Error al obtener el historial de Firestore (simulado):", error);
-            historyListContainer.innerHTML = '<p class="message-area error">Error al cargar el historial.</p>';
+            console.error("Error al obtener el historial:", error);
+            showState(emptyState);
         }
-    }
+    };
 
-    // Función para renderizar los elementos del historial
-    function renderHistory(items) {
-        if (items.length === 0) {
-            historyListContainer.innerHTML = '<p>No hay movimientos registrados.</p>';
+    // ===== FUNCIÓN MODIFICADA PARA RENDERIZAR EN TABLA =====
+    const renderHistory = (items) => {
+        const searchTerm = searchInput.value.toLowerCase();
+        const filteredItems = items.filter(item => {
+            const user = item.usuarioNombre.toLowerCase();
+            const action = item.accion.toLowerCase();
+            const message = item.detalles.mensaje.toLowerCase();
+            return user.includes(searchTerm) || action.includes(searchTerm) || message.includes(searchTerm);
+        });
+
+        if (filteredItems.length === 0) {
+            showState(emptyState);
             return;
         }
 
-        historyListContainer.innerHTML = ''; // Limpiar el contenedor
-        items.forEach(item => {
-            const listItem = document.createElement('div');
-            listItem.classList.add('list-item');
-            listItem.innerHTML = `
-                <p><strong>Fecha:</strong> ${item.date}</p>
-                <p><strong>Usuario:</strong> ${item.user}</p>
-                <p><strong>Acción:</strong> ${item.action}</p>
-                <p><strong>Detalle:</strong> ${item.detail}</p>
-            `;
-            historyListContainer.appendChild(listItem);
-        });
-    }
+        historyTbody.innerHTML = ''; // Limpiar el cuerpo de la tabla
+        
+        filteredItems.forEach(item => {
+            const row = document.createElement('tr');
+            const date = item.timestamp ? item.timestamp.toDate().toLocaleString('es-AR') : 'N/A';
 
-    // Botón de cerrar sesión
+            row.innerHTML = `
+                <td>${date}</td>
+                <td>${item.usuarioNombre || item.usuarioEmail}</td>
+                <td>${item.accion}</td>
+                <td>${item.detalles.mensaje}</td>
+            `;
+            historyTbody.appendChild(row);
+});
+
+        showState(historyTableContainer);
+    };
+
+    filterBtn.addEventListener('click', () => {
+        const filters = {};
+        if (startDateInput.value) filters.startDate = new Date(startDateInput.value);
+        if (endDateInput.value) filters.endDate = new Date(endDateInput.value);
+        loadHistoryData(filters);
+    });
+
+    clearFilterBtn.addEventListener('click', () => {
+        searchInput.value = '';
+        startDateInput.value = '';
+        endDateInput.value = '';
+        loadHistoryData();
+    });
+    
+    searchInput.addEventListener('input', () => {
+        renderHistory(allHistoryItems);
+    });
+
     if (logoutBtn) {
         logoutBtn.addEventListener('click', async () => {
-            try {
-                await signOut(auth);
-                window.location.href = 'login.html';
-            } catch (error) {
-                console.error('Error al cerrar sesión: ' + error.message);
-                showMessage('Error al cerrar sesión.', 'error');
-            }
+            await signOut(auth);
+            window.location.href = 'login.html';
         });
     }
 
-    // Botón para volver al menú
-    if (backToMenuBtn) {
-        backToMenuBtn.addEventListener('click', () => {
+    if (backBtn) {
+        backBtn.addEventListener('click', () => {
             window.location.href = 'menu.html';
         });
     }

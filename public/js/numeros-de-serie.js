@@ -2,11 +2,12 @@
 
 import {
     db, auth, onAuthStateChanged, signOut,
-    doc, getDoc, deleteDoc, updateDoc
+    doc, getDoc, deleteDoc, updateDoc,
+    registrarHistorial // <-- Importamos la nueva función
 } from './firebase-config.js';
 
 document.addEventListener('DOMContentLoaded', () => {
-    // --- Elementos del DOM ---
+    // ... (la declaración de elementos del DOM no cambia)
     const modelNameDisplay = document.getElementById('model-name-display');
     const serialNumbersList = document.getElementById('serialNumbersList');
     const addCajaBtn = document.getElementById('add-caja-btn');
@@ -25,8 +26,9 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentModelName = '';
     let currentZonaName = '';
     let serialToDelete = null;
-    let userRole = 'operario'; // Rol por defecto por seguridad
+    let userRole = 'operario'; 
 
+    // ... (La función showNotification no cambia)
     let notificationTimeout;
     const showNotification = (message, type = 'success') => {
         const toast = document.getElementById('notification-toast');
@@ -41,6 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     onAuthStateChanged(auth, async (user) => {
+        // ... (Esta función no cambia)
         if (!user) { window.location.href = 'login.html'; return; }
         
         try {
@@ -51,7 +54,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             if (userDisplayName) { userDisplayName.textContent = userDocSnap.exists() ? userDocSnap.data().name : user.email; }
             
-            // ===== CAMBIO AQUÍ: Lógica para MOSTRAR el botón si es supervisor =====
             if (userRole === 'supervisor') {
                 if(addCajaBtn) addCajaBtn.style.display = 'block';
             }
@@ -59,11 +61,11 @@ document.addEventListener('DOMContentLoaded', () => {
             loadSerialNumbers();
         } catch (error) {
             console.error("Error al obtener rol del usuario:", error);
-            // El botón ya está oculto por defecto, así que no es necesario hacer nada en caso de error
             loadSerialNumbers();
         }
     });
 
+    // ... (La función showState y loadSerialNumbers no cambian)
     const showState = (stateElement) => {
         [loadingState, errorState, emptyState, serialNumbersList].forEach(el => el.style.display = 'none');
         if (stateElement) { stateElement.style.display = 'block'; }
@@ -136,17 +138,6 @@ document.addEventListener('DOMContentLoaded', () => {
             showState(errorState);
         }
     };
-    
-    const openDeleteModal = (serial) => {
-        serialToDelete = serial;
-        deleteModalText.textContent = `¿Estás seguro de que deseas eliminar la caja "${serial}" y todos sus ítems? Esta acción es permanente.`;
-        deleteConfirmModal.style.display = 'flex';
-    };
-
-    const closeDeleteModal = () => {
-        deleteConfirmModal.style.display = 'none';
-        serialToDelete = null;
-    };
 
     const deleteCaja = async () => {
         if (!serialToDelete) return;
@@ -156,9 +147,11 @@ document.addEventListener('DOMContentLoaded', () => {
         cancelDeleteBtn.disabled = true;
 
         try {
+            // Borramos el documento de ítems
             const itemDocRef = doc(db, "Items", serialToDelete);
             await deleteDoc(itemDocRef);
 
+            // Actualizamos la lista de series en el documento de la zona
             const zonaDocRef = doc(db, "Cajas", currentZonaName);
             const zonaDocSnap = await getDoc(zonaDocRef);
             if (zonaDocSnap.exists()) {
@@ -171,6 +164,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             }
             
+            // --- REGISTRO DE HISTORIAL ---
+            registrarHistorial('ELIMINACIÓN DE CAJA', {
+                cajaSerie: serialToDelete,
+                modelo: currentModelName,
+                mensaje: `Se eliminó la caja "${serialToDelete}" (Modelo: ${currentModelName}) y todos sus ítems.`
+            });
+
             showNotification(`Caja "${serialToDelete}" eliminada con éxito.`, 'success');
             
             closeDeleteModal();
@@ -186,18 +186,24 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
     
-    // --- EVENT LISTENERS RESTAURADOS ---
+    // ... (El resto de funciones y listeners como openDeleteModal, closeDeleteModal, etc., no cambian)
+    const openDeleteModal = (serial) => {
+        serialToDelete = serial;
+        deleteModalText.textContent = `¿Estás seguro de que deseas eliminar la caja "${serial}" y todos sus ítems? Esta acción es permanente.`;
+        deleteConfirmModal.style.display = 'flex';
+    };
+    const closeDeleteModal = () => {
+        deleteConfirmModal.style.display = 'none';
+        serialToDelete = null;
+    };
     cancelDeleteBtn.addEventListener('click', closeDeleteModal);
     confirmDeleteBtn.addEventListener('click', deleteCaja);
-
     addCajaBtn.addEventListener('click', () => {
         window.location.href = `agregar-caja.html?modelName=${encodeURIComponent(currentModelName)}&zonaName=${encodeURIComponent(currentZonaName)}`;
     });
-    
     backBtn.addEventListener('click', () => {
         window.location.href = `modelado-caja.html?zonaName=${encodeURIComponent(currentZonaName)}`;
     });
-
     logoutBtn.addEventListener('click', async () => {
         await signOut(auth);
         window.location.href = 'login.html';

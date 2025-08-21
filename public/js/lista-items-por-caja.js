@@ -2,8 +2,8 @@
 
 import {
     db, auth, onAuthStateChanged, signOut,
-    doc, getDoc, updateDoc, deleteField,
-    onSnapshot // <-- IMPORTANTE: Importamos onSnapshot
+    doc, getDoc, updateDoc, deleteField, onSnapshot,
+    registrarHistorial // <-- Importamos la nueva función
 } from './firebase-config.js';
 
 function sanitizeFieldName(name) {
@@ -27,6 +27,7 @@ const showNotification = (message, type = 'success') => {
     }, 3000);
 };
 
+// ... (El resto de funciones de UI como showModalMessage, etc. no cambian)
 const showModalMessage = (msg, type = 'info') => {
     const modalMessage = document.getElementById('modalMessage');
     if (modalMessage) {
@@ -58,7 +59,9 @@ const showModalLoading = (show) => {
     if (show) clearModalMessage();
 };
 
+
 document.addEventListener('DOMContentLoaded', () => {
+    // ... (la declaración de elementos del DOM no cambia)
     const userDisplayNameElement = document.getElementById('user-display-name');
     const logoutBtn = document.getElementById('logout-btn');
     const backBtn = document.getElementById('back-btn');
@@ -79,11 +82,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
     const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
     const deleteModalSpinner = document.getElementById('delete-modal-spinner');
-    
+
     let allLoadedItemsData = {};
     let currentSelectedSerialNumber = '';
     let modelName = '';
     let currentEditingItemOriginalName = null;
+    let currentEditingItemOldSerial = ''; // Variable para guardar el valor anterior
     let itemToDelete = null;
     let placaTypes = new Set();
     let placaDiams = new Set();
@@ -101,10 +105,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (stateElement) { stateElement.style.display = 'block'; }
     };
 
-    // =========================================================================
-    // ===== CAMBIO PRINCIPAL: Se modifica esta función para usar onSnapshot =====
-    // =========================================================================
     const loadInitialData = async () => {
+        // ... (Esta función no cambia, sigue usando onSnapshot)
         showState(loadingState);
         const urlParams = new URLSearchParams(window.location.search);
         currentSelectedSerialNumber = urlParams.get('selectedSerialNumber');
@@ -116,7 +118,6 @@ document.addEventListener('DOMContentLoaded', () => {
         boxSerialNumberDisplay.textContent = `Items para Caja: ${currentSelectedSerialNumber}`;
         
         try {
-            // 1. Leemos el esquema UNA SOLA VEZ (no cambia a menudo)
             const schemaDocRef = doc(db, "esquemas_modelos", modelName);
             const schemaDocSnap = await getDoc(schemaDocRef);
             if (schemaDocSnap.exists()) {
@@ -125,15 +126,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 parseSchemaForOptions(itemNames);
             }
 
-            // 2. Creamos la escucha en TIEMPO REAL para los ítems de la caja
             const itemDocRef = doc(db, "Items", currentSelectedSerialNumber);
             onSnapshot(itemDocRef, (itemDocSnap) => {
-                console.log("Datos actualizados en tiempo real!"); // Mensaje para verificar en consola
+                console.log("Datos actualizados en tiempo real!");
                 allLoadedItemsData = itemDocSnap.exists() ? itemDocSnap.data() : {};
-                // Re-renderizamos la lista cada vez que haya un cambio
                 renderFilteredItems(allLoadedItemsData, searchInput.value);
             }, (error) => {
-                // Función para manejar errores de la escucha
                 console.error("Error en la escucha de datos en tiempo real:", error);
                 showState(errorState);
             });
@@ -143,7 +141,8 @@ document.addEventListener('DOMContentLoaded', () => {
             showState(errorState);
         }
     };
-
+    
+    // ... (Las funciones buildSchemaMap, parseSchemaForOptions y renderFilteredItems no cambian)
     const buildSchemaMap = (itemNames) => {
         schemaMap.clear();
         itemNames.forEach(itemName => {
@@ -163,7 +162,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     };
-
+    
     const renderFilteredItems = (itemsData, searchTerm = '') => {
         const dynamicRows = Array.from(itemsList.querySelectorAll('.dynamic-item-row'));
         itemsList.innerHTML = '';
@@ -198,6 +197,116 @@ document.addEventListener('DOMContentLoaded', () => {
         showState(itemsList);
     };
 
+    const saveNewItem = async (rowElement) => {
+        // ...
+        const newSerial = rowElement.querySelector('.item-serial-input').value.trim();
+        // ... (resto de la lógica para obtener itemName)
+        const type = rowElement.querySelector('.item-part-type').value;
+        const diam = rowElement.querySelector('.item-part-diam').value;
+        const orificio = rowElement.querySelector('.item-part-orificio').value;
+        if (!type || !diam || !orificio || !newSerial) {
+            showNotification('Por favor, completa todos los campos.', 'error'); return;
+        }
+        const description = `PLACA ${type} diam ${diam} x ${orificio}`;
+        let itemCode = schemaMap.get(description);
+        if (!itemCode) {
+            itemCode = rowElement.querySelector('.manual-code-input').value.trim();
+            if (!itemCode) {
+                showNotification('La descripción es nueva. Por favor, ingresa un código.', 'error'); return;
+            }
+        }
+        const itemName = `${itemCode};${description}`;
+        const sanitizedFieldName = sanitizeFieldName(itemName);
+
+        try {
+            const itemDocRef = doc(db, "Items", currentSelectedSerialNumber);
+            await updateDoc(itemDocRef, { [sanitizedFieldName]: newSerial });
+
+            // --- REGISTRO DE HISTORIAL ---
+            registrarHistorial('AGREGAR ÍTEM', {
+                cajaSerie: currentSelectedSerialNumber,
+                itemDescripcion: itemName,
+                valorNuevo: newSerial,
+                mensaje: `Se agregó el ítem "${itemName}" con N° de Serie "${newSerial}" a la caja "${currentSelectedSerialNumber}".`
+            });
+
+            showNotification('Ítem agregado con éxito.', 'success');
+        } catch (error) {
+            console.error("Error al guardar el nuevo ítem:", error);
+            showNotification('Error al guardar: ' + error.message, 'error');
+        }
+    };
+    
+    const openEditModal = (originalName, currentSerial) => {
+        currentEditingItemOriginalName = originalName;
+        currentEditingItemOldSerial = currentSerial; // Guardamos el valor viejo
+        modalItemCodeDescription.textContent = originalName;
+        newSerialNumberInput.value = currentSerial;
+        editSerialModal.style.display = 'flex';
+        clearModalMessage();
+    };
+
+    const confirmEdit = async () => {
+        showModalLoading(true);
+        let newSerial = newSerialNumberInput.value.trim();
+        if (newSerial === '0') { newSerial = 'REEMPLAZAR'; }
+        
+        if (!newSerial) {
+            showModalMessage("El número de serie no puede estar vacío.", 'error');
+            showModalLoading(false); return;
+        }
+
+        try {
+            const itemDocRef = doc(db, "Items", currentSelectedSerialNumber);
+            const fieldToUpdate = sanitizeFieldName(currentEditingItemOriginalName);
+            await updateDoc(itemDocRef, { [fieldToUpdate]: newSerial });
+
+            // --- REGISTRO DE HISTORIAL ---
+            registrarHistorial('MODIFICACIÓN DE ÍTEM', {
+                cajaSerie: currentSelectedSerialNumber,
+                itemDescripcion: currentEditingItemOriginalName,
+                valorAnterior: currentEditingItemOldSerial,
+                valorNuevo: newSerial,
+                mensaje: `Cambió N° de Serie de "${currentEditingItemOldSerial}" a "${newSerial}" para el ítem "${currentEditingItemOriginalName}" en la caja "${currentSelectedSerialNumber}".`
+            });
+            
+            showModalMessage('Movimientos realizados con éxito.', 'success');
+            setTimeout(() => { closeEditModal(); showModalLoading(false); }, 1500);
+        } catch (error) {
+            console.error("Error al actualizar el N° de serie:", error);
+            showModalMessage(`Error al guardar los cambios: ${error.message}`, 'error');
+            showModalLoading(false);
+        }
+    };
+
+    const executeDelete = async () => {
+        if (!itemToDelete) return;
+        deleteModalSpinner.style.display = 'block';
+        confirmDeleteBtn.disabled = true;
+        cancelDeleteBtn.disabled = true;
+        try {
+            const itemDocRef = doc(db, "Items", currentSelectedSerialNumber);
+            await updateDoc(itemDocRef, { [itemToDelete.sanitized]: deleteField() });
+
+            // --- REGISTRO DE HISTORIAL ---
+            registrarHistorial('ELIMINACIÓN DE ÍTEM', {
+                cajaSerie: currentSelectedSerialNumber,
+                itemDescripcion: itemToDelete.original,
+                mensaje: `Se eliminó el ítem "${itemToDelete.original}" de la caja "${currentSelectedSerialNumber}".`
+            });
+
+            closeDeleteModal();
+        } catch (error) {
+            console.error("Error al eliminar el ítem:", error);
+            deleteModalText.textContent = `Error: ${error.message}`;
+        } finally {
+            deleteModalSpinner.style.display = 'none';
+            confirmDeleteBtn.disabled = false;
+            cancelDeleteBtn.disabled = false;
+        }
+    };
+
+    // ... (El resto de funciones y listeners como addNewItemRow, handleDropdownChange, openDeleteModal, closeEditModal, etc., no cambian)
     const addNewItemRow = () => {
         const existingNewRow = document.querySelector('.dynamic-item-row');
         if (existingNewRow) { existingNewRow.querySelector('select').focus(); return; }
@@ -230,7 +339,6 @@ document.addEventListener('DOMContentLoaded', () => {
         newRow.querySelector('.btn-secondary').addEventListener('click', () => newRow.remove());
         newRow.querySelector('.btn-primary').addEventListener('click', () => saveNewItem(newRow));
     };
-
     const handleDropdownChange = (rowElement) => {
         const type = rowElement.querySelector('.item-part-type').value;
         const diam = rowElement.querySelector('.item-part-diam').value;
@@ -250,69 +358,10 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     };
-    
-    const saveNewItem = async (rowElement) => {
-        const type = rowElement.querySelector('.item-part-type').value;
-        const diam = rowElement.querySelector('.item-part-diam').value;
-        const orificio = rowElement.querySelector('.item-part-orificio').value;
-        const newSerial = rowElement.querySelector('.item-serial-input').value.trim();
-        if (!type || !diam || !orificio || !newSerial) {
-            showNotification('Por favor, completa todos los campos.', 'error'); return;
-        }
-        const description = `PLACA ${type} diam ${diam} x ${orificio}`;
-        let itemCode = schemaMap.get(description);
-        if (!itemCode) {
-            itemCode = rowElement.querySelector('.manual-code-input').value.trim();
-            if (!itemCode) {
-                showNotification('La descripción es nueva. Por favor, ingresa un código.', 'error'); return;
-            }
-        }
-        const itemName = `${itemCode};${description}`;
-        const sanitizedFieldName = sanitizeFieldName(itemName);
-        try {
-            const itemDocRef = doc(db, "Items", currentSelectedSerialNumber);
-            await updateDoc(itemDocRef, { [sanitizedFieldName]: newSerial });
-            // No es necesario actualizar allLoadedItemsData manualmente, onSnapshot lo hará
-            showNotification('Ítem agregado con éxito.', 'success');
-        } catch (error) {
-            console.error("Error al guardar el nuevo ítem:", error);
-            showNotification('Error al guardar: ' + error.message, 'error');
-        }
-    };
-    
-    const openEditModal = (originalName, currentSerial) => {
-        currentEditingItemOriginalName = originalName;
-        modalItemCodeDescription.textContent = originalName;
-        newSerialNumberInput.value = currentSerial;
-        editSerialModal.style.display = 'flex';
-        clearModalMessage();
-    };
     const closeEditModal = () => {
         editSerialModal.style.display = 'none';
         currentEditingItemOriginalName = null;
     };
-    const confirmEdit = async () => {
-        showModalLoading(true);
-        let newSerial = newSerialNumberInput.value.trim();
-        if (newSerial === '0') { newSerial = 'REEMPLAZAR'; }
-        if (!newSerial) {
-            showModalMessage("El número de serie no puede estar vacío.", 'error');
-            showModalLoading(false); return;
-        }
-        try {
-            const itemDocRef = doc(db, "Items", currentSelectedSerialNumber);
-            const fieldToUpdate = sanitizeFieldName(currentEditingItemOriginalName);
-            await updateDoc(itemDocRef, { [fieldToUpdate]: newSerial });
-            // No es necesario actualizar allLoadedItemsData ni re-renderizar, onSnapshot lo hará
-            showModalMessage('Movimientos realizados con éxito.', 'success');
-            setTimeout(() => { closeEditModal(); showModalLoading(false); }, 1500);
-        } catch (error) {
-            console.error("Error al actualizar el N° de serie:", error);
-            showModalMessage(`Error al guardar los cambios: ${error.message}`, 'error');
-            showModalLoading(false);
-        }
-    };
-
     const openDeleteModal = (sanitizedFieldName, originalItemName) => {
         itemToDelete = { sanitized: sanitizedFieldName, original: originalItemName };
         deleteModalText.textContent = `¿Estás seguro de que deseas eliminar "${originalItemName}"?`;
@@ -322,26 +371,6 @@ document.addEventListener('DOMContentLoaded', () => {
         deleteConfirmModal.style.display = 'none';
         itemToDelete = null;
     };
-    const executeDelete = async () => {
-        if (!itemToDelete) return;
-        deleteModalSpinner.style.display = 'block';
-        confirmDeleteBtn.disabled = true;
-        cancelDeleteBtn.disabled = true;
-        try {
-            const itemDocRef = doc(db, "Items", currentSelectedSerialNumber);
-            await updateDoc(itemDocRef, { [itemToDelete.sanitized]: deleteField() });
-            // onSnapshot se encargará de re-renderizar la lista
-            closeDeleteModal();
-        } catch (error) {
-            console.error("Error al eliminar el ítem:", error);
-            deleteModalText.textContent = `Error: ${error.message}`;
-        } finally {
-            deleteModalSpinner.style.display = 'none';
-            confirmDeleteBtn.disabled = false;
-            cancelDeleteBtn.disabled = false;
-        }
-    };
-
     // --- Listeners de Eventos ---
     addItemBtn.addEventListener('click', addNewItemRow);
     searchInput.addEventListener('input', () => renderFilteredItems(allLoadedItemsData, searchInput.value));
