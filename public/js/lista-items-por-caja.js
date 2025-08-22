@@ -1,9 +1,7 @@
-// public/js/lista-items-por-caja.js
-
 import {
     db, auth, onAuthStateChanged, signOut,
-    doc, getDoc, updateDoc, deleteField, onSnapshot,
-    registrarHistorial // <-- Importamos la nueva función
+    doc, getDoc, setDoc, updateDoc, deleteField, onSnapshot,
+    registrarHistorial
 } from './firebase-config.js';
 
 function sanitizeFieldName(name) {
@@ -21,47 +19,11 @@ const showNotification = (message, type = 'success') => {
     clearTimeout(notificationTimeout);
     toast.textContent = message;
     toast.className = 'show';
-    toast.classList.add(type === 'success' ? 'success' : 'error');
-    notificationTimeout = setTimeout(() => {
-        toast.classList.remove('show');
-    }, 3000);
+    toast.classList.add(type);
+    notificationTimeout = setTimeout(() => { toast.classList.remove('show'); }, 3000);
 };
-
-// ... (El resto de funciones de UI como showModalMessage, etc. no cambian)
-const showModalMessage = (msg, type = 'info') => {
-    const modalMessage = document.getElementById('modalMessage');
-    if (modalMessage) {
-        modalMessage.textContent = msg;
-        modalMessage.className = `message-area ${type}`;
-        modalMessage.style.display = 'block';
-    }
-};
-
-const clearModalMessage = () => {
-    const modalMessage = document.getElementById('modalMessage');
-    if (modalMessage) {
-        modalMessage.textContent = '';
-        modalMessage.className = 'message-area';
-        modalMessage.style.display = 'none';
-    }
-};
-
-const showModalLoading = (show) => {
-    const modalSpinner = document.getElementById('modalSpinner');
-    const confirmEditBtn = document.getElementById('confirmEditBtn');
-    const cancelEditBtn = document.getElementById('cancelEditBtn');
-    const newSerialNumberInput = document.getElementById('newSerialNumberInput');
-
-    if (modalSpinner) modalSpinner.style.display = show ? 'block' : 'none';
-    if (confirmEditBtn) confirmEditBtn.disabled = show;
-    if (cancelEditBtn) cancelEditBtn.disabled = show;
-    if (newSerialNumberInput) newSerialNumberInput.disabled = show;
-    if (show) clearModalMessage();
-};
-
 
 document.addEventListener('DOMContentLoaded', () => {
-    // ... (la declaración de elementos del DOM no cambia)
     const userDisplayNameElement = document.getElementById('user-display-name');
     const logoutBtn = document.getElementById('logout-btn');
     const backBtn = document.getElementById('back-btn');
@@ -72,6 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const emptyState = document.getElementById('empty-state');
     const searchInput = document.getElementById('searchInput');
     const addItemBtn = document.getElementById('add-item-btn');
+    const downloadPdfBtn = document.getElementById('download-pdf-btn');
     const editSerialModal = document.getElementById('editSerialModal');
     const modalItemCodeDescription = document.getElementById('modalItemCodeDescription');
     const newSerialNumberInput = document.getElementById('newSerialNumberInput');
@@ -81,310 +44,348 @@ document.addEventListener('DOMContentLoaded', () => {
     const deleteModalText = document.getElementById('delete-modal-text');
     const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
     const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
-    const deleteModalSpinner = document.getElementById('delete-modal-spinner');
+    const tipoReporteModal = document.getElementById('tipoReporteModal');
+    const btnEntrada = document.getElementById('btn-entrada');
+    const btnSalida = document.getElementById('btn-salida');
+    const prestamoModal = document.getElementById('prestamoModal');
+    const prestamoInput = document.getElementById('prestamo-input');
+    const cancelPrestamoBtn = document.getElementById('cancel-prestamo-btn');
+    const confirmPrestamoBtn = document.getElementById('confirm-prestamo-btn');
 
     let allLoadedItemsData = {};
     let currentSelectedSerialNumber = '';
     let modelName = '';
-    let currentEditingItemOriginalName = null;
-    let currentEditingItemOldSerial = ''; // Variable para guardar el valor anterior
+    let currentEditingItem = { originalName: '', oldSerial: '' };
     let itemToDelete = null;
-    let placaTypes = new Set();
-    let placaDiams = new Set();
-    let placaOrificios = new Set();
     let schemaMap = new Map();
+    let unsubscribeFromItems = null;
 
     onAuthStateChanged(auth, (user) => {
-        if (!user) { window.location.href = 'login.html'; return; }
+        if (!user) {
+            window.location.href = 'login.html';
+            return;
+        }
         if (userDisplayNameElement) userDisplayNameElement.textContent = user.displayName || user.email;
-        loadInitialData();
+        initializePage();
     });
 
-    const showState = (stateElement) => {
-        [loadingState, errorState, emptyState, itemsList].forEach(el => { if(el) el.style.display = 'none'});
-        if (stateElement) { stateElement.style.display = 'block'; }
-    };
-
-    const loadInitialData = async () => {
-        // ... (Esta función no cambia, sigue usando onSnapshot)
+    const initializePage = async () => {
         showState(loadingState);
         const urlParams = new URLSearchParams(window.location.search);
         currentSelectedSerialNumber = urlParams.get('selectedSerialNumber');
         modelName = urlParams.get('modelName');
+
         if (!currentSelectedSerialNumber || !modelName) {
-            boxSerialNumberDisplay.textContent = 'Error: Faltan parámetros en la URL';
-            showState(errorState); return;
+            if (boxSerialNumberDisplay) boxSerialNumberDisplay.textContent = 'Error: Faltan parámetros en la URL';
+            showState(errorState);
+            return;
         }
-        boxSerialNumberDisplay.textContent = `Items para Caja: ${currentSelectedSerialNumber}`;
-        
+        if (boxSerialNumberDisplay) boxSerialNumberDisplay.textContent = `Items para Caja: ${currentSelectedSerialNumber}`;
+
         try {
             const schemaDocRef = doc(db, "esquemas_modelos", modelName);
             const schemaDocSnap = await getDoc(schemaDocRef);
             if (schemaDocSnap.exists()) {
-                const itemNames = Object.keys(schemaDocSnap.data());
-                buildSchemaMap(itemNames);
-                parseSchemaForOptions(itemNames);
+                buildSchemaMap(Object.keys(schemaDocSnap.data()));
+            }
+
+            if (unsubscribeFromItems) {
+                unsubscribeFromItems();
             }
 
             const itemDocRef = doc(db, "Items", currentSelectedSerialNumber);
-            onSnapshot(itemDocRef, (itemDocSnap) => {
-                console.log("Datos actualizados en tiempo real!");
+            unsubscribeFromItems = onSnapshot(itemDocRef, (itemDocSnap) => {
                 allLoadedItemsData = itemDocSnap.exists() ? itemDocSnap.data() : {};
-                renderFilteredItems(allLoadedItemsData, searchInput.value);
+                const searchTerm = searchInput ? searchInput.value : '';
+                renderFilteredItems(allLoadedItemsData, searchTerm);
             }, (error) => {
                 console.error("Error en la escucha de datos en tiempo real:", error);
                 showState(errorState);
             });
 
         } catch (error) {
-            console.error("Error al cargar datos iniciales:", error);
+            console.error("Error durante la inicialización de la página:", error);
             showState(errorState);
         }
     };
-    
-    // ... (Las funciones buildSchemaMap, parseSchemaForOptions y renderFilteredItems no cambian)
+
     const buildSchemaMap = (itemNames) => {
         schemaMap.clear();
         itemNames.forEach(itemName => {
             const [code, description] = itemName.split(';');
-            if (code && description) { schemaMap.set(description.trim(), code.trim()); }
-        });
-    };
-
-    const parseSchemaForOptions = (itemNames) => {
-        itemNames.forEach(itemName => {
-            const description = itemName.split(';')[1] || '';
-            const match = description.match(/PLACA\s(.*?)\sdiam\s(.*?)\sx\s(.*)/i);
-            if (match) {
-                placaTypes.add(match[1].trim());
-                placaDiams.add(match[2].trim());
-                placaOrificios.add(match[3].trim());
+            if (code && description) {
+                schemaMap.set(description.trim(), code.trim());
             }
         });
     };
-    
+
+    const showState = (stateElement) => {
+        const allStates = [loadingState, errorState, emptyState, itemsList];
+        allStates.forEach(el => { if (el) el.style.display = 'none' });
+        if (stateElement) {
+            stateElement.style.display = (stateElement === itemsList || stateElement === emptyState) ? 'flex' : 'block';
+        }
+    };
+
     const renderFilteredItems = (itemsData, searchTerm = '') => {
+        if (!itemsList) return;
+        
         const dynamicRows = Array.from(itemsList.querySelectorAll('.dynamic-item-row'));
         itemsList.innerHTML = '';
         dynamicRows.forEach(row => itemsList.appendChild(row));
+
         const lowerCaseSearchTerm = searchTerm.toLowerCase();
         const filteredKeys = Object.keys(itemsData).filter(key => {
             const itemValue = itemsData[key];
             const originalKey = unSanitizeFieldName(key);
-            return originalKey.toLowerCase().includes(lowerCaseSearchTerm) || itemValue.toLowerCase().includes(lowerCaseSearchTerm);
+            return originalKey.toLowerCase().includes(lowerCaseSearchTerm) || String(itemValue).toLowerCase().includes(lowerCaseSearchTerm);
         });
-        if (filteredKeys.length === 0 && dynamicRows.length === 0) { showState(emptyState); return; }
+
+        if (filteredKeys.length === 0 && dynamicRows.length === 0) {
+            showState(emptyState);
+            return;
+        }
+
         filteredKeys.sort().forEach(sanitizedItemFieldName => {
             const itemValue = itemsData[sanitizedItemFieldName];
             const originalItemName = unSanitizeFieldName(sanitizedItemFieldName);
             const listItem = document.createElement('li');
             listItem.className = 'list-item';
-            const separatorIndex = originalItemName.indexOf(';');
-            const itemCode = separatorIndex !== -1 ? originalItemName.substring(0, separatorIndex) : originalItemName;
-            const description = separatorIndex !== -1 ? originalItemName.substring(separatorIndex + 1) : '';
+            const [itemCode, description] = originalItemName.split(';');
+            const serialDisplay = (itemValue === 'REEMPLAZAR') ? `<span style="color: #dc3545; font-weight: bold;">${itemValue}</span>` : itemValue;
+
             listItem.innerHTML = `
                 <div class="item-main-details-container">
-                    <div class="item-detail-group"><span class="item-label">Código:</span><span class="item-value-text">${itemCode}</span></div>
-                    <div class="item-detail-group"><span class="item-label">Descripción:</span><span class="item-value-text">${description}</span></div>
-                    <div class="item-detail-group"><span class="item-label">N° de Serie:</span><span class="item-value-text">${itemValue}</span></div>
+                    <div class="item-detail-group"><span class="item-label">Código:</span><span class="item-value-text">${itemCode || ''}</span></div>
+                    <div class="item-detail-group"><span class="item-label">Descripción:</span><span class="item-value-text">${description || ''}</span></div>
+                    <div class="item-detail-group"><span class="item-label">N° de Serie:</span><span class="item-value-text">${serialDisplay}</span></div>
                 </div>
-                <button class="btn-delete-item" title="Eliminar ítem"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
+                <button class="btn-delete-item" title="Eliminar ítem"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
             `;
+            
             listItem.querySelector('.item-main-details-container').addEventListener('click', () => openEditModal(originalItemName, itemValue));
-            listItem.querySelector('.btn-delete-item').addEventListener('click', (event) => { event.stopPropagation(); openDeleteModal(sanitizedItemFieldName, originalItemName); });
+            listItem.querySelector('.btn-delete-item').addEventListener('click', (e) => {
+                e.stopPropagation();
+                openDeleteModal(sanitizedItemFieldName, originalItemName);
+            });
+
             itemsList.appendChild(listItem);
         });
         showState(itemsList);
     };
 
+    const addNewItemRow = () => {
+        if (!itemsList || document.querySelector('.dynamic-item-row')) return;
+
+        const newRow = document.createElement('li');
+        newRow.className = 'list-item dynamic-item-row';
+        newRow.innerHTML = `
+            <div class="item-main-details-container" style="cursor: default;">
+                <input type="text" class="manual-desc-input" placeholder="Buscar ítem por descripción..." list="schema-descriptions" style="width: 100%; margin-bottom: 10px; padding: 8px;">
+                <datalist id="schema-descriptions">
+                    ${Array.from(schemaMap.keys()).sort().map(desc => `<option value="${desc}"></option>`).join('')}
+                </datalist>
+                <div class="item-code-display" style="font-family: monospace; margin-bottom: 10px; min-height: 1.2em;"></div>
+                <input type="text" class="item-serial-input" placeholder="N° de Serie del Ítem" style="width: 100%; padding: 8px;">
+                <div class="modal-actions" style="justify-content: flex-end;">
+                    <button class="btn-modal btn-secondary cancel-add-btn">Cancelar</button>
+                    <button class="btn-modal btn-primary save-add-btn">Guardar Ítem</button>
+                </div>
+            </div>`;
+        itemsList.prepend(newRow);
+        showState(itemsList);
+        
+        const descInput = newRow.querySelector('.manual-desc-input');
+        descInput.focus();
+
+        descInput.addEventListener('input', () => {
+            const code = schemaMap.get(descInput.value);
+            const codeDisplay = newRow.querySelector('.item-code-display');
+            codeDisplay.textContent = code ? `Código Encontrado: ${code}` : 'No se encontró el código (se creará un ítem nuevo).';
+        });
+
+        newRow.querySelector('.cancel-add-btn').addEventListener('click', () => newRow.remove());
+        newRow.querySelector('.save-add-btn').addEventListener('click', () => saveNewItem(newRow));
+    };
+
     const saveNewItem = async (rowElement) => {
-        // ...
-        const newSerial = rowElement.querySelector('.item-serial-input').value.trim();
-        // ... (resto de la lógica para obtener itemName)
-        const type = rowElement.querySelector('.item-part-type').value;
-        const diam = rowElement.querySelector('.item-part-diam').value;
-        const orificio = rowElement.querySelector('.item-part-orificio').value;
-        if (!type || !diam || !orificio || !newSerial) {
-            showNotification('Por favor, completa todos los campos.', 'error'); return;
-        }
-        const description = `PLACA ${type} diam ${diam} x ${orificio}`;
+        const descInput = rowElement.querySelector('.manual-desc-input');
+        const serialInput = rowElement.querySelector('.item-serial-input');
+        
+        const description = descInput.value.trim();
+        const itemSerial = serialInput.value.trim();
         let itemCode = schemaMap.get(description);
-        if (!itemCode) {
-            itemCode = rowElement.querySelector('.manual-code-input').value.trim();
-            if (!itemCode) {
-                showNotification('La descripción es nueva. Por favor, ingresa un código.', 'error'); return;
-            }
+
+        if (!description || !itemSerial) {
+            showNotification("La descripción y el N° de Serie son obligatorios.", "error");
+            return;
         }
+
+        if (!itemCode) {
+            itemCode = prompt("Este es un ítem nuevo. Por favor, ingresa su CÓDIGO:");
+            if (!itemCode || !itemCode.trim()) return;
+            itemCode = itemCode.trim();
+        }
+
         const itemName = `${itemCode};${description}`;
         const sanitizedFieldName = sanitizeFieldName(itemName);
 
         try {
             const itemDocRef = doc(db, "Items", currentSelectedSerialNumber);
-            await updateDoc(itemDocRef, { [sanitizedFieldName]: newSerial });
-
-            // --- REGISTRO DE HISTORIAL ---
+            await updateDoc(itemDocRef, { [sanitizedFieldName]: itemSerial }, { merge: true });
+            
             registrarHistorial('AGREGAR ÍTEM', {
                 cajaSerie: currentSelectedSerialNumber,
                 itemDescripcion: itemName,
-                valorNuevo: newSerial,
-                mensaje: `Se agregó el ítem "${itemName}" con N° de Serie "${newSerial}" a la caja "${currentSelectedSerialNumber}".`
+                valorNuevo: itemSerial,
+                mensaje: `Se agregó el ítem "${itemName}" con N° de Serie "${itemSerial}" a la caja "${currentSelectedSerialNumber}".`
             });
-
-            showNotification('Ítem agregado con éxito.', 'success');
+            showNotification("Ítem agregado con éxito.", "success");
+            rowElement.remove();
         } catch (error) {
-            console.error("Error al guardar el nuevo ítem:", error);
-            showNotification('Error al guardar: ' + error.message, 'error');
+            showNotification("Error al guardar el nuevo ítem.", "error");
+            console.error(error);
         }
     };
-    
+
     const openEditModal = (originalName, currentSerial) => {
-        currentEditingItemOriginalName = originalName;
-        currentEditingItemOldSerial = currentSerial; // Guardamos el valor viejo
-        modalItemCodeDescription.textContent = originalName;
-        newSerialNumberInput.value = currentSerial;
-        editSerialModal.style.display = 'flex';
-        clearModalMessage();
+        currentEditingItem = { originalName: originalName, oldSerial: currentSerial };
+        if (modalItemCodeDescription) modalItemCodeDescription.textContent = originalName;
+        if (newSerialNumberInput) newSerialNumberInput.value = (currentSerial === 'REEMPLAZAR') ? '0' : currentSerial;
+        if (editSerialModal) editSerialModal.style.display = 'flex';
     };
 
-    const confirmEdit = async () => {
-        showModalLoading(true);
+    const openDeleteModal = (sanitized, original) => {
+        itemToDelete = { sanitized: sanitized, original: original };
+        if (deleteModalText) deleteModalText.textContent = `¿Seguro que deseas eliminar "${original}"?`;
+        if (deleteConfirmModal) deleteConfirmModal.style.display = 'flex';
+    };
+
+    confirmEditBtn?.addEventListener('click', async () => {
         let newSerial = newSerialNumberInput.value.trim();
         if (newSerial === '0') { newSerial = 'REEMPLAZAR'; }
         
-        if (!newSerial) {
-            showModalMessage("El número de serie no puede estar vacío.", 'error');
-            showModalLoading(false); return;
+        if (!newSerial && newSerial !== 'REEMPLAZAR') {
+             showNotification("El número de serie no puede estar vacío.", "error");
+             return;
         }
 
         try {
             const itemDocRef = doc(db, "Items", currentSelectedSerialNumber);
-            const fieldToUpdate = sanitizeFieldName(currentEditingItemOriginalName);
-            await updateDoc(itemDocRef, { [fieldToUpdate]: newSerial });
-
-            // --- REGISTRO DE HISTORIAL ---
+            await updateDoc(itemDocRef, { [sanitizeFieldName(currentEditingItem.originalName)]: newSerial });
             registrarHistorial('MODIFICACIÓN DE ÍTEM', {
                 cajaSerie: currentSelectedSerialNumber,
-                itemDescripcion: currentEditingItemOriginalName,
-                valorAnterior: currentEditingItemOldSerial,
+                itemDescripcion: currentEditingItem.originalName,
+                valorAnterior: currentEditingItem.oldSerial,
                 valorNuevo: newSerial,
-                mensaje: `Cambió N° de Serie de "${currentEditingItemOldSerial}" a "${newSerial}" para el ítem "${currentEditingItemOriginalName}" en la caja "${currentSelectedSerialNumber}".`
+                mensaje: `Cambió N° de Serie de "${currentEditingItem.oldSerial}" a "${newSerial}" para el ítem "${currentEditingItem.originalName}" en caja "${currentSelectedSerialNumber}".`
             });
-            
-            showModalMessage('Movimientos realizados con éxito.', 'success');
-            setTimeout(() => { closeEditModal(); showModalLoading(false); }, 1500);
+            showNotification('Ítem actualizado con éxito.', 'success');
         } catch (error) {
-            console.error("Error al actualizar el N° de serie:", error);
-            showModalMessage(`Error al guardar los cambios: ${error.message}`, 'error');
-            showModalLoading(false);
+            showNotification('Error al actualizar.', 'error');
+            console.error("Error al editar ítem:", error);
+        } finally {
+            if (editSerialModal) editSerialModal.style.display = 'none';
         }
-    };
+    });
 
-    const executeDelete = async () => {
+    confirmDeleteBtn?.addEventListener('click', async () => {
         if (!itemToDelete) return;
-        deleteModalSpinner.style.display = 'block';
-        confirmDeleteBtn.disabled = true;
-        cancelDeleteBtn.disabled = true;
         try {
             const itemDocRef = doc(db, "Items", currentSelectedSerialNumber);
             await updateDoc(itemDocRef, { [itemToDelete.sanitized]: deleteField() });
-
-            // --- REGISTRO DE HISTORIAL ---
             registrarHistorial('ELIMINACIÓN DE ÍTEM', {
                 cajaSerie: currentSelectedSerialNumber,
                 itemDescripcion: itemToDelete.original,
                 mensaje: `Se eliminó el ítem "${itemToDelete.original}" de la caja "${currentSelectedSerialNumber}".`
             });
-
-            closeDeleteModal();
+            showNotification('Ítem eliminado con éxito.', 'success');
         } catch (error) {
-            console.error("Error al eliminar el ítem:", error);
-            deleteModalText.textContent = `Error: ${error.message}`;
+            showNotification('Error al eliminar el ítem.', 'error');
+            console.error("Error al eliminar ítem:", error);
         } finally {
-            deleteModalSpinner.style.display = 'none';
-            confirmDeleteBtn.disabled = false;
-            cancelDeleteBtn.disabled = false;
+            if (deleteConfirmModal) deleteConfirmModal.style.display = 'none';
         }
-    };
+    });
 
-    // ... (El resto de funciones y listeners como addNewItemRow, handleDropdownChange, openDeleteModal, closeEditModal, etc., no cambian)
-    const addNewItemRow = () => {
-        const existingNewRow = document.querySelector('.dynamic-item-row');
-        if (existingNewRow) { existingNewRow.querySelector('select').focus(); return; }
-        const newRow = document.createElement('li');
-        newRow.className = 'list-item dynamic-item-row';
-        const sortedTypes = [...placaTypes].sort((a, b) => a.localeCompare(b));
-        const sortedDiams = [...placaDiams].sort((a, b) => a.localeCompare(b));
-        const sortedOrificios = [...placaOrificios].sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
-        const typeOptions = sortedTypes.map(opt => `<option value="${opt}">${opt}</option>`).join('');
-        const diamOptions = sortedDiams.map(opt => `<option value="${opt}">${opt}</option>`).join('');
-        const orificioOptions = sortedOrificios.map(opt => `<option value="${opt}">${opt}</option>`).join('');
-        newRow.innerHTML = `
-            <div class="item-main-details-container" style="cursor: default;">
-                <div class="dynamic-item-selectors">
-                    <select class="item-part-type"><option value="">Tipo...</option>${typeOptions}</select>
-                    <select class="item-part-diam"><option value="">Diámetro...</option>${diamOptions}</select>
-                    <select class="item-part-orificio"><option value="">Orificios...</option>${orificioOptions}</select>
-                </div>
-                <div class="item-code-display" style="display: none; margin-top: 10px; padding: 8px; background-color: #e9ecef; border-radius: 5px; font-family: monospace;"></div>
-                <input type="text" class="manual-code-input" placeholder="Ingresa el código nuevo" style="display: none; margin-top: 10px; padding: 8px; width: 100%; box-sizing: border-box; border-radius: 5px; border: 1px solid #ccc;">
-                <input type="text" class="item-serial-input" placeholder="N° de Serie del Ítem" style="margin-top: 10px; padding: 8px; width: 100%; box-sizing: border-box; border-radius: 5px; border: 1px solid #ccc;">
-                <div class="dynamic-row-actions"><button class="btn-secondary">Cancelar</button><button class="btn-primary">Guardar Ítem</button></div>
-            </div>
-        `;
-        itemsList.prepend(newRow);
-        showState(itemsList);
-        newRow.querySelectorAll('.dynamic-item-selectors select').forEach(select => {
-            select.addEventListener('change', () => handleDropdownChange(newRow));
-        });
-        newRow.querySelector('.btn-secondary').addEventListener('click', () => newRow.remove());
-        newRow.querySelector('.btn-primary').addEventListener('click', () => saveNewItem(newRow));
-    };
-    const handleDropdownChange = (rowElement) => {
-        const type = rowElement.querySelector('.item-part-type').value;
-        const diam = rowElement.querySelector('.item-part-diam').value;
-        const orificio = rowElement.querySelector('.item-part-orificio').value;
-        const codeDisplay = rowElement.querySelector('.item-code-display');
-        const manualInput = rowElement.querySelector('.manual-code-input');
-        if (type && diam && orificio) {
-            const description = `PLACA ${type} diam ${diam} x ${orificio}`;
-            const foundCode = schemaMap.get(description);
-            if (foundCode) {
-                codeDisplay.innerHTML = `<span style="font-weight: bold;">Código Encontrado:</span> ${foundCode}`;
-                codeDisplay.style.display = 'block';
-                manualInput.style.display = 'none';
+    const generarPDF = (tipo, prestamoNum = null) => {
+        showNotification('Generando PDF...', 'info');
+
+        const pdfTitle = document.getElementById('pdf-report-title');
+        const pdfBoxSerial = document.getElementById('pdf-box-serial');
+        const pdfTipo = document.getElementById('pdf-tipo');
+        const pdfPrestamo = document.getElementById('pdf-prestamo-num');
+        const tableBody = document.getElementById('pdf-table-body');
+        
+        if(pdfTitle) pdfTitle.textContent = `REPORTE ${new Date().toLocaleString('es-AR')}`;
+        if(pdfBoxSerial) pdfBoxSerial.textContent = `Caja: ${currentSelectedSerialNumber}`;
+        if(pdfTipo) pdfTipo.textContent = `Tipo: ${tipo.toUpperCase()}`;
+        
+        if(pdfPrestamo) {
+            if (prestamoNum) {
+                pdfPrestamo.textContent = `N° de Préstamo: ${prestamoNum}`;
+                pdfPrestamo.style.display = 'block';
             } else {
-                codeDisplay.style.display = 'none';
-                manualInput.style.display = 'block';
+                pdfPrestamo.style.display = 'none';
             }
         }
+        
+        if(tableBody) {
+            tableBody.innerHTML = '';
+            const sortedKeys = Object.keys(allLoadedItemsData).sort();
+            if (sortedKeys.length > 0) {
+                sortedKeys.forEach(sanitizedName => {
+                    const [codigo, desc] = unSanitizeFieldName(sanitizedName).split(';');
+                    const serie = allLoadedItemsData[sanitizedName];
+                    tableBody.innerHTML += `<tr><td>${codigo||''}</td><td>${desc||''}</td><td>${serie||''}</td></tr>`;
+                });
+            } else {
+                 tableBody.innerHTML = `<tr><td colspan="3" style="text-align: center;">No hay ítems en esta caja.</td></tr>`;
+            }
+        }
+
+        const template = document.getElementById('pdf-template');
+        
+        if (template && typeof html2canvas === 'function' && typeof window.jspdf === 'object') {
+            html2canvas(template, { scale: 2, useCORS: true })
+                .then(canvas => {
+                    try {
+                        const { jsPDF } = window.jspdf;
+                        const pdf = new jsPDF('p', 'mm', 'a4');
+                        const pdfWidth = pdf.internal.pageSize.getWidth();
+                        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+                        
+                        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 10, 10, pdfWidth - 20, pdfHeight - 20);
+                        pdf.save(`Reporte_Caja_${currentSelectedSerialNumber}.pdf`);
+
+                    } catch (pdfError) {
+                        console.error('Error durante la creación del PDF:', pdfError);
+                        showNotification('Error al crear el PDF.', 'error');
+                    }
+                })
+                .catch(err => {
+                    console.error('Error de html2canvas:', err);
+                    showNotification('Error al generar la imagen para el PDF.', 'error');
+                });
+        } else {
+            showNotification('Error: Faltan componentes para generar el PDF.', 'error');
+        }
+
+        if (prestamoModal) prestamoModal.style.display = 'none';
+        if (prestamoInput) prestamoInput.value = '';
     };
-    const closeEditModal = () => {
-        editSerialModal.style.display = 'none';
-        currentEditingItemOriginalName = null;
-    };
-    const openDeleteModal = (sanitizedFieldName, originalItemName) => {
-        itemToDelete = { sanitized: sanitizedFieldName, original: originalItemName };
-        deleteModalText.textContent = `¿Estás seguro de que deseas eliminar "${originalItemName}"?`;
-        deleteConfirmModal.style.display = 'flex';
-    };
-    const closeDeleteModal = () => {
-        deleteConfirmModal.style.display = 'none';
-        itemToDelete = null;
-    };
-    // --- Listeners de Eventos ---
-    addItemBtn.addEventListener('click', addNewItemRow);
-    searchInput.addEventListener('input', () => renderFilteredItems(allLoadedItemsData, searchInput.value));
-    cancelEditBtn.addEventListener('click', closeEditModal);
-    confirmEditBtn.addEventListener('click', confirmEdit);
-    cancelDeleteBtn.addEventListener('click', closeDeleteModal);
-    confirmDeleteBtn.addEventListener('click', executeDelete);
-    backBtn.addEventListener('click', () => {
-        const urlParams = new URLSearchParams(window.location.search);
-        const modelName = urlParams.get('modelName');
-        const zonaName = urlParams.get('zonaName');
-        if (modelName && zonaName) {
-            window.location.href = `numeros-de-serie.html?modelName=${encodeURIComponent(modelName)}&zonaName=${encodeURIComponent(zonaName)}`;
-        } else { window.history.back(); }
-    });
-    logoutBtn.addEventListener('click', () => { signOut(auth).then(() => window.location.href = 'login.html'); });
+
+    if (searchInput) searchInput.addEventListener('input', () => renderFilteredItems(allLoadedItemsData, searchInput.value));
+    if (addItemBtn) addItemBtn.addEventListener('click', addNewItemRow);
+    if (downloadPdfBtn) downloadPdfBtn.addEventListener('click', () => { if (tipoReporteModal) tipoReporteModal.style.display = 'flex'; });
+    
+    if (btnEntrada) btnEntrada.addEventListener('click', () => { if(tipoReporteModal) tipoReporteModal.style.display = 'none'; generarPDF('Entrada'); });
+    if (btnSalida) btnSalida.addEventListener('click', () => { if (tipoReporteModal) tipoReporteModal.style.display = 'none'; if (prestamoModal) prestamoModal.style.display = 'flex'; if (prestamoInput) prestamoInput.focus(); });
+    if (confirmPrestamoBtn) confirmPrestamoBtn.addEventListener('click', () => { const num = prestamoInput.value.trim(); if (num) generarPDF('Salida', num); else showNotification("Por favor, ingresa un número de préstamo.", "error"); });
+    if (cancelPrestamoBtn) cancelPrestamoBtn.addEventListener('click', () => { if (prestamoModal) prestamoModal.style.display = 'none'; });
+    if (cancelEditBtn) cancelEditBtn.addEventListener('click', () => { if (editSerialModal) editSerialModal.style.display = 'none'; });
+    if (cancelDeleteBtn) cancelDeleteBtn.addEventListener('click', () => { if (deleteConfirmModal) deleteConfirmModal.style.display = 'none'; });
+    
+    if (backBtn) backBtn.addEventListener('click', () => window.history.back());
+    if (logoutBtn) logoutBtn.addEventListener('click', () => signOut(auth).then(() => { if (unsubscribeFromItems) unsubscribeFromItems(); window.location.href = 'login.html'; }));
 });
