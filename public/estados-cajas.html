@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modelos de Cajas | Sistema de Trazabilidad</title>
+    <link rel="icon" href="assets/logo.png" type="image/png">
+    <style>
+        body { font-family: 'Inter', Arial, sans-serif; margin: 0; min-height: 100vh; display: flex; flex-direction: column; background: linear-gradient(135deg, #6e8efb, #a777e3); color: #2c3e50; }
+        .app-header { background-color: rgba(255, 255, 255, 0.9); backdrop-filter: blur(5px); padding: 10px 25px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); }
+        .header-left, .user-info { display: flex; align-items: center; gap: 15px; }
+        .user-display-name { font-weight: 500; }
+        .logout-btn { background-color: #dc3545; color: white; padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer; }
+        .btn-back { background-color: #f0f4f8; color: #4285F4; padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 5px;}
+        .main-content { flex-grow: 1; display: flex; flex-direction: column; align-items: center; padding: 30px 20px; max-width: 800px; width: 90%; margin: 0 auto; }
+        .title-card { background-color: white; padding: 20px 30px; border-radius: 12px; box-shadow: 0 6px 15px rgba(0,0,0,0.1); text-align: center; width: 100%; margin-bottom: 25px; }
+        .title-card h1 { color: #4285F4; margin: 0; }
+        .list-container { background-color: white; padding: 20px; border-radius: 12px; box-shadow: 0 6px 15px rgba(0,0,0,0.1); width: 100%; }
+        .item-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; }
+        .list-item { background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 15px 20px; font-size: 1.1em; font-weight: 500; cursor: pointer; transition: all 0.2s ease; }
+        .list-item:hover { background-color: #e9ecef; transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+    </style>
+</head>
+<body>
+    <header class="app-header">
+        <div class="header-left">
+            <a href="gestion-caja.html" class="btn-back">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M19 12H5"></path><path d="M12 19l-7-7 7-7"></path></svg>
+                Gestión de Cajas
+            </a>
+        </div>
+        <div class="user-info">
+            <span id="user-display-name">Cargando...</span>
+            <button id="logout-btn" class="logout-btn">Cerrar sesión</button>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div class="title-card">
+            <h1>Todos los Modelos de Cajas</h1>
+        </div>
+        <div class="list-container">
+            <div id="loading-state"><p>Cargando modelos...</p></div>
+            <ul id="modelos-list" class="item-list" style="display: none;">
+                </ul>
+        </div>
+    </main>
+
+    <script type="module" src="js/estados-cajas.js"></script>
+</body>
+</html>

@@ -1,9 +1,6 @@
-// public/js/lista-historial.js
-
 import { auth, db, onAuthStateChanged, signOut, doc, getDoc, collection, query, orderBy, getDocs, where } from './firebase-config.js';
 
 document.addEventListener('DOMContentLoaded', () => {
-    // --- Elementos del DOM ---
     const userDisplayNameElement = document.getElementById('user-display-name');
     const logoutBtn = document.getElementById('logout-btn');
     const backBtn = document.getElementById('back-btn');
@@ -21,113 +18,109 @@ document.addEventListener('DOMContentLoaded', () => {
     let allHistoryItems = [];
 
     const showState = (state) => {
-        loadingState.style.display = 'none';
-        emptyState.style.display = 'none';
-        historyTableContainer.style.display = 'none';
+        if(loadingState) loadingState.style.display = 'none';
+        if(emptyState) emptyState.style.display = 'none';
+        if(historyTableContainer) historyTableContainer.style.display = 'none';
         if(state) state.style.display = 'block';
     };
 
     onAuthStateChanged(auth, async (user) => {
-        if (user) {
-            try {
-                const userDocRef = doc(db, "users", user.uid);
-                const userDocSnap = await getDoc(userDocRef);
-                userDisplayNameElement.textContent = userDocSnap.exists() ? userDocSnap.data().name : user.email;
-                loadHistoryData();
-            } catch (error) {
-                console.error("Error al cargar datos de usuario:", error);
-            }
-        } else {
+        if (user && userDisplayNameElement) {
+            const userDoc = await getDoc(doc(db, "users", user.uid));
+            userDisplayNameElement.textContent = userDoc.exists() ? userDoc.data().name : user.email;
+            loadHistoryData();
+        } else if (!user) {
             window.location.href = 'login.html';
         }
     });
     
-    const loadHistoryData = async (filters = {}) => {
+    const loadHistoryData = async () => {
         showState(loadingState);
         try {
             const historyRef = collection(db, "historial");
-            let q = query(historyRef, orderBy("timestamp", "desc"));
-
-            if (filters.startDate) {
-                q = query(q, where("timestamp", ">=", filters.startDate));
-            }
-            if (filters.endDate) {
-                const endOfDay = new Date(filters.endDate);
-                endOfDay.setHours(23, 59, 59, 999);
-                q = query(q, where("timestamp", "<=", endOfDay));
-            }
-
+            const q = query(historyRef, orderBy("timestamp", "desc"));
             const querySnapshot = await getDocs(q);
-            allHistoryItems = querySnapshot.docs.map(doc => doc.data());
-            renderHistory(allHistoryItems);
 
+            allHistoryItems = querySnapshot.docs.map(doc => doc.data());
+            applyFiltersAndRender();
         } catch (error) {
             console.error("Error al obtener el historial:", error);
             showState(emptyState);
         }
     };
 
-    // ===== FUNCIÓN MODIFICADA PARA RENDERIZAR EN TABLA =====
-    const renderHistory = (items) => {
+    const applyFiltersAndRender = () => {
+        const startDate = startDateInput.value ? new Date(startDateInput.value) : null;
+        const endDate = endDateInput.value ? new Date(endDateInput.value) : null;
         const searchTerm = searchInput.value.toLowerCase();
-        const filteredItems = items.filter(item => {
-            const user = item.usuarioNombre.toLowerCase();
-            const action = item.accion.toLowerCase();
-            const message = item.detalles.mensaje.toLowerCase();
-            return user.includes(searchTerm) || action.includes(searchTerm) || message.includes(searchTerm);
+
+        if (startDate) startDate.setHours(0, 0, 0, 0);
+        if (endDate) endDate.setHours(23, 59, 59, 999);
+
+        const filteredItems = allHistoryItems.filter(item => {
+            // Filtro por fecha
+            if (item.timestamp) {
+                const itemDate = item.timestamp.toDate();
+                if (startDate && itemDate < startDate) return false;
+                if (endDate && itemDate > endDate) return false;
+            }
+
+            // Filtro por término de búsqueda
+            const user = (item.usuarioNombre || '').toLowerCase();
+            const action = (item.accion || '').toLowerCase();
+            // ===== CORRECCIÓN AQUÍ =====
+            // Se usa el operador 'optional chaining' (?.) para leer 'mensaje' de forma segura.
+            const message = (item.detalles?.mensaje || '').toLowerCase();
+            
+            if (searchTerm && !(user.includes(searchTerm) || action.includes(searchTerm) || message.includes(searchTerm))) {
+                return false;
+            }
+            
+            return true;
         });
 
-        if (filteredItems.length === 0) {
+        renderHistory(filteredItems);
+    };
+
+    const renderHistory = (items) => {
+        if (items.length === 0) {
             showState(emptyState);
             return;
         }
 
-        historyTbody.innerHTML = ''; // Limpiar el cuerpo de la tabla
+        if(historyTbody) historyTbody.innerHTML = '';
         
-        filteredItems.forEach(item => {
+        items.forEach(item => {
             const row = document.createElement('tr');
             const date = item.timestamp ? item.timestamp.toDate().toLocaleString('es-AR') : 'N/A';
+            
+            // ===== CORRECCIÓN AQUÍ =====
+            // Si item.detalles.mensaje no existe, muestra 'Sin detalles'.
+            const detalleMensaje = item.detalles?.mensaje || 'Sin detalles';
 
             row.innerHTML = `
                 <td>${date}</td>
-                <td>${item.usuarioNombre || item.usuarioEmail}</td>
-                <td>${item.accion}</td>
-                <td>${item.detalles.mensaje}</td>
+                <td>${item.usuarioNombre || item.usuarioEmail || 'N/A'}</td>
+                <td>${item.accion || 'N/A'}</td>
+                <td>${detalleMensaje}</td>
             `;
-            historyTbody.appendChild(row);
-});
+            if(historyTbody) historyTbody.appendChild(row);
+        });
 
         showState(historyTableContainer);
     };
 
-    filterBtn.addEventListener('click', () => {
-        const filters = {};
-        if (startDateInput.value) filters.startDate = new Date(startDateInput.value);
-        if (endDateInput.value) filters.endDate = new Date(endDateInput.value);
-        loadHistoryData(filters);
-    });
-
-    clearFilterBtn.addEventListener('click', () => {
-        searchInput.value = '';
-        startDateInput.value = '';
-        endDateInput.value = '';
-        loadHistoryData();
-    });
-    
-    searchInput.addEventListener('input', () => {
-        renderHistory(allHistoryItems);
-    });
-
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', async () => {
-            await signOut(auth);
-            window.location.href = 'login.html';
+    if(filterBtn) filterBtn.addEventListener('click', applyFiltersAndRender);
+    if(clearFilterBtn) {
+        clearFilterBtn.addEventListener('click', () => {
+            if(searchInput) searchInput.value = '';
+            if(startDateInput) startDateInput.value = '';
+            if(endDateInput) endDateInput.value = '';
+            applyFiltersAndRender();
         });
     }
+    if(searchInput) searchInput.addEventListener('input', applyFiltersAndRender);
 
-    if (backBtn) {
-        backBtn.addEventListener('click', () => {
-            window.location.href = 'menu.html';
-        });
-    }
+    if (backBtn) backBtn.addEventListener('click', () => { window.location.href = 'menu.html'; });
+    if (logoutBtn) logoutBtn.addEventListener('click', () => signOut(auth));
 });

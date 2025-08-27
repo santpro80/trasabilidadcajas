@@ -1,57 +1,62 @@
-// public/js/modelos-de-cajas.js
-
 import {
     db,
     auth,
     onAuthStateChanged,
     signOut,
     collection,
-    getDocs
+    getDocs,
+    doc,
+    getDoc
 } from './firebase-config.js';
 
 document.addEventListener('DOMContentLoaded', () => {
-    // --- Elementos del DOM ---
     const modelosList = document.getElementById('modelos-list');
-    const userDisplayElement = document.getElementById('user-email'); 
+    const userDisplayElement = document.getElementById('user-email');
     const backBtn = document.getElementById('back-btn');
     const logoutBtn = document.getElementById('logout-btn');
     const loadingState = document.getElementById('loading-state');
     const errorState = document.getElementById('error-state');
     const emptyState = document.getElementById('empty-state');
 
-    // --- Lógica de Autenticación ---
-    onAuthStateChanged(auth, (user) => {
+    onAuthStateChanged(auth, async (user) => {
         if (!user) {
             window.location.href = 'login.html';
             return;
         }
+
         if (userDisplayElement) {
-            userDisplayElement.textContent = user.displayName || user.email;
+            try {
+                const userDocRef = doc(db, "users", user.uid);
+                const userDocSnap = await getDoc(userDocRef);
+                userDisplayElement.textContent = userDocSnap.exists() ? userDocSnap.data().name : user.email;
+            } catch (error) {
+                console.error("Error al obtener datos del usuario:", error);
+                userDisplayElement.textContent = user.email;
+            }
         }
-        loadZonas(); 
+
+        loadZonas();
     });
 
-    // --- Función para mostrar el estado correcto (Cargando, Lista, Error) ---
     const showState = (stateElement) => {
         if (loadingState) loadingState.style.display = 'none';
         if (errorState) errorState.style.display = 'none';
         if (emptyState) emptyState.style.display = 'none';
         if (modelosList) modelosList.style.display = 'none';
-        
+
         if (stateElement) {
             stateElement.style.display = 'block';
         }
     };
 
-    // --- Función para Cargar y Mostrar las Zonas ---
     const loadZonas = async () => {
-        showState(loadingState); // Mostrar "Cargando..."
+        showState(loadingState);
         try {
             const querySnapshot = await getDocs(collection(db, "Cajas"));
-            modelosList.innerHTML = ''; 
+            if (modelosList) modelosList.innerHTML = '';
 
             if (querySnapshot.empty) {
-                showState(emptyState); // Mostrar mensaje de que no hay modelos
+                showState(emptyState);
                 return;
             }
 
@@ -61,7 +66,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 listItem.className = 'list-item';
                 listItem.textContent = zonaName;
 
-                // Al hacer clic, enviamos el nombre de la zona como parámetro 'zonaName'
                 listItem.addEventListener('click', () => {
                     window.location.href = `modelado-caja.html?zonaName=${encodeURIComponent(zonaName)}`;
                 });
@@ -69,18 +73,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 modelosList.appendChild(listItem);
             });
 
-            showState(modelosList); // Mostrar la lista de modelos cargada
+            showState(modelosList);
 
         } catch (error) {
             console.error("Error al cargar las zonas:", error);
-            showState(errorState); // Mostrar mensaje de error
+            showState(errorState);
         }
     };
 
-    // --- Lógica de Navegación ---
     if (backBtn) {
+        // La corrección está aquí: se usa '=>' en lugar de '->'
         backBtn.addEventListener('click', () => {
-            window.location.href = 'menu.html';
+            window.location.href = 'gestion-caja.html';
         });
     }
 

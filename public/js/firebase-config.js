@@ -1,36 +1,13 @@
-// public/js/firebase-config.js
-
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
 import { 
-    getAuth, 
-    onAuthStateChanged, 
-    signOut, 
-    signInWithEmailAndPassword,
-    createUserWithEmailAndPassword,
-    updatePassword,
-    reauthenticateWithCredential,
-    EmailAuthProvider
+    getAuth, onAuthStateChanged, signOut, signInWithEmailAndPassword,
+    createUserWithEmailAndPassword, updatePassword, reauthenticateWithCredential, EmailAuthProvider
 } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
 import { 
-    getFirestore, 
-    doc, 
-    getDoc, 
-    setDoc,
-    updateDoc,
-    arrayUnion,
-    deleteField,
-    deleteDoc,
-    collection,
-    query,
-    orderBy,
-    onSnapshot,
-    getDocs,
-    addDoc,
-    serverTimestamp,
-    where // <-- AÑADIDO AQUÍ
+    getFirestore, doc, getDoc, setDoc, updateDoc, deleteField,
+    deleteDoc, collection, query, orderBy, onSnapshot, getDocs, addDoc, serverTimestamp, where
 } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
-// Configuración de tu proyecto
 const firebaseConfig = {
     apiKey: "AIzaSyBtj9fa0St2IMZgo4jfNPsz_3EMVtioyGU",
     authDomain: "cajas-secuela.firebaseapp.com",
@@ -46,26 +23,32 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 export const registrarHistorial = async (accion, detalles) => {
+    // ===== MENSAJES DE DIAGNÓSTICO AQUÍ =====
+    console.log("--- Función registrarHistorial ejecutada ---");
+    console.log("Acción recibida:", accion);
+    console.log("Detalles recibidos:", detalles);
+    // ===========================================
+
     try {
         const user = auth.currentUser;
         if (!user) {
             console.log("No hay usuario autenticado para registrar el historial.");
             return;
         }
-
         const userDocRef = doc(db, "users", user.uid);
         const userDocSnap = await getDoc(userDocRef);
         const userName = userDocSnap.exists() ? userDocSnap.data().name : user.email;
-
         const historialDoc = {
             timestamp: serverTimestamp(),
             usuarioEmail: user.email,
             usuarioNombre: userName,
             accion: accion,
-            detalles: detalles
+            detalles: detalles // Aquí se guarda el objeto completo de detalles
         };
 
+        console.log("Documento que se guardará en Firestore:", historialDoc);
         await addDoc(collection(db, "historial"), historialDoc);
+        console.log("--- Historial guardado con éxito ---");
 
     } catch (error) {
         console.error("Error al registrar en el historial:", error);
@@ -73,27 +56,8 @@ export const registrarHistorial = async (accion, detalles) => {
 };
 
 export { 
-    app, 
-    auth, 
-    db,
-    onAuthStateChanged,
-    signOut,
-    signInWithEmailAndPassword,
-    createUserWithEmailAndPassword,
-    updatePassword,
-    reauthenticateWithCredential,
-    EmailAuthProvider,
-    doc,
-    getDoc,
-    setDoc,
-    updateDoc,
-    arrayUnion,
-    deleteField,
-    deleteDoc,
-    collection,
-    query,
-    orderBy,
-    onSnapshot,
-    getDocs,
-    where // <-- AÑADIDO AQUÍ
+    app, auth, db, onAuthStateChanged, signOut, signInWithEmailAndPassword,
+    createUserWithEmailAndPassword, updatePassword, reauthenticateWithCredential,
+    EmailAuthProvider, doc, getDoc, setDoc, updateDoc, deleteField, deleteDoc,
+    collection, query, orderBy, onSnapshot, getDocs, where, serverTimestamp
 };
