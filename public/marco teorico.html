@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Apuntes de HTML</title>
+</head>
+<body>
+
+    <h1>Marco Teórico de HTML</h1>
+
+    <h2>¿Qué es HTML?</h2>
+    <p>
+        Imagina que estás construyendo una casa. Necesitas un esqueleto, unos cimientos, paredes, un techo... Esa estructura básica es el <strong>HTML</strong> de una página web.
+    </p>
+    <ul>
+        <li><strong>HTML</strong> son las siglas de <strong>H</strong>yper<strong>T</strong>ext <strong>M</strong>arkup <strong>L</strong>anguage (Lenguaje de Marcado de Hipertexto).</li>
+        <li><strong>No es un lenguaje de programación.</strong> No puedes hacer cálculos matemáticos ni lógica compleja con él.</li>
+        <li><strong>Es un lenguaje de "marcado".</strong> Su único trabajo es describir y dar estructura al contenido de una página web. Le dice al navegador: "esto es un título", "esto es un párrafo", "esto es una imagen", etc.</li>
+    </ul>
+
+    <h2>¿Cómo funciona? Las Etiquetas (Tags)</h2>
+    <p>
+        HTML funciona a través de "etiquetas" (en inglés, <em>tags</em>). Las etiquetas son como comandos que le das al navegador, y se escriben entre corchetes angulares (<code>&lt;</code> y <code>&gt;</code>).
+    </p>
+    <p>La mayoría de las etiquetas vienen en pares:</p>
+    <ol>
+        <li>Una <strong>etiqueta de apertura</strong>: <code>&lt;p&gt;</code> (le dice al navegador: "aquí empieza un párrafo").</li>
+        <li>Una <strong>etiqueta de cierre</strong>: <code>&lt;/p&gt;</code> (le dice al navegador: "aquí termina el párrafo").</li>
+    </ol>
+    <p>El contenido va en medio de las dos: <code>&lt;p&gt;Este es el texto de mi párrafo.&lt;/p&gt;</code></p>
+
+    <h2>La Estructura Básica de TODA página HTML</h2>
+    <p>Cualquier archivo HTML profesional tiene esta estructura mínima. Es como el ADN de una página web:</p>
+    
+    <pre><code>
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+  &lt;head&gt;
+    &lt;!-- Aquí va información para el navegador (no se ve en la página) --&gt;
+  &lt;/head&gt;
+  &lt;body&gt;
+    &lt;!-- Aquí va TODO el contenido que el usuario SÍ ve --&gt;
+  &lt;/body&gt;
+&lt;/html&gt;
+    </code></pre>
+
+    <ul>
+        <li><code>&lt;!DOCTYPE html&gt;</code>: Es la primera línea. Le dice al navegador "Oye, este es un documento HTML5 moderno".</li>
+        <li><code>&lt;html&gt;</code>: Es la etiqueta raíz. Todo lo demás vive dentro de ella.</li>
+        <li><code>&lt;head&gt;</code> (Cabeza): Contiene información "invisible" para el usuario, como el título que aparece en la pestaña del navegador.</li>
+        <li><code>&lt;body&gt;</code> (Cuerpo): Es la parte más importante. <strong>Todo lo que quieras que el usuario vea</strong> (texto, imágenes, botones, formularios) debe ir aquí dentro.</li>
+    </ul>
+
+</body>
+</html>

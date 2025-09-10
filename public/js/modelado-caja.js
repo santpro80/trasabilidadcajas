@@ -14,6 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const userDisplayName = document.getElementById('user-display-name');
     const backBtn = document.getElementById('back-btn');
     const logoutBtn = document.getElementById('logout-btn');
+    const menuBtn = document.getElementById('menu-btn');
     const loadingState = document.getElementById('loading-state');
     const errorState = document.getElementById('error-state');
     const emptyState = document.getElementById('empty-state');
@@ -120,6 +121,12 @@ document.addEventListener('DOMContentLoaded', () => {
         logoutBtn.addEventListener('click', async () => {
             await signOut(auth);
             window.location.href = 'login.html';
+        });
+    }
+
+    if (menuBtn) {
+        menuBtn.addEventListener('click', () => {
+            window.location.href = 'menu.html';
         });
     }
 });

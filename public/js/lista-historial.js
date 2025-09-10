@@ -92,7 +92,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         items.forEach(item => {
             const row = document.createElement('tr');
-            const date = item.timestamp ? item.timestamp.toDate().toLocaleString('es-AR') : 'N/A';
+            const date = item.timestamp ? item.timestamp.toDate().toLocaleString('es-AR', { hour12: false }) : 'N/A';
             
             // ===== CORRECCIÓN AQUÍ =====
             // Si item.detalles.mensaje no existe, muestra 'Sin detalles'.

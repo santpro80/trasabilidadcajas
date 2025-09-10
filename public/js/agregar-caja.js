@@ -245,7 +245,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     messageDiv.style.color = "red";
                 }
                 return;
-            }
+            }   
             if (errorInDynamicRow) {
                 if(messageDiv) {
                     messageDiv.textContent = "Completa todas las opciones o campos manuales de los ítems nuevos.";
