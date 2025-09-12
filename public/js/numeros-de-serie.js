@@ -14,6 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const backBtn = document.getElementById('back-btn');
     const logoutBtn = document.getElementById('logout-btn');
     const userDisplayName = document.getElementById('user-display-name');
+    const menuBtn = document.getElementById('menu-btn');
     const loadingState = document.getElementById('loading-state');
     const errorState = document.getElementById('error-state');
     const emptyState = document.getElementById('empty-state');
@@ -203,6 +204,10 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     backBtn.addEventListener('click', () => {
         window.location.href = `modelado-caja.html?zonaName=${encodeURIComponent(currentZonaName)}`;
+    });
+
+    menuBtn.addEventListener('click', () => {
+        window.location.href = 'menu.html';
     });
     logoutBtn.addEventListener('click', async () => {
         await signOut(auth);
