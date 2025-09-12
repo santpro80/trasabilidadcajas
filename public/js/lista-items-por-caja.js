@@ -135,13 +135,18 @@ document.addEventListener('DOMContentLoaded', () => {
             const [itemCode, description] = originalItemName.split(';');
             const serialDisplay = (itemValue === 'REEMPLAZAR') ? `<span style="color: #dc3545; font-weight: bold;">${itemValue}</span>` : itemValue;
             listItem.innerHTML = `
-                <div class="item-main-details-container">
-                    <div class="item-detail-group"><span class="item-label">Código:</span><span class="item-value-text">${itemCode || ''}</span></div>
-                    <div class="item-detail-group"><span class="item-label">Descripción:</span><span class="item-value-text">${description || ''}</span></div>
-                    <div class="item-detail-group"><span class="item-label">N° de Serie:</span><span class="item-value-text">${serialDisplay}</span></div>
-                </div>
-                <button class="btn-delete-item" title="Eliminar ítem"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>`;
-            listItem.querySelector('.item-main-details-container').addEventListener('click', () => openEditModal(originalItemName, itemValue));
+                <div class="item-cell code">${itemCode || ''}</div>
+                <div class="item-cell desc">${description || ''}</div>
+                <div class="item-cell serial">${serialDisplay}</div>
+                <div class="item-cell action">
+                    <button class="btn-delete-item" title="Eliminar ítem"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
+                </div>`;
+            
+            // Add click event to all cells except the action cell to open the edit modal
+            listItem.querySelectorAll('.item-cell:not(.action)').forEach(cell => {
+                cell.addEventListener('click', () => openEditModal(originalItemName, itemValue));
+            });
+
             listItem.querySelector('.btn-delete-item').addEventListener('click', (e) => {
                 e.stopPropagation();
                 openDeleteModal(sanitizedName, originalItemName);

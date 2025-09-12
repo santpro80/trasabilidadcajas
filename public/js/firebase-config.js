@@ -59,5 +59,5 @@ export {
     app, auth, db, onAuthStateChanged, signOut, signInWithEmailAndPassword,
     createUserWithEmailAndPassword, updatePassword, reauthenticateWithCredential,
     EmailAuthProvider, doc, getDoc, setDoc, updateDoc, deleteField, deleteDoc,
-    collection, query, orderBy, onSnapshot, getDocs, where, serverTimestamp
+    collection, query, orderBy, onSnapshot, getDocs, where, serverTimestamp, addDoc
 };
