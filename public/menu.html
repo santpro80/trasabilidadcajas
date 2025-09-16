@@ -104,6 +104,16 @@
                             <span>Historial</span>
                         </button>
                     </li>
+                    <li id="li-informe-diario" style="display: none;">
+                        <button id="btn-informe-diario">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                <line x1="12" y1="8" x2="12" y2="16"></line>
+                                <line x1="8" y1="12" x2="16" y2="12"></line>
+                            </svg>
+                            <span>Informe Diario</span>
+                        </button>
+                    </li>
                     <li>
                         <button id="btn-cuenta">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -175,6 +185,7 @@
         const logoutBtn = document.getElementById('logout-btn');
         const btnCajas = document.getElementById('btn-cajas');
         const btnHistorial = document.getElementById('btn-historial');
+        const btnInformeDiario = document.getElementById('btn-informe-diario');
         const btnCuenta = document.getElementById('btn-cuenta');
         const btnImportarDatos = document.getElementById('btn-importar-datos');
         const btnRegistrarUsuario = document.getElementById('btn-registrar-usuario');
@@ -192,6 +203,7 @@
 
         const manageMenuVisibility = (role) => {
             const liHistorial = document.getElementById('li-historial');
+            const liInformeDiario = document.getElementById('li-informe-diario');
             const liImportarDatos = document.getElementById('li-importar-datos');
             const liRegistrarUsuario = document.getElementById('li-registrar-usuario');
             const liVerOpiniones = document.getElementById('li-ver-opiniones');
@@ -201,6 +213,7 @@
 
             // Supervisor-only buttons
             if (liHistorial) liHistorial.style.display = isSupervisor ? 'list-item' : 'none';
+            if (liInformeDiario) liInformeDiario.style.display = isSupervisor ? 'list-item' : 'none';
             if (liImportarDatos) liImportarDatos.style.display = isSupervisor ? 'list-item' : 'none';
             if (liRegistrarUsuario) liRegistrarUsuario.style.display = isSupervisor ? 'list-item' : 'none';
             if (liVerOpiniones) liVerOpiniones.style.display = isSupervisor ? 'list-item' : 'none';
@@ -293,6 +306,7 @@
 
         btnCajas?.addEventListener('click', () => { window.location.href = 'modelos-de-cajas.html'; });
         btnHistorial?.addEventListener('click', () => { window.location.href = 'lista-historial.html'; });
+        btnInformeDiario?.addEventListener('click', () => { window.location.href = 'informe-diario.html'; });
         btnCuenta?.addEventListener('click', () => { window.location.href = 'cuenta.html'; });
         btnImportarDatos?.addEventListener('click', () => { window.location.href = 'redir-import.html'; });
         btnRegistrarUsuario?.addEventListener('click', () => { window.location.href = 'register.html'; });

@@ -1,4 +1,4 @@
-import { auth, db, onAuthStateChanged, signOut, doc, getDoc, collection, query, getDocs, orderBy } from './firebase-config.js';
+import { auth, db, onAuthStateChanged, signOut, doc, getDoc, collection, query, getDocs, orderBy, addDoc, serverTimestamp } from './firebase-config.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     const userDisplayNameElement = document.getElementById('user-display-name');
@@ -7,6 +7,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const opinionsList = document.getElementById('opinionsList');
     const loadingState = document.getElementById('loading-state');
     const emptyState = document.getElementById('empty-state');
+    const opinionTemplate = document.getElementById('opinion-template');
+    const replyTemplate = document.getElementById('reply-template');
+
+    let currentUser = null;
 
     onAuthStateChanged(auth, async (user) => {
         if (user) {
@@ -16,10 +20,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (userDocSnap.exists()) {
                     const userData = userDocSnap.data();
-                    if (userDisplayNameElement) userDisplayNameElement.textContent = userData.name || user.email;
+                    currentUser = { uid: user.uid, ...userData };
+                    if (userDisplayNameElement) userDisplayNameElement.textContent = currentUser.name || user.email;
                     
-                    // Security check: Only supervisors can see this page
-                    if (userData.role !== 'supervisor') {
+                    if (currentUser.role !== 'supervisor') {
                         console.warn('Acceso denegado. El usuario no es supervisor.');
                         window.location.href = 'menu.html';
                         return;
@@ -28,7 +32,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     loadOpinions();
 
                 } else {
-                    // If user has no document, they are treated as operator, deny access
                     console.warn('Acceso denegado. Perfil de usuario no encontrado.');
                     window.location.href = 'menu.html';
                 }
@@ -58,22 +61,47 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             opinionsList.innerHTML = '';
-            querySnapshot.forEach(doc => {
-                const opinion = doc.data();
-                const li = document.createElement('li');
-                li.className = 'opinion-item';
+            for (const opinionDoc of querySnapshot.docs) {
+                const opinion = opinionDoc.data();
+                const opinionId = opinionDoc.id;
 
-                const date = opinion.fecha ? opinion.fecha.toDate().toLocaleString('es-AR') : 'Fecha no disponible';
+                const opinionItem = opinionTemplate.content.cloneNode(true).querySelector('.opinion-item');
 
-                li.innerHTML = `
-                    <div class="opinion-header">
-                        <span class="opinion-user">${opinion.userName || 'Usuario desconocido'}</span>
-                        <span class="opinion-date">${date}</span>
-                    </div>
-                    <p class="opinion-body">${opinion.opinion}</p>
-                `;
-                opinionsList.appendChild(li);
-            });
+                opinionItem.querySelector('.opinion-user').textContent = opinion.userName || 'Usuario desconocido';
+                opinionItem.querySelector('.opinion-date').textContent = opinion.fecha ? opinion.fecha.toDate().toLocaleString('es-AR') : 'Fecha no disponible';
+                opinionItem.querySelector('.opinion-body').textContent = opinion.opinion;
+
+                // Cargar respuestas
+                const repliesList = opinionItem.querySelector('.replies-list');
+                const repliesRef = collection(db, 'opiniones', opinionId, 'respuestas');
+                const repliesQuery = query(repliesRef, orderBy('fecha', 'asc'));
+                const repliesSnapshot = await getDocs(repliesQuery);
+
+                repliesSnapshot.forEach(replyDoc => {
+                    const reply = replyDoc.data();
+                    const replyItem = replyTemplate.content.cloneNode(true).querySelector('.reply-item');
+                    replyItem.querySelector('.reply-user').textContent = reply.userName || 'Supervisor';
+                    replyItem.querySelector('.reply-date').textContent = reply.fecha ? reply.fecha.toDate().toLocaleString('es-AR') : '';
+                    replyItem.querySelector('.reply-body').textContent = reply.respuesta;
+                    repliesList.appendChild(replyItem);
+                });
+
+                // Configurar formulario de respuesta
+                const replyTextarea = opinionItem.querySelector('.reply-textarea');
+                const btnReply = opinionItem.querySelector('.btn-reply');
+
+                btnReply.addEventListener('click', async () => {
+                    const replyText = replyTextarea.value.trim();
+                    if (replyText) {
+                        await addReply(opinionId, replyText);
+                        replyTextarea.value = '';
+                        // Recargar solo esa opinión para ver la nueva respuesta
+                        loadOpinions(); // Simple reload for now
+                    }
+                });
+
+                opinionsList.appendChild(opinionItem);
+            }
 
             loadingState.style.display = 'none';
             opinionsList.style.display = 'flex';
@@ -81,6 +109,22 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             console.error("Error cargando las opiniones:", error);
             loadingState.textContent = 'Error al cargar las opiniones.';
+        }
+    };
+
+    const addReply = async (opinionId, respuesta) => {
+        if (!currentUser) return;
+
+        try {
+            const repliesRef = collection(db, 'opiniones', opinionId, 'respuestas');
+            await addDoc(repliesRef, {
+                respuesta,
+                fecha: serverTimestamp(),
+                userId: currentUser.uid,
+                userName: currentUser.name
+            });
+        } catch (error) {
+            console.error('Error al agregar la respuesta:', error);
         }
     };
 

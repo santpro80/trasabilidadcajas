@@ -21,6 +21,19 @@
         .opinion-date { font-size: 0.85em; color: #777; }
         .opinion-body { line-height: 1.6; }
         .loading-state, .empty-state { text-align: center; padding: 50px; background-color: #fff; border-radius: 12px; }
+
+        /* Estilos para las respuestas */
+        .replies-container { margin-top: 20px; border-top: 1px solid #f0f0f0; padding-top: 15px; }
+        .replies-list { list-style: none; padding: 0; margin: 0 0 15px 0; }
+        .reply-item { background-color: #f9f9f9; padding: 12px; border-radius: 8px; margin-top: 10px; }
+        .reply-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .reply-user { font-weight: 600; font-size: 0.9em; color: #4285F4; }
+        .reply-date { font-size: 0.8em; color: #888; }
+        .reply-body { font-size: 0.95em; line-height: 1.5; margin: 0; }
+        .reply-form-container { display: flex; gap: 10px; margin-top: 15px; }
+        .reply-textarea { flex-grow: 1; border: 1px solid #ddd; border-radius: 5px; padding: 10px; font-family: inherit; font-size: 0.95em; resize: vertical; min-height: 40px; }
+        .btn-reply { background-color: #4285F4; color: white; border: none; border-radius: 5px; padding: 0 20px; cursor: pointer; font-size: 0.95em; transition: background-color 0.2s; }
+        .btn-reply:hover { background-color: #357ae8; }
     </style>
 </head>
 <body>
@@ -47,6 +60,35 @@
             <div id="empty-state" class="empty-state" style="display: none;">No hay opiniones para mostrar.</div>
             <ul id="opinionsList" class="opinions-list"></ul>
         </div>
+
+        <!-- Template para un item de opinión -->
+        <template id="opinion-template">
+            <li class="opinion-item">
+                <div class="opinion-header">
+                    <span class="opinion-user"></span>
+                    <span class="opinion-date"></span>
+                </div>
+                <p class="opinion-body"></p>
+                <div class="replies-container">
+                    <ul class="replies-list"></ul>
+                    <div class="reply-form-container">
+                        <textarea class="reply-textarea" placeholder="Escribe tu respuesta..."></textarea>
+                        <button class="btn-reply">Responder</button>
+                    </div>
+                </div>
+            </li>
+        </template>
+
+        <!-- Template para un item de respuesta -->
+        <template id="reply-template">
+            <li class="reply-item">
+                <div class="reply-header">
+                    <span class="reply-user"></span>
+                    <span class="reply-date"></span>
+                </div>
+                <p class="reply-body"></p>
+            </li>
+        </template>
     </main>
 
     <script type="module" src="js/ver-opiniones.js"></script>

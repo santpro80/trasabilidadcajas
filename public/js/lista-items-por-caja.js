@@ -1,7 +1,7 @@
 import {
     db, auth, onAuthStateChanged, signOut,
     doc, getDoc, setDoc, updateDoc, deleteField, onSnapshot,
-    registrarHistorial, collection, query, where, getDocs, serverTimestamp
+    registrarHistorial, collection, query, where, getDocs, serverTimestamp, addDoc
 } from './firebase-config.js';
 
 function sanitizeFieldName(name) { return name.replace(/\//g, '_slash_').replace(/\./g, '_dot_').replace(/,/g, '_comma_'); }
@@ -279,6 +279,38 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    const registrarMovimientoCaja = async (tipo, prestamoNum = null) => {
+        try {
+            const user = auth.currentUser;
+            if (!user) {
+                console.error("No hay usuario autenticado para registrar el movimiento de caja.");
+                return; 
+            }
+            const userDocSnap = await getDoc(doc(db, "users", user.uid));
+            const userName = userDocSnap.exists() ? userDocSnap.data().name : user.email;
+            const fecha = new Date().toISOString().split('T')[0]; // Formato YYYY-MM-DD
+
+            const movimientoData = {
+                cajaSerie: currentSelectedSerialNumber,
+                tipo: tipo,
+                fecha: fecha,
+                timestamp: serverTimestamp(),
+                usuarioNombre: userName,
+                usuarioEmail: user.email
+            };
+
+            if (tipo === 'Salida' && prestamoNum) {
+                movimientoData.prestamoNum = prestamoNum;
+            }
+
+            await addDoc(collection(db, "movimientos_cajas"), movimientoData);
+            console.log(`Movimiento de caja '${tipo}' para '${currentSelectedSerialNumber}' registrado.`);
+        } catch (error) {
+            console.error("Error al registrar movimiento de caja:", error);
+            showNotification('Error al registrar el movimiento en el informe diario.', 'error');
+        }
+    };
+
     const generarPDF = (tipo, prestamoNum = null) => {
         if (typeof html2canvas === 'undefined' || typeof window.jspdf === 'undefined') { showNotification("Error: Faltan librerías para PDF.", "error"); return; }
         const template = document.getElementById('pdf-template');
@@ -315,14 +347,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 tableBody.innerHTML += `<tr><td>${codigo||''}</td><td>${desc||''}</td><td>${serie||''}</td></tr>`;
             });
         }
-        html2canvas(template, { scale: 2, useCORS: true }).then(canvas => {
+        html2canvas(template, { scale: 2, useCORS: true }).then(async canvas => {
             const { jsPDF } = window.jspdf;
             const pdf = new jsPDF('p', 'mm', 'a4');
             const pdfWidth = pdf.internal.pageSize.getWidth();
             const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
             pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 10, 10, pdfWidth - 20, pdfHeight > 277 ? 277 : pdfHeight);
             pdf.save(`Reporte_Caja_${currentSelectedSerialNumber}.pdf`);
-        }).catch(err => { showNotification('Error al generar la imagen para el PDF.', 'error'); });
+
+            // Registrar el movimiento después de generar el PDF
+            await registrarMovimientoCaja(tipo, prestamoNum);
+
+        }).catch(err => { 
+            showNotification('Error al generar la imagen para el PDF.', 'error'); 
+            console.error("Error en html2canvas:", err);
+        });
         if (tipoReporteModal) tipoReporteModal.style.display = 'none';
         if (prestamoModal) prestamoModal.style.display = 'none';
         if (prestamoInput) prestamoInput.value = '';
@@ -341,3 +380,4 @@ document.addEventListener('DOMContentLoaded', () => {
     if (logoutBtn) logoutBtn.addEventListener('click', () => signOut(auth).then(() => { if (unsubscribeFromItems) unsubscribeFromItems(); window.location.href = 'login.html'; }));
     if (menuBtn) menuBtn.addEventListener('click', () => { window.location.href = 'menu.html'; });
 });
+
