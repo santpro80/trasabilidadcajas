@@ -129,15 +129,29 @@
             background-color: #e9ecef;
             border-color: #adb5bd;
         }
-        .delete-container {
+        .action-buttons-container {
             flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-register-entry {
+            background-color: #28a745; /* Verde */
+            width: 55px;
+            height: 55px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
         }
+        .btn-register-entry svg {
+            stroke: white;
+        }
         .btn-delete-caja {
             background-color: #dc3545;
-            width: 55px; /* Ancho igual a la altura para ser un círculo perfecto si el padding lo permite */
+            width: 55px; 
             height: 55px;
             border-radius: 8px;
             border: none;

@@ -3,7 +3,8 @@
 import {
     db, auth, onAuthStateChanged, signOut,
     doc, getDoc, deleteDoc, updateDoc,
-    registrarHistorial // <-- Importamos la nueva función
+    registrarHistorial, // <-- Importamos la nueva función
+    registrarMovimientoCaja
 } from './firebase-config.js';
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -99,36 +100,49 @@ document.addEventListener('DOMContentLoaded', () => {
                         const li = document.createElement('li');
                         li.className = 'list-item';
                         
-                        let deleteButtonHtml = '';
+                        let buttonsContainer = document.createElement('div');
+                        buttonsContainer.className = 'action-buttons-container';
+
+                        // Botón de Registrar Entrada (visible para todos)
+                        const registrarBtn = document.createElement('button');
+                        registrarBtn.className = 'btn-register-entry';
+                        registrarBtn.title = 'Registrar Entrada Simple';
+                        registrarBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>`;
+                        registrarBtn.addEventListener('click', async (e) => {
+                            e.stopPropagation();
+                            showNotification(`Registrando entrada para ${serial}...`, 'info');
+                            try {
+                                await registrarMovimientoCaja('Entrada', serial);
+                                showNotification(`Entrada de caja "${serial}" registrada.`, 'success');
+                            } catch (error) {
+                                showNotification(`Error al registrar entrada para "${serial}".`, 'error');
+                            }
+                        });
+                        buttonsContainer.appendChild(registrarBtn);
+
+                        // Botón de Eliminar (solo para supervisores)
                         if (userRole === 'supervisor') {
-                            deleteButtonHtml = `
-                                <div class="delete-container">
-                                    <button class="btn-delete-caja" title="Eliminar caja">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                                    </button>
-                                </div>
-                            `;
+                            const deleteBtn = document.createElement('button');
+                            deleteBtn.className = 'btn-delete-caja';
+                            deleteBtn.title = 'Eliminar caja';
+                            deleteBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
+                            deleteBtn.addEventListener('click', (e) => {
+                                e.stopPropagation();
+                                openDeleteModal(serial);
+                            });
+                            buttonsContainer.appendChild(deleteBtn);
                         }
                         
-                        li.innerHTML = `
-                            <div class="serial-container">
-                                <span class="serial-text">${serial}</span>
-                            </div>
-                            ${deleteButtonHtml}
-                        `;
-                        
-                        li.querySelector('.serial-container').addEventListener('click', () => {
+                        const serialContainer = document.createElement('div');
+                        serialContainer.className = 'serial-container';
+                        serialContainer.innerHTML = `<span class="serial-text">${serial}</span>`;
+                        serialContainer.addEventListener('click', () => {
                             const url = `lista-items-por-caja.html?selectedSerialNumber=${encodeURIComponent(serial)}&modelName=${encodeURIComponent(currentModelName)}&zonaName=${encodeURIComponent(currentZonaName)}`;
                             window.location.href = url;
                         });
-                        
-                        const deleteButton = li.querySelector('.btn-delete-caja');
-                        if (deleteButton) {
-                            deleteButton.addEventListener('click', () => {
-                                openDeleteModal(serial);
-                            });
-                        }
 
+                        li.appendChild(serialContainer);
+                        li.appendChild(buttonsContainer);
                         serialNumbersList.appendChild(li);
                     });
                     showState(serialNumbersList);

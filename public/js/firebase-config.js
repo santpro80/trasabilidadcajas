@@ -55,6 +55,39 @@ export const registrarHistorial = async (accion, detalles) => {
     }
 };
 
+export const registrarMovimientoCaja = async (tipo, cajaSerie, prestamoNum = null) => {
+    try {
+        const user = auth.currentUser;
+        if (!user) {
+            throw new Error("No hay usuario autenticado para registrar el movimiento.");
+        }
+        const userDocSnap = await getDoc(doc(db, "users", user.uid));
+        const userName = userDocSnap.exists() ? userDocSnap.data().name : user.email;
+        const fecha = new Date().toISOString().split('T')[0]; // Formato YYYY-MM-DD
+
+        const movimientoData = {
+            cajaSerie: cajaSerie,
+            tipo: tipo,
+            fecha: fecha,
+            timestamp: serverTimestamp(),
+            usuarioNombre: userName,
+            usuarioEmail: user.email
+        };
+
+        if (tipo === 'Salida' && prestamoNum) {
+            movimientoData.prestamoNum = prestamoNum;
+        }
+
+        await addDoc(collection(db, "movimientos_cajas"), movimientoData);
+        console.log(`Movimiento de caja '${tipo}' para '${cajaSerie}' registrado.`);
+
+    } catch (error) {
+        console.error("Error al registrar movimiento de caja:", error);
+        // Re-lanzamos el error para que la función que llama sepa que algo salió mal
+        throw error;
+    }
+};
+
 export { 
     app, auth, db, onAuthStateChanged, signOut, signInWithEmailAndPassword,
     createUserWithEmailAndPassword, updatePassword, reauthenticateWithCredential,

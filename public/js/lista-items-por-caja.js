@@ -1,7 +1,8 @@
 import {
     db, auth, onAuthStateChanged, signOut,
     doc, getDoc, setDoc, updateDoc, deleteField, onSnapshot,
-    registrarHistorial, collection, query, where, getDocs, serverTimestamp, addDoc
+    registrarHistorial, collection, query, where, getDocs, serverTimestamp, addDoc,
+    registrarMovimientoCaja // <-- IMPORTAMOS LA FUNCIÓN
 } from './firebase-config.js';
 
 function sanitizeFieldName(name) { return name.replace(/\//g, '_slash_').replace(/\./g, '_dot_').replace(/,/g, '_comma_'); }
@@ -279,35 +280,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    const registrarMovimientoCaja = async (tipo, prestamoNum = null) => {
+    const registrarEntradaSimple = async () => {
+        if (tipoReporteModal) tipoReporteModal.style.display = 'none';
+        showNotification('Registrando entrada...', 'info');
         try {
-            const user = auth.currentUser;
-            if (!user) {
-                console.error("No hay usuario autenticado para registrar el movimiento de caja.");
-                return; 
-            }
-            const userDocSnap = await getDoc(doc(db, "users", user.uid));
-            const userName = userDocSnap.exists() ? userDocSnap.data().name : user.email;
-            const fecha = new Date().toISOString().split('T')[0]; // Formato YYYY-MM-DD
-
-            const movimientoData = {
-                cajaSerie: currentSelectedSerialNumber,
-                tipo: tipo,
-                fecha: fecha,
-                timestamp: serverTimestamp(),
-                usuarioNombre: userName,
-                usuarioEmail: user.email
-            };
-
-            if (tipo === 'Salida' && prestamoNum) {
-                movimientoData.prestamoNum = prestamoNum;
-            }
-
-            await addDoc(collection(db, "movimientos_cajas"), movimientoData);
-            console.log(`Movimiento de caja '${tipo}' para '${currentSelectedSerialNumber}' registrado.`);
+            // Usamos la función centralizada, pasando el N° de serie de la caja actual
+            await registrarMovimientoCaja('Entrada', currentSelectedSerialNumber);
+            showNotification('Entrada registrada en el informe diario.', 'success');
         } catch (error) {
-            console.error("Error al registrar movimiento de caja:", error);
-            showNotification('Error al registrar el movimiento en el informe diario.', 'error');
+            showNotification('Error al registrar la entrada.', 'error');
+            // El error ya se loguea en la función central
         }
     };
 
@@ -355,8 +337,8 @@ document.addEventListener('DOMContentLoaded', () => {
             pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 10, 10, pdfWidth - 20, pdfHeight > 277 ? 277 : pdfHeight);
             pdf.save(`Reporte_Caja_${currentSelectedSerialNumber}.pdf`);
 
-            // Registrar el movimiento después de generar el PDF
-            await registrarMovimientoCaja(tipo, prestamoNum);
+            // Registrar el movimiento después de generar el PDF, usando la función centralizada
+            await registrarMovimientoCaja(tipo, currentSelectedSerialNumber, prestamoNum);
 
         }).catch(err => { 
             showNotification('Error al generar la imagen para el PDF.', 'error'); 
@@ -370,7 +352,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (searchInput) searchInput.addEventListener('input', () => renderFilteredItems(allLoadedItemsData, searchInput.value));
     if (addItemBtn) addItemBtn.addEventListener('click', addNewItemRow);
     if (downloadPdfBtn) downloadPdfBtn.addEventListener('click', () => { if (tipoReporteModal) tipoReporteModal.style.display = 'flex'; });
-    if (btnEntrada) btnEntrada.addEventListener('click', () => { if(tipoReporteModal) tipoReporteModal.style.display = 'none'; generarPDF('Entrada'); });
+    if (btnEntrada) btnEntrada.addEventListener('click', registrarEntradaSimple);
     if (btnSalida) btnSalida.addEventListener('click', () => { if (tipoReporteModal) tipoReporteModal.style.display = 'none'; if (prestamoModal) prestamoModal.style.display = 'flex'; if (prestamoInput) prestamoInput.focus(); });
     if (confirmPrestamoBtn) confirmPrestamoBtn.addEventListener('click', () => { const num = prestamoInput.value.trim(); if (num) generarPDF('Salida', num); else showNotification("Por favor, ingresa un número de préstamo.", "error"); });
     if (cancelPrestamoBtn) cancelPrestamoBtn.addEventListener('click', () => { if (prestamoModal) prestamoModal.style.display = 'none'; });
