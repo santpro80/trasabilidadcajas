@@ -2,11 +2,8 @@ import {
     db, auth, onAuthStateChanged, signOut,
     doc, getDoc, setDoc, updateDoc, deleteField, onSnapshot,
     registrarHistorial, collection, query, where, getDocs, serverTimestamp, addDoc,
-    registrarMovimientoCaja // <-- IMPORTAMOS LA FUNCIÓN
+    registrarMovimientoCaja, sanitizeFieldName, unSanitizeFieldName
 } from './firebase-config.js';
-
-function sanitizeFieldName(name) { return name.replace(/\//g, '_slash_').replace(/\./g, '_dot_').replace(/,/g, '_comma_'); }
-function unSanitizeFieldName(name) { return name.replace(/_comma_/g, ',').replace(/_dot_/g, '.').replace(/_slash_/g, '/'); }
 
 let notificationTimeout;
 const showNotification = (message, type = 'success') => {
@@ -285,7 +282,7 @@ document.addEventListener('DOMContentLoaded', () => {
         showNotification('Registrando entrada...', 'info');
         try {
             // Usamos la función centralizada, pasando el N° de serie de la caja actual
-            await registrarMovimientoCaja('Entrada', currentSelectedSerialNumber);
+            await registrarMovimientoCaja('Entrada', currentSelectedSerialNumber, modelName);
             showNotification('Entrada registrada en el informe diario.', 'success');
         } catch (error) {
             showNotification('Error al registrar la entrada.', 'error');
@@ -338,7 +335,7 @@ document.addEventListener('DOMContentLoaded', () => {
             pdf.save(`Reporte_Caja_${currentSelectedSerialNumber}.pdf`);
 
             // Registrar el movimiento después de generar el PDF, usando la función centralizada
-            await registrarMovimientoCaja(tipo, currentSelectedSerialNumber, prestamoNum);
+            await registrarMovimientoCaja(tipo, currentSelectedSerialNumber, modelName, prestamoNum);
 
         }).catch(err => { 
             showNotification('Error al generar la imagen para el PDF.', 'error'); 

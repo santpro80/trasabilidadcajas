@@ -22,13 +22,10 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-export const registrarHistorial = async (accion, detalles) => {
-    // ===== MENSAJES DE DIAGNÓSTICO AQUÍ =====
-    console.log("--- Función registrarHistorial ejecutada ---");
-    console.log("Acción recibida:", accion);
-    console.log("Detalles recibidos:", detalles);
-    // ===========================================
+export function sanitizeFieldName(name) { return name.replace(/\//g, '_slash_').replace(/\./g, '_dot_').replace(/,/g, '_comma_'); }
+export function unSanitizeFieldName(name) { return name.replace(/_comma_/g, ',').replace(/_dot_/g, '.').replace(/_slash_/g, '/'); }
 
+export const registrarHistorial = async (accion, detalles) => {
     try {
         const user = auth.currentUser;
         if (!user) {
@@ -43,19 +40,15 @@ export const registrarHistorial = async (accion, detalles) => {
             usuarioEmail: user.email,
             usuarioNombre: userName,
             accion: accion,
-            detalles: detalles // Aquí se guarda el objeto completo de detalles
+            detalles: detalles
         };
-
-        console.log("Documento que se guardará en Firestore:", historialDoc);
         await addDoc(collection(db, "historial"), historialDoc);
-        console.log("--- Historial guardado con éxito ---");
-
     } catch (error) {
         console.error("Error al registrar en el historial:", error);
     }
 };
 
-export const registrarMovimientoCaja = async (tipo, cajaSerie, prestamoNum = null) => {
+export const registrarMovimientoCaja = async (tipo, cajaSerie, modelName, prestamoNum = null) => {
     try {
         const user = auth.currentUser;
         if (!user) {
@@ -63,12 +56,17 @@ export const registrarMovimientoCaja = async (tipo, cajaSerie, prestamoNum = nul
         }
         const userDocSnap = await getDoc(doc(db, "users", user.uid));
         const userName = userDocSnap.exists() ? userDocSnap.data().name : user.email;
-        const fecha = new Date().toISOString().split('T')[0]; // Formato YYYY-MM-DD
+        const fecha = new Date();
+        const fechaISO = fecha.toISOString().split('T')[0]; // Formato YYYY-MM-DD
+        const mesISO = fecha.toISOString().slice(0, 7); // Formato YYYY-MM
 
+        // 1. Registrar el movimiento (lógica existente)
         const movimientoData = {
             cajaSerie: cajaSerie,
+            modelName: modelName,
             tipo: tipo,
-            fecha: fecha,
+            fecha: fechaISO,
+            mes: mesISO,
             timestamp: serverTimestamp(),
             usuarioNombre: userName,
             usuarioEmail: user.email
@@ -81,9 +79,21 @@ export const registrarMovimientoCaja = async (tipo, cajaSerie, prestamoNum = nul
         await addDoc(collection(db, "movimientos_cajas"), movimientoData);
         console.log(`Movimiento de caja '${tipo}' para '${cajaSerie}' registrado.`);
 
+        // 2. Actualizar el estado de la caja (nueva lógica)
+        const nuevoEstado = tipo === 'Salida' ? 'Prestada' : 'Disponible';
+        const estadoDocRef = doc(db, "caja_estados", cajaSerie);
+        const estadoData = {
+            status: nuevoEstado,
+            modelName: modelName,
+            last_update: serverTimestamp(),
+            last_changed_by: userName
+        };
+        
+        await setDoc(estadoDocRef, estadoData, { merge: true });
+        console.log(`Estado de la caja '${cajaSerie}' actualizado a '${nuevoEstado}'.`);
+
     } catch (error) {
         console.error("Error al registrar movimiento de caja:", error);
-        // Re-lanzamos el error para que la función que llama sepa que algo salió mal
         throw error;
     }
 };

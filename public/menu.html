@@ -95,6 +95,24 @@
                             <span>Modelos de Cajas</span>
                         </button>
                     </li>
+                    <li id="li-estadisticas" style="display: none;">
+                        <button id="btn-estadisticas">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 20V10"></path>
+                                <path d="M18 20V4"></path>
+                                <path d="M6 20V16"></path>
+                            </svg>
+                            <span>Estadística</span>
+                        </button>
+                    </li>
+                    <li id="li-estados-cajas" style="display: none;">
+                        <button id="btn-estados-cajas">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line>
+                            </svg>
+                            <span>Estados Cajas</span>
+                        </button>
+                    </li>
                     <li id="li-historial">
                         <button id="btn-historial">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -191,6 +209,8 @@
         const btnRegistrarUsuario = document.getElementById('btn-registrar-usuario');
         const btnDarOpinion = document.getElementById('btn-dar-opinion');
         const btnVerOpiniones = document.getElementById('btn-ver-opiniones');
+        const btnEstadisticas = document.getElementById('btn-estadisticas');
+        const btnEstadosCajas = document.getElementById('btn-estados-cajas');
 
         // Modal elements
         const opinionModal = document.getElementById('opinionModal');
@@ -208,6 +228,8 @@
             const liRegistrarUsuario = document.getElementById('li-registrar-usuario');
             const liVerOpiniones = document.getElementById('li-ver-opiniones');
             const liDarOpinion = document.getElementById('li-dar-opinion');
+            const liEstadisticas = document.getElementById('li-estadisticas');
+            const liEstadosCajas = document.getElementById('li-estados-cajas');
 
             const isSupervisor = role === 'supervisor';
 
@@ -217,6 +239,8 @@
             if (liImportarDatos) liImportarDatos.style.display = isSupervisor ? 'list-item' : 'none';
             if (liRegistrarUsuario) liRegistrarUsuario.style.display = isSupervisor ? 'list-item' : 'none';
             if (liVerOpiniones) liVerOpiniones.style.display = isSupervisor ? 'list-item' : 'none';
+            if (liEstadisticas) liEstadisticas.style.display = isSupervisor ? 'list-item' : 'none';
+            if (liEstadosCajas) liEstadosCajas.style.display = isSupervisor ? 'list-item' : 'none';
 
             // Operator-only buttons
             if (liDarOpinion) liDarOpinion.style.display = !isSupervisor ? 'list-item' : 'none';
@@ -311,6 +335,8 @@
         btnImportarDatos?.addEventListener('click', () => { window.location.href = 'redir-import.html'; });
         btnRegistrarUsuario?.addEventListener('click', () => { window.location.href = 'register.html'; });
         btnVerOpiniones?.addEventListener('click', () => { window.location.href = 'ver-opiniones.html'; });
+        btnEstadisticas?.addEventListener('click', () => { window.location.href = 'estadisticas.html'; });
+        btnEstadosCajas?.addEventListener('click', () => { window.location.href = 'estados-cajas.html'; });
     </script>
 </body>
 </html>

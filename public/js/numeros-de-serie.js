@@ -112,7 +112,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             e.stopPropagation();
                             showNotification(`Registrando entrada para ${serial}...`, 'info');
                             try {
-                                await registrarMovimientoCaja('Entrada', serial);
+                                await registrarMovimientoCaja('Entrada', serial, currentModelName);
                                 showNotification(`Entrada de caja "${serial}" registrada.`, 'success');
                             } catch (error) {
                                 showNotification(`Error al registrar entrada para "${serial}".`, 'error');

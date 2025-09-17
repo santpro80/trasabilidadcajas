@@ -1,4 +1,4 @@
-import { auth, db, createUserWithEmailAndPassword, setDoc, doc, collection, query, where, getDocs } from './firebase-config.js';
+import { auth, db, createUserWithEmailAndPassword, setDoc, doc, collection, query, where, getDocs, reauthenticateWithCredential, EmailAuthProvider } from './firebase-config.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     const registerForm = document.getElementById('registerForm');
@@ -6,10 +6,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const usernameInput = document.getElementById('username');
     const emailInput = document.getElementById('email');
     const passwordInput = document.getElementById('password');
-    const confirmPasswordInput = document.getElementById('confirm-password'); // Campo nuevo
+    const confirmPasswordInput = document.getElementById('confirm-password');
     const roleSelect = document.getElementById('role');
-    const supervisorPasswordGroup = document.getElementById('supervisor-password-group'); // Grupo del campo nuevo
-    const supervisorPasswordInput = document.getElementById('supervisor-password'); // Campo nuevo
+    const supervisorPasswordGroup = document.getElementById('supervisor-password-group');
+    const supervisorPasswordInput = document.getElementById('supervisor-password'); // Este es el campo para la contraseña del supervisor
     const messageArea = document.getElementById('message-area');
     const submitBtn = document.getElementById('submit-btn');
 
@@ -21,20 +21,15 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // Lógica para mostrar/ocultar el campo de contraseña de supervisor
     roleSelect.addEventListener('change', () => {
-        if (roleSelect.value === 'supervisor') {
-            supervisorPasswordGroup.style.display = 'block';
-        } else {
-            supervisorPasswordGroup.style.display = 'none';
-        }
+        supervisorPasswordGroup.style.display = roleSelect.value === 'supervisor' ? 'block' : 'none';
     });
 
     registerForm.addEventListener('submit', async (event) => {
         event.preventDefault();
         
-        if(submitBtn) submitBtn.disabled = true;
-        if(messageArea) messageArea.style.display = 'none';
+        submitBtn.disabled = true;
+        messageArea.style.display = 'none';
 
         const name = nameInput.value;
         const username = usernameInput.value.toUpperCase().replace(/\s+/g, '');
@@ -44,28 +39,37 @@ document.addEventListener('DOMContentLoaded', () => {
         const role = roleSelect.value;
         const supervisorPassword = supervisorPasswordInput.value;
 
-        // ===== VALIDACIÓN: Contraseñas de usuario coinciden =====
         if (password !== confirmPassword) {
-            showMessage('Error: Las contraseñas no coinciden.');
-            if(submitBtn) submitBtn.disabled = false;
+            showMessage('Error: Las contraseñas para el nuevo usuario no coinciden.');
+            submitBtn.disabled = false;
             return;
         }
 
-        // ===== VALIDACIÓN: Formato de username =====
         if (!/^[A-Z0-9]+$/.test(username)) {
             showMessage('Error: El nombre de usuario solo puede contener letras y números, sin espacios.');
-            if(submitBtn) submitBtn.disabled = false;
+            submitBtn.disabled = false;
             return;
         }
 
-        // ===== VALIDACIÓN: Contraseña de supervisor =====
-        if (role === 'supervisor' && supervisorPassword !== '48482094') {
-            showMessage('Error: La contraseña de supervisor es incorrecta.');
-            if(submitBtn) submitBtn.disabled = false;
+        const currentUser = auth.currentUser;
+        if (!currentUser) {
+            showMessage('Error: No hay un supervisor autenticado para realizar esta acción.');
+            submitBtn.disabled = false;
             return;
         }
 
         try {
+            // Si el nuevo rol es 'supervisor', requerir re-autenticación
+            if (role === 'supervisor') {
+                if (!supervisorPassword) {
+                    throw new Error('Debes introducir tu contraseña de supervisor para confirmar.');
+                }
+                const credential = EmailAuthProvider.credential(currentUser.email, supervisorPassword);
+                await reauthenticateWithCredential(currentUser, credential);
+            }
+
+            // --- Si la re-autenticación es exitosa (o no era necesaria), proceder a crear el usuario ---
+
             const usersRef = collection(db, "users");
             const q = query(usersRef, where("username", "==", username));
             const querySnapshot = await getDocs(q);
@@ -90,11 +94,15 @@ document.addEventListener('DOMContentLoaded', () => {
             let userFriendlyMessage = error.message;
             if (error.code === "auth/email-already-in-use") {
                 userFriendlyMessage = "El correo electrónico ya está en uso.";
+            } else if (error.code === 'auth/wrong-password') {
+                userFriendlyMessage = "La contraseña de supervisor es incorrecta.";
+            } else if (error.code === 'auth/too-many-requests') {
+                userFriendlyMessage = "Demasiados intentos fallidos. Inténtalo más tarde.";
             }
             showMessage(userFriendlyMessage);
 
         } finally {
-            if(submitBtn) submitBtn.disabled = false;
+            submitBtn.disabled = false;
         }
     });
 });
