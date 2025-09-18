@@ -25,9 +25,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
     const modalSpinner = document.getElementById('modal-spinner');
 
+    // New elements for entry confirmation modal
+    const confirmEntryModal = document.getElementById('confirmEntryModal');
+    const confirmEntryModalText = document.getElementById('confirm-entry-modal-text');
+    const cancelEntryBtn = document.getElementById('cancel-entry-btn');
+    const confirmEntryBtn = document.getElementById('confirm-entry-btn');
+
     let currentModelName = '';
     let currentZonaName = '';
     let serialToDelete = null;
+    let serialToConfirmEntry = null; // New variable to store serial for entry confirmation
     let userRole = 'operario'; 
 
     // ... (La función showNotification no cambia)
@@ -110,13 +117,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         registrarBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>`;
                         registrarBtn.addEventListener('click', async (e) => {
                             e.stopPropagation();
-                            showNotification(`Registrando entrada para ${serial}...`, 'info');
-                            try {
-                                await registrarMovimientoCaja('Entrada', serial, currentModelName);
-                                showNotification(`Entrada de caja "${serial}" registrada.`, 'success');
-                            } catch (error) {
-                                showNotification(`Error al registrar entrada para "${serial}".`, 'error');
-                            }
+                            openConfirmEntryModal(serial); // Open custom modal instead of window.confirm
                         });
                         buttonsContainer.appendChild(registrarBtn);
 
@@ -201,6 +202,18 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
     
+    // Functions for entry confirmation modal
+    const openConfirmEntryModal = (serial) => {
+        serialToConfirmEntry = serial;
+        confirmEntryModalText.textContent = `¿Estás seguro de que deseas registrar una entrada para la caja "${serial}"?`;
+        confirmEntryModal.style.display = 'flex';
+    };
+
+    const closeConfirmEntryModal = () => {
+        confirmEntryModal.style.display = 'none';
+        serialToConfirmEntry = null;
+    };
+
     // ... (El resto de funciones y listeners como openDeleteModal, closeDeleteModal, etc., no cambian)
     const openDeleteModal = (serial) => {
         serialToDelete = serial;
@@ -213,6 +226,32 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     cancelDeleteBtn.addEventListener('click', closeDeleteModal);
     confirmDeleteBtn.addEventListener('click', deleteCaja);
+
+    // Event listeners for new entry confirmation modal
+    cancelEntryBtn.addEventListener('click', closeConfirmEntryModal);
+    confirmEntryBtn.addEventListener('click', async () => {
+        if (!serialToConfirmEntry) return;
+
+        // Optionally show a spinner or disable buttons here if the action takes time
+        // modalSpinner.style.display = 'block'; // If you want to reuse the spinner
+        // confirmEntryBtn.disabled = true;
+        // cancelEntryBtn.disabled = true;
+
+        try {
+            showNotification(`Registrando entrada para ${serialToConfirmEntry}...`, 'info');
+            await registrarMovimientoCaja('Entrada', serialToConfirmEntry, currentModelName);
+            showNotification(`Entrada de caja "${serialToConfirmEntry}" registrada.`, 'success');
+        } catch (error) {
+            showNotification(`Error al registrar entrada para "${serialToConfirmEntry}".`, 'error');
+            console.error("Error al registrar entrada:", error);
+        } finally {
+            // modalSpinner.style.display = 'none';
+            // confirmEntryBtn.disabled = false;
+            // cancelEntryBtn.disabled = false;
+            closeConfirmEntryModal();
+        }
+    });
+
     addCajaBtn.addEventListener('click', () => {
         window.location.href = `agregar-caja.html?modelName=${encodeURIComponent(currentModelName)}&zonaName=${encodeURIComponent(currentZonaName)}`;
     });

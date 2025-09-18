@@ -181,7 +181,7 @@
         .modal-actions { display: flex; justify-content: center; gap: 15px; }
         .btn-modal { padding: 10px 25px; border: none; border-radius: 8px;
             cursor: pointer; font-weight: 600; }
-        .btn-modal.confirm { background-color: #dc3545; color: white; }
+        .btn-modal.confirm { background-color: #249216; color: white; }
         .btn-modal.cancel { background-color: #6c757d; color: white; }
         #notification-toast {
             position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%);
@@ -254,6 +254,18 @@
             <div class="modal-actions">
                 <button id="cancel-delete-btn" class="btn-modal cancel">Cancelar</button>
                 <button id="confirm-delete-btn" class="btn-modal confirm">Eliminar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Nuevo Modal de Confirmación para Registrar Entrada -->
+    <div id="confirmEntryModal" class="modal-overlay">
+        <div class="modal-content">
+            <h2>Confirmar Registro de Entrada</h2>
+            <p id="confirm-entry-modal-text">¿Estás seguro de que deseas registrar una entrada para esta caja?</p>
+            <div class="modal-actions">
+                <button id="cancel-entry-btn" class="btn-modal cancel">Cancelar</button>
+                <button id="confirm-entry-btn" class="btn-modal confirm">Confirmar</button>
             </div>
         </div>
     </div>

@@ -64,7 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const zonaName = doc.id;
                 const listItem = document.createElement('li');
                 listItem.className = 'list-item';
-                listItem.textContent = zonaName;
+                listItem.textContent = zonaName.toUpperCase();
 
                 listItem.addEventListener('click', () => {
                     window.location.href = `modelado-caja.html?zonaName=${encodeURIComponent(zonaName)}`;
