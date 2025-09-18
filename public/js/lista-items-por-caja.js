@@ -2,7 +2,7 @@ import {
     db, auth, onAuthStateChanged, signOut,
     doc, getDoc, setDoc, updateDoc, deleteField, onSnapshot,
     registrarHistorial, collection, query, where, getDocs, serverTimestamp, addDoc,
-    registrarMovimientoCaja, sanitizeFieldName, unSanitizeFieldName
+    registrarMovimientoCaja, sanitizeFieldName, unSanitizeFieldName, registrarConsumoItem
 } from './firebase-config.js';
 
 let notificationTimeout;
@@ -140,13 +140,19 @@ document.addEventListener('DOMContentLoaded', () => {
                     <button class="btn-delete-item" title="Eliminar ítem"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
                 </div>`;
             
-            // Add click event to all cells except the action cell to open the edit modal
-            listItem.querySelectorAll('.item-cell:not(.action)').forEach(cell => {
-                cell.addEventListener('click', () => openEditModal(originalItemName, itemValue));
+            // Add a single click event listener to the entire list item
+            listItem.addEventListener('click', (e) => {
+                // Check if the click originated from the delete button or its SVG icon/path
+                if (e.target.closest('.btn-delete-item')) {
+                    // If it's the delete button, its own handler (with stopPropagation) will manage it
+                    return;
+                }
+                // Otherwise, open the edit modal
+                openEditModal(originalItemName, itemValue);
             });
 
             listItem.querySelector('.btn-delete-item').addEventListener('click', (e) => {
-                e.stopPropagation();
+                e.stopPropagation(); // Prevent the click from bubbling up to the listItem
                 openDeleteModal(sanitizedName, originalItemName);
             });
             itemsList.appendChild(listItem);
@@ -243,6 +249,12 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const itemDocRef = doc(db, "Items", currentSelectedSerialNumber);
             await updateDoc(itemDocRef, { [sanitizeFieldName(currentEditingItem.originalName)]: newSerial });
+
+            // Si el ítem se marca para reemplazar, registramos el consumo.
+            if (newSerial === 'REEMPLAZAR') {
+                await registrarConsumoItem(modelName, currentEditingItem.originalName);
+            }
+
             const detallesParaHistorial = {
                 cajaSerie: currentSelectedSerialNumber, itemDescripcion: currentEditingItem.originalName,
                 valorAnterior: currentEditingItem.oldSerial, valorNuevo: newSerial,

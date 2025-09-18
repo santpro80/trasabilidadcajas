@@ -17,6 +17,41 @@
         .stats-table thead { background-color: #f0f4f8; }
         .stats-table th { font-weight: 600; }
         .stats-table tbody tr:nth-child(even) { background-color: #f9f9f9; }
+    .stats-table tbody tr:nth-child(even) { background-color: #f9f9f9; }
+        .stats-table tbody tr.clickable-row { cursor: pointer; }
+        .stats-table tbody tr.clickable-row:hover { background-color: #e9ecef; }
+
+        /* Modal Styles */
+        .modal-overlay { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); justify-content: center; align-items: center; }
+        .modal-content { background-color: #fefefe; margin: auto; padding: 20px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); width: 80%; max-width: 600px; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ddd; padding-bottom: 10px; margin-bottom: 15px; }
+        .modal-header h2 { margin: 0; color: #4285F4; }
+        .close-btn { color: #aaa; font-size: 28px; font-weight: bold; cursor: pointer; }
+        .close-btn:hover, .close-btn:focus { color: black; }
+        #consumed-items-container { max-height: 400px; overflow-y: auto; }
+        .consumed-item { background-color: #f9f9f9; border: 1px solid #ddd; padding: 10px; margin-bottom: 8px; border-radius: 5px; display: flex; justify-content: space-between; align-items: center; }
+        .consumed-item .item-details { display: flex; flex-direction: column; }
+        .consumed-item .item-code { font-family: monospace; font-size: 0.9em; color: #555; }
+        .consumed-item .item-desc { font-weight: 500; }
+        .consumed-item .item-count { font-weight: bold; color: #dc3545; font-size: 1.2em; }
+    .consumed-item .item-count { font-weight: bold; color: #dc3545; font-size: 1.2em; }
+        .btn-download-excel {
+            background-color: #28a745; /* Green */
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            margin-top: 20px;
+            display: block; /* Make it a block element to take full width or center it */
+            width: fit-content; /* Adjust width to content */
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .btn-download-excel:hover {
+            background-color: #218838;
+        }
     </style>
 </head>
 <body>
@@ -33,8 +68,23 @@
             <div id="stats-container">
                 <p>Cargando estadísticas...</p>
             </div>
+            <button id="download-box-stats-btn" class="btn-download-excel">Descargar Excel (Salidas de Cajas)</button>
         </div>
     </main>
+
+    <!-- Modal para Consumo de Items -->
+    <div id="consumption-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="consumption-modal-title">Consumo de Items</h2>
+                <span class="close-btn">&times;</span>
+            </div>
+            <div id="consumed-items-container">
+                <p>Cargando...</p>
+            </div>
+            <button id="download-item-consumption-btn" class="btn-download-excel">Descargar Excel (Consumo de Items)</button>
+        </div>
+    </div>
 
     <script type="module" src="js/estadisticas.js"></script>
 </body>

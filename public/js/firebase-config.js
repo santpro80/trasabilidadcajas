@@ -5,7 +5,7 @@ import {
 } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
 import { 
     getFirestore, doc, getDoc, setDoc, updateDoc, deleteField,
-    deleteDoc, collection, query, orderBy, onSnapshot, getDocs, addDoc, serverTimestamp, where
+    deleteDoc, collection, query, orderBy, onSnapshot, getDocs, addDoc, serverTimestamp, where, increment
 } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
 const firebaseConfig = {
@@ -98,9 +98,40 @@ export const registrarMovimientoCaja = async (tipo, cajaSerie, modelName, presta
     }
 };
 
+export const registrarConsumoItem = async (modelName, itemName) => {
+    if (!modelName || !itemName) {
+        console.error("registrarConsumoItem: modelName e itemName son requeridos.");
+        return;
+    }
+
+    try {
+        const fecha = new Date();
+        const mesISO = fecha.toISOString().slice(0, 7); // Formato YYYY-MM
+        const statsDocRef = doc(db, "estadisticas_consumo", mesISO);
+
+        const sanitizedModel = sanitizeFieldName(modelName);
+        const sanitizedItem = sanitizeFieldName(itemName);
+
+        const updateData = {
+            [sanitizedModel]: {
+                [sanitizedItem]: increment(1)
+            }
+        };
+
+        // setDoc con merge:true crea el documento si no existe,
+        // y anida/actualiza los campos sin sobreescribir el documento entero.
+        await setDoc(statsDocRef, updateData, { merge: true });
+
+        console.log(`Consumo registrado para item: ${itemName} en modelo: ${modelName}`);
+
+    } catch (error) {
+        console.error("Error al registrar consumo de ítem:", error);
+    }
+};
+
 export { 
     app, auth, db, onAuthStateChanged, signOut, signInWithEmailAndPassword,
     createUserWithEmailAndPassword, updatePassword, reauthenticateWithCredential,
     EmailAuthProvider, doc, getDoc, setDoc, updateDoc, deleteField, deleteDoc,
-    collection, query, orderBy, onSnapshot, getDocs, where, serverTimestamp, addDoc
+    collection, query, orderBy, onSnapshot, getDocs, where, serverTimestamp, addDoc, increment
 };
