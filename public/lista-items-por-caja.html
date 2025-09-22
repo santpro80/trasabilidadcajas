@@ -34,7 +34,7 @@
         .item-value-text { color: #2c3e50; word-break: break-word; font-size: 1em; }
         .item-details-wrapper { display: flex; flex-grow: 1; gap: 15px; align-items: center; } /* New rule */
         .item-cell.desc { flex-grow: 1; } /* Make description grow to push serial to right */
-        .list-item.selected { background-color: #e8f0fe; border: 1px solid #4285F4; } /* Keep background for selected, and a subtle blue border */
+        .list-item.selected { background-color: #e8f0fe; } /* Keep background for selected */
         .btn-delete-item { background-color: #e74c3c; color: white; border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.3s ease; }
         .btn-delete-item svg { width: 20px; height: 20px; }
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); display: none; justify-content: center; align-items: center; z-index: 2000; }
@@ -54,8 +54,14 @@
 <body>
     <header class="app-header">
         <div class="header-left">
-            <button id="back-btn" class="btn-back">Volver</button>
-            <button id="menu-btn" class="btn-back">Menú</button>
+            <button id="back-btn" class="btn-back">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-left"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                Volver
+            </button>
+            <button id="menu-btn" class="btn-back">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-menu"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+                Menú
+            </button>
         </div>
         <div class="user-info">
             <span id="user-display-name"></span>
