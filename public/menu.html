@@ -152,13 +152,16 @@
                             <span>Registrar Usuario</span>
                         </button>
                     </li>
-                    <li id="li-ver-opiniones" style="display: none;">
-                        <button id="btn-ver-opiniones">
+                    <li id="li-tickets">
+                        <button id="btn-tickets">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
-                                <line x1="4" y1="22" x2="4" y2="15"></line>
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                                <polyline points="10 9 9 9 8 9"></polyline>
                             </svg>
-                            <span>Ver Opiniones</span>
+                            <span>Tickets</span>
                         </button>
                     </li>
                     <li id="li-importar-datos">
@@ -171,30 +174,10 @@
                             <span>Importar Datos</span>
                         </button>
                     </li>
-                    <li id="li-dar-opinion" style="display: none;">
-                        <button id="btn-dar-opinion">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
-                            </svg>
-                            <span>Dar mi Opinión</span>
-                        </button>
-                    </li>
                 </ul>
             </nav>
         </div>
     </main>
-
-    <div id="opinionModal" class="modal-overlay">
-        <div class="modal-content">
-            <h2>Dar mi Opinión</h2>
-            <p>Tu feedback nos ayuda a mejorar. Por favor, déjanos tu opinión sobre la aplicación.</p>
-            <textarea id="opinionText" placeholder="Escribe tu opinión aquí..."></textarea>
-            <div class="modal-actions">
-                <button id="cancelOpinionBtn" class="btn-modal secondary">Cancelar</button>
-                <button id="sendOpinionBtn" class="btn-modal primary">Enviar</button>
-            </div>
-        </div>
-    </div>
 
     <script type="module">
         import { auth, db, onAuthStateChanged, signOut, doc, getDoc, collection, addDoc, serverTimestamp } from './js/firebase-config.js';
@@ -207,16 +190,9 @@
         const btnCuenta = document.getElementById('btn-cuenta');
         const btnImportarDatos = document.getElementById('btn-importar-datos');
         const btnRegistrarUsuario = document.getElementById('btn-registrar-usuario');
-        const btnDarOpinion = document.getElementById('btn-dar-opinion');
-        const btnVerOpiniones = document.getElementById('btn-ver-opiniones');
+        const btnTickets = document.getElementById('btn-tickets');
         const btnEstadisticas = document.getElementById('btn-estadisticas');
         const btnEstadosCajas = document.getElementById('btn-estados-cajas');
-
-        // Modal elements
-        const opinionModal = document.getElementById('opinionModal');
-        const opinionText = document.getElementById('opinionText');
-        const cancelOpinionBtn = document.getElementById('cancelOpinionBtn');
-        const sendOpinionBtn = document.getElementById('sendOpinionBtn');
 
         let currentUserId = null;
         let currentUserRole = 'operario';
@@ -226,8 +202,7 @@
             const liInformeDiario = document.getElementById('li-informe-diario');
             const liImportarDatos = document.getElementById('li-importar-datos');
             const liRegistrarUsuario = document.getElementById('li-registrar-usuario');
-            const liVerOpiniones = document.getElementById('li-ver-opiniones');
-            const liDarOpinion = document.getElementById('li-dar-opinion');
+            const liTickets = document.getElementById('li-tickets');
             const liEstadisticas = document.getElementById('li-estadisticas');
             const liEstadosCajas = document.getElementById('li-estados-cajas');
 
@@ -238,12 +213,11 @@
             if (liInformeDiario) liInformeDiario.style.display = isSupervisor ? 'list-item' : 'none';
             if (liImportarDatos) liImportarDatos.style.display = isSupervisor ? 'list-item' : 'none';
             if (liRegistrarUsuario) liRegistrarUsuario.style.display = isSupervisor ? 'list-item' : 'none';
-            if (liVerOpiniones) liVerOpiniones.style.display = isSupervisor ? 'list-item' : 'none';
             if (liEstadisticas) liEstadisticas.style.display = isSupervisor ? 'list-item' : 'none';
             if (liEstadosCajas) liEstadosCajas.style.display = isSupervisor ? 'list-item' : 'none';
 
-            // Operator-only buttons
-            if (liDarOpinion) liDarOpinion.style.display = !isSupervisor ? 'list-item' : 'none';
+            // This button is visible for everyone
+            if (liTickets) liTickets.style.display = 'list-item';
         };
 
         onAuthStateChanged(auth, async (user) => {
@@ -280,63 +254,22 @@
             }
         });
 
-        // Modal logic
-        btnDarOpinion?.addEventListener('click', () => {
-            if (opinionModal) opinionModal.style.display = 'flex';
-        });
-
-        cancelOpinionBtn?.addEventListener('click', () => {
-            if (opinionModal) opinionModal.style.display = 'none';
-            if (opinionText) opinionText.value = ''; // Clear textarea
-        });
-
-        sendOpinionBtn?.addEventListener('click', async () => {
-            if (!opinionText || !opinionText.value.trim()) {
-                alert('Por favor, escribe una opinión antes de enviar.');
-                return;
-            }
-            if (!currentUserId) {
-                alert('Error: No se ha podido identificar al usuario.');
-                return;
-            }
-
-            sendOpinionBtn.disabled = true;
-            sendOpinionBtn.textContent = 'Enviando...';
-
-            try {
-                const userDocRef = doc(db, "users", currentUserId);
-                const userDocSnap = await getDoc(userDocRef);
-                const userName = userDocSnap.exists() ? userDocSnap.data().name : 'Usuario desconocido';
-
-                await addDoc(collection(db, 'opiniones'), {
-                    userId: currentUserId,
-                    userName: userName,
-                    userRole: currentUserRole,
-                    opinion: opinionText.value.trim(),
-                    fecha: serverTimestamp()
-                });
-                if (opinionModal) opinionModal.style.display = 'none';
-                if (opinionText) opinionText.value = '';
-                alert('¡Gracias por tu opinión!');
-            } catch (error) {
-                console.error('Error al enviar la opinión:', error);
-                alert('Hubo un error al enviar tu opinión. Por favor, inténtalo de nuevo.');
-            } finally {
-                sendOpinionBtn.disabled = false;
-                sendOpinionBtn.textContent = 'Enviar';
-            }
-        });
-
-
         btnCajas?.addEventListener('click', () => { window.location.href = 'modelos-de-cajas.html'; });
         btnHistorial?.addEventListener('click', () => { window.location.href = 'lista-historial.html'; });
         btnInformeDiario?.addEventListener('click', () => { window.location.href = 'informe-diario.html'; });
         btnCuenta?.addEventListener('click', () => { window.location.href = 'cuenta.html'; });
         btnImportarDatos?.addEventListener('click', () => { window.location.href = 'redir-import.html'; });
         btnRegistrarUsuario?.addEventListener('click', () => { window.location.href = 'register.html'; });
-        btnVerOpiniones?.addEventListener('click', () => { window.location.href = 'ver-opiniones.html'; });
         btnEstadisticas?.addEventListener('click', () => { window.location.href = 'estadisticas.html'; });
         btnEstadosCajas?.addEventListener('click', () => { window.location.href = 'estados-cajas.html'; });
+
+        btnTickets?.addEventListener('click', () => {
+            if (currentUserRole === 'supervisor') {
+                window.location.href = 'tickets-supervisor.html';
+            } else {
+                window.location.href = 'tickets-operador.html';
+            }
+        });
     </script>
 </body>
 </html>

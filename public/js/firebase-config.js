@@ -5,7 +5,7 @@ import {
 } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
 import { 
     getFirestore, doc, getDoc, setDoc, updateDoc, deleteField,
-    deleteDoc, collection, query, orderBy, onSnapshot, getDocs, addDoc, serverTimestamp, where, increment
+    deleteDoc, collection, query, orderBy, onSnapshot, getDocs, addDoc, serverTimestamp, where, increment, arrayUnion
 } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
 const firebaseConfig = {
@@ -133,5 +133,5 @@ export {
     app, auth, db, onAuthStateChanged, signOut, signInWithEmailAndPassword,
     createUserWithEmailAndPassword, updatePassword, reauthenticateWithCredential,
     EmailAuthProvider, doc, getDoc, setDoc, updateDoc, deleteField, deleteDoc,
-    collection, query, orderBy, onSnapshot, getDocs, where, serverTimestamp, addDoc, increment
+    collection, query, orderBy, onSnapshot, getDocs, where, serverTimestamp, addDoc, increment, arrayUnion
 };

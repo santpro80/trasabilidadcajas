@@ -1,0 +1,26 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Los usuarios pueden leer y actualizar su propio documento de usuario
+    match /users/{userId} {
+      allow read, update: if request.auth.uid == userId;
+    }
+
+    // Reglas para la colección 'tickets'
+    match /tickets/{ticketId} {
+      // Un usuario debe estar autenticado para crear un ticket
+      allow create: if request.auth != null;
+
+      // El operador que creó el ticket puede leerlo y actualizarlo (añadir mensajes)
+      // Los supervisores también pueden leer y actualizar cualquier ticket
+      allow read, update: if request.auth.uid == resource.data.operatorUid ||
+                          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'supervisor';
+      
+      // Solo los supervisores pueden eliminar tickets
+      allow delete: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'supervisor';
+    }
+
+    // Aquí puedes añadir las reglas para tus otras colecciones...
+  }
+}
