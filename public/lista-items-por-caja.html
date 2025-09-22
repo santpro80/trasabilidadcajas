@@ -26,11 +26,15 @@
         #add-item-btn { background-color: #28a745; }
         .list-container { background-color: #ffffff; border-radius: 12px; padding: 20px; box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1); width: 100%; box-sizing: border-box; min-height: 300px; }
         .item-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; }
-        .list-item { background-color: #f9f9f9; border: 1px solid #e0e0e0; border-radius: 10px; padding: 15px 20px; display: flex; align-items: center; gap: 15px; transition: all 0.2s ease; }
+        .list-item { background-color: #f9f9f9; border: 1px solid #e0e0e0; border-radius: 10px; padding: 15px 20px; display: flex; align-items: center; gap: 15px; transition: all 0.2s ease; cursor: pointer; }
+        .list-item:hover { border: 2px solid #4285F4; background-color: #e8f0fe; transform: translateY(-2px); box-shadow: 0 0 8px rgba(66, 133, 244, 0.5); } /* Highlight on hover with thicker blue border and shadow */
         .item-main-details-container { flex-grow: 1; text-align: left; cursor: pointer; min-width: 0; }
         .item-detail-group { display: flex; flex-direction: column; gap: 2px; }
         .item-label { font-weight: 600; color: #555; font-size: 0.9em; }
         .item-value-text { color: #2c3e50; word-break: break-word; font-size: 1em; }
+        .item-details-wrapper { display: flex; flex-grow: 1; gap: 15px; align-items: center; } /* New rule */
+        .item-cell.desc { flex-grow: 1; } /* Make description grow to push serial to right */
+        .list-item.selected { background-color: #e8f0fe; border: 1px solid #4285F4; } /* Keep background for selected, and a subtle blue border */
         .btn-delete-item { background-color: #e74c3c; color: white; border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.3s ease; }
         .btn-delete-item svg { width: 20px; height: 20px; }
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); display: none; justify-content: center; align-items: center; z-index: 2000; }
@@ -51,6 +55,7 @@
     <header class="app-header">
         <div class="header-left">
             <button id="back-btn" class="btn-back">Volver</button>
+            <button id="menu-btn" class="btn-back">Menú</button>
         </div>
         <div class="user-info">
             <span id="user-display-name"></span>
@@ -67,7 +72,7 @@
                 <input type="text" id="searchInput" placeholder="Buscar por código, descripción o N° de serie...">
             </div>
             <button id="add-item-btn" class="btn-action">(+) Agregar Ítem</button>
-            <button id="download-pdf-btn" class="btn-action">Descargar PDF</button>
+            <button id="download-pdf-btn" class="btn-action">Reporte</button>
         </div>
         <div id="list-container" class="list-container">
             <div id="loading-state">Cargando ítems...</div>

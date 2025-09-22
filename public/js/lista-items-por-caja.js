@@ -51,8 +51,9 @@ document.addEventListener('DOMContentLoaded', () => {
     let modelName = '';
     let currentEditingItem = { originalName: '', oldSerial: '' };
     let itemToDelete = null;
-    let codeToDescMap = new Map();
-    let unsubscribeFromItems = null;
+let codeToDescMap = new Map();
+let unsubscribeFromItems = null;
+let currentSelectedItem = null; // New variable to track selected item
 
     onAuthStateChanged(auth, async (user) => {
         if (!user) { window.location.href = 'login.html'; return; }
@@ -133,9 +134,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const [itemCode, description] = originalItemName.split(';');
             const serialDisplay = (itemValue === 'REEMPLAZAR') ? `<span style="color: #dc3545; font-weight: bold;">${itemValue}</span>` : itemValue;
             listItem.innerHTML = `
-                <div class="item-cell code">${itemCode || ''}</div>
-                <div class="item-cell desc">${description || ''}</div>
-                <div class="item-cell serial">${serialDisplay}</div>
+                <div class="item-details-wrapper">
+                    <div class="item-cell code">${itemCode || ''}</div>
+                    <div class="item-cell desc">${description || ''}</div>
+                    <div class="item-cell serial">${serialDisplay}</div>
+                </div>
                 <div class="item-cell action">
                     <button class="btn-delete-item" title="Eliminar ítem"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
                 </div>`;
@@ -147,6 +150,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     // If it's the delete button, its own handler (with stopPropagation) will manage it
                     return;
                 }
+                // Remove highlight from previously selected item
+                if (currentSelectedItem) {
+                    currentSelectedItem.classList.remove('selected');
+                }
+                // Add highlight to the newly selected item
+                listItem.classList.add('selected');
+                currentSelectedItem = listItem;
+
                 // Otherwise, open the edit modal
                 openEditModal(originalItemName, itemValue);
             });
