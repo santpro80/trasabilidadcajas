@@ -1,4 +1,4 @@
-import { db, auth, onAuthStateChanged, signOut, doc, getDoc, setDoc, updateDoc, registrarHistorial, sanitizeFieldName } from './firebase-config.js';
+import { db, auth, onAuthStateChanged, signOut, doc, getDoc, setDoc, updateDoc, registrarHistorial, sanitizeFieldName, addDoc, collection, serverTimestamp } from './firebase-config.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     const formTitle = document.getElementById('form-title');
@@ -235,6 +235,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
+            // --- Save Tracing Time ---
+            const tracingStartTime = localStorage.getItem('tracingStartTime');
+            const tracingModelName = localStorage.getItem('tracingModelName');
+            if (tracingStartTime && tracingModelName) {
+                const endTime = Date.now();
+                const durationMs = endTime - parseInt(tracingStartTime, 10);
+                await saveTracingTime(tracingModelName, durationMs);
+                localStorage.removeItem('tracingStartTime');
+                localStorage.removeItem('tracingModelName');
+                localStorage.removeItem('tracingZonaName');
+            }
+
             registrarHistorial('CREACIÓN DE CAJA', {
                 cajaSerie: newCajaSerial,
                 modelo: modelName,
@@ -253,6 +265,21 @@ document.addEventListener('DOMContentLoaded', () => {
             showNotification("Error al guardar la caja: " + error.message, "error");
         }
     });
+
+    // New function to save tracing time
+    const saveTracingTime = async (model, duration) => {
+        try {
+            await addDoc(collection(db, "tracingTimes"), {
+                modelName: model,
+                durationMs: duration,
+                timestamp: serverTimestamp()
+            });
+            console.log(`Tiempo de trazado guardado para ${model}: ${duration}ms`);
+        } catch (error) {
+            console.error("Error al guardar el tiempo de trazado:", error);
+            showNotification(`Error al guardar tiempo: ${error.message}`, 'error');
+        }
+    };
 
     // --- Attach event listeners ---
     addItemBtn.addEventListener('click', addDynamicItemRow);

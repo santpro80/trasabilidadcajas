@@ -50,19 +50,40 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const applyFiltersAndRender = () => {
-        const startDate = startDateInput.value ? new Date(startDateInput.value) : null;
-        const endDate = endDateInput.value ? new Date(endDateInput.value) : null;
+        let startDate = null;
+        if (startDateInput.value) {
+            startDate = new Date(startDateInput.value);
+            startDate.setHours(0, 0, 0, 0); // Start of the day in local timezone
+        }
+
+        let endDate = null;
+        if (endDateInput.value) {
+            endDate = new Date(endDateInput.value);
+            endDate.setHours(23, 59, 59, 999); // End of the day in local timezone
+        }
+
         const searchTerm = searchInput.value.toLowerCase();
 
-        if (startDate) startDate.setHours(0, 0, 0, 0);
-        if (endDate) endDate.setHours(23, 59, 59, 999);
+        console.log("Filtro - Fecha Inicio (Local):", startDate ? startDate.toLocaleString() : "N/A");
+        console.log("Filtro - Fecha Fin (Local):", endDate ? endDate.toLocaleString() : "N/A");
 
         const filteredItems = allHistoryItems.filter(item => {
             // Filtro por fecha
             if (item.timestamp) {
-                const itemDate = item.timestamp.toDate();
-                if (startDate && itemDate < startDate) return false;
-                if (endDate && itemDate > endDate) return false;
+                const itemDate = item.timestamp.toDate(); // Firestore Timestamp converted to JS Date (local timezone)
+                
+                console.log("  Item - Fecha (Local):", itemDate.toLocaleString());
+                console.log("  Item - Fecha (UTC):", itemDate.toUTCString());
+                console.log("  Comparando:", itemDate.getTime(), "con", startDate ? startDate.getTime() : "N/A", "y", endDate ? endDate.getTime() : "N/A");
+
+                if (startDate && itemDate < startDate) {
+                    console.log("    Filtrado: itemDate < startDate");
+                    return false;
+                }
+                if (endDate && itemDate > endDate) {
+                    console.log("    Filtrado: itemDate > endDate");
+                    return false;
+                }
             }
 
             // Filtro por término de búsqueda

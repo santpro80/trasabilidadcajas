@@ -253,6 +253,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     addCajaBtn.addEventListener('click', () => {
+        localStorage.setItem('tracingStartTime', Date.now());
+        localStorage.setItem('tracingModelName', currentModelName);
+        localStorage.setItem('tracingZonaName', currentZonaName); // Store zonaName for context
         window.location.href = `agregar-caja.html?modelName=${encodeURIComponent(currentModelName)}&zonaName=${encodeURIComponent(currentZonaName)}`;
     });
     backBtn.addEventListener('click', () => {

@@ -14,6 +14,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const downloadBoxStatsBtn = document.getElementById('download-box-stats-btn');
     const downloadItemConsumptionBtn = document.getElementById('download-item-consumption-btn');
 
+    // New elements for average tracing time
+    const showAvgTracingTimeBtn = document.getElementById('show-avg-tracing-time-btn');
+    const avgTracingTimeResultsDiv = document.getElementById('avg-tracing-time-results');
+
     // Data storage for downloads
     let currentBoxStatsData = [];
     let currentItemConsumptionData = {};
@@ -248,6 +252,65 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         downloadCSV(csvContent, filename);
     });
+
+    // New function to load and render average tracing times
+    const loadAndRenderAvgTracingTimes = async () => {
+        if (!avgTracingTimeResultsDiv) return;
+
+        avgTracingTimeResultsDiv.innerHTML = '<p>Cargando tiempos promedio...</p>';
+
+        try {
+            const querySnapshot = await getDocs(collection(db, "tracingTimes"));
+            const modelDurations = {}; // { "Model A": [1000, 2000, 1500], ... }
+
+            querySnapshot.forEach(doc => {
+                const data = doc.data();
+                const modelName = data.modelName;
+                const durationMs = data.durationMs;
+
+                if (modelName && typeof durationMs === 'number') {
+                    if (!modelDurations[modelName]) {
+                        modelDurations[modelName] = [];
+                    }
+                    modelDurations[modelName].push(durationMs);
+                }
+            });
+
+            let resultsHTML = '';
+            if (Object.keys(modelDurations).length === 0) {
+                resultsHTML = '<p>No hay datos de tiempo de trazado disponibles.</p>';
+            } else {
+                resultsHTML = '<h3>Tiempo Promedio de Trazado por Modelo:</h3><ul>';
+                for (const modelName in modelDurations) {
+                    const durations = modelDurations[modelName];
+                    const sum = durations.reduce((a, b) => a + b, 0);
+                    const averageMs = sum / durations.length;
+
+                    // Format duration to human-readable string
+                    const totalSeconds = Math.floor(averageMs / 1000);
+                    const minutes = Math.floor(totalSeconds / 60);
+                    const seconds = totalSeconds % 60;
+                    const milliseconds = Math.floor(averageMs % 1000);
+
+                    let formattedTime = '';
+                    if (minutes > 0) formattedTime += `${minutes}m `;
+                    formattedTime += `${seconds}s`;
+                    if (minutes === 0) formattedTime += ` ${milliseconds}ms`; // Show ms only if less than a minute
+
+                    resultsHTML += `<li><strong>${modelName}</strong>: ${formattedTime}</li>`;
+                }
+                resultsHTML += '</ul>';
+            }
+            avgTracingTimeResultsDiv.innerHTML = resultsHTML;
+
+        } catch (error) {
+            console.error("Error al cargar tiempos promedio de trazado:", error);
+            avgTracingTimeResultsDiv.innerHTML = '<p>Ocurrió un error al cargar los tiempos promedio.</p>';
+        }
+    };
+
+    // Event listener for the new button
+    showAvgTracingTimeBtn?.addEventListener('click', loadAndRenderAvgTracingTimes);
 
     loadMonthlyStats();
 });

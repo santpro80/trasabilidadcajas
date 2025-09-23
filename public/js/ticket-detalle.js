@@ -151,7 +151,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    eliminarTicketBtn?.addEventListener('click', () => {
+    eliminarTicketBtn?.addEventListener('click', async () => {
         if (currentUserRole !== 'supervisor') return;
 
         const confirmation = confirm('¿Estás seguro de que quieres eliminar este ticket permanentemente? Esta acción no se puede deshacer.');
@@ -160,16 +160,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const ticketRef = doc(db, 'tickets', ticketId);
         console.log("Intentando eliminar el ticket con ID:", ticketId);
 
-        deleteDoc(ticketRef)
-            .then(() => {
-                console.log("Promesa de deleteDoc resuelta (then).");
-                alert("La solicitud de eliminación fue procesada por Firebase.");
-                // The onSnapshot listener should handle the redirect.
-            })
-            .catch((error) => {
-                console.error("Error al eliminar el ticket:", error);
-                alert(`Ocurrió un error al eliminar el ticket: ${error.message}`);
-            });
+        try {
+            await deleteDoc(ticketRef);
+            alert('Se ha enviado la solicitud de eliminación. Serás redirigido a la lista de tickets.');
+            window.location.href = 'tickets-supervisor.html'; // Force redirect
+        } catch (error) {
+            console.error("Error al eliminar el ticket:", error);
+            alert(`Ocurrió un error al intentar eliminar el ticket: ${error.message}`);
+        }
     });
 
     // Stop the listener when the user navigates away
