@@ -24,6 +24,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    const forceUppercase = (event) => {
+        const input = event.target;
+        const originalSelectionStart = input.selectionStart;
+        const originalSelectionEnd = input.selectionEnd;
+        input.value = input.value.toUpperCase();
+        input.setSelectionRange(originalSelectionStart, originalSelectionEnd);
+    };
+
     // --- Initialization ---
     onAuthStateChanged(auth, async (user) => {
         if (!user) { window.location.href = 'login.html'; return; }
@@ -31,6 +39,20 @@ document.addEventListener('DOMContentLoaded', () => {
             const userDoc = await getDoc(doc(db, "users", user.uid));
             userDisplayName.textContent = userDoc.exists() ? userDoc.data().name : user.email;
         }
+
+        const cajaSerialInput = document.getElementById('cajaSerialInput');
+        if (cajaSerialInput) {
+            cajaSerialInput.addEventListener('input', forceUppercase);
+        }
+
+        if (itemsContainer) {
+            itemsContainer.addEventListener('input', (event) => {
+                if (event.target.matches('.item-serial-input, .manual-code-input')) {
+                    forceUppercase(event);
+                }
+            });
+        }
+
         loadSchemaAndBuildForm();
     });
 
