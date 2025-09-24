@@ -180,7 +180,8 @@
     </main>
 
     <script type="module">
-        import { auth, db, onAuthStateChanged, signOut, doc, getDoc, collection, addDoc, serverTimestamp } from './js/firebase-config.js';
+        import { auth, db, onAuthStateChanged, signOut, doc, getDoc, collection, query, where, onSnapshot, addDoc, serverTimestamp } from './js/firebase-config.js';
+        import { setupTicketNotifications } from './js/global-notifications.js';
 
         const userDisplayElement = document.getElementById('user-display-name');
         const logoutBtn = document.getElementById('logout-btn');
@@ -194,7 +195,6 @@
         const btnEstadisticas = document.getElementById('btn-estadisticas');
         const btnEstadosCajas = document.getElementById('btn-estados-cajas');
 
-        let currentUserId = null;
         let currentUserRole = 'operario';
 
         const manageMenuVisibility = (role) => {
@@ -222,7 +222,6 @@
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
-                currentUserId = user.uid;
                 try {
                     const userDocRef = doc(db, "users", user.uid);
                     const userDocSnap = await getDoc(userDocRef);
@@ -235,6 +234,8 @@
                         currentUserRole = 'operario';
                     }
                     manageMenuVisibility(currentUserRole);
+                    // Setup ticket notifications
+                    setupTicketNotifications(db, collection, query, where, onSnapshot, user, currentUserRole);
                 } catch (error) {
                     console.error("Error al obtener datos del usuario:", error);
                     if (userDisplayElement) userDisplayElement.textContent = user.email;

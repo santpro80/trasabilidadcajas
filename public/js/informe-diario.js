@@ -1,7 +1,8 @@
 import {
     db, auth, onAuthStateChanged, signOut,
-    getDoc, doc, collection, query, where, getDocs, orderBy
+    getDoc, doc, collection, query, where, getDocs, orderBy, onSnapshot
 } from './firebase-config.js';
+import { setupTicketNotifications } from './global-notifications.js';
 
 // --- UTILITIES ---
 let notificationTimeout;
@@ -57,6 +58,30 @@ const showState = (stateElement) => {
 };
 
 // --- DATA FETCHING AND RENDERING ---
+
+// Builds a map from serial number to model name for efficient lookup.
+const buildSerialToModelMap = async () => {
+    const serialMap = new Map();
+    try {
+        const zonasSnapshot = await getDocs(collection(db, "Cajas"));
+        zonasSnapshot.forEach(zonaDoc => {
+            const zonaData = zonaDoc.data();
+            // Iterate over each field in the zone document (the fields are the model names)
+            for (const modelName in zonaData) {
+                if (typeof zonaData[modelName] === 'string') {
+                    const serials = zonaData[modelName].split(',').filter(Boolean);
+                    serials.forEach(serial => {
+                        serialMap.set(serial.trim(), modelName);
+                    });
+                }
+            }
+        });
+    } catch (error) {
+        console.error("Error building the serial-to-model map:", error);
+    }
+    return serialMap;
+};
+
 const fetchAndRenderReport = async (fecha) => {
     if (!entradasList || !salidasList) return;
 
@@ -67,6 +92,10 @@ const fetchAndRenderReport = async (fecha) => {
     salidasCount.textContent = '0';
 
     try {
+        // Step 1: Build the lookup map.
+        const serialToModelMap = await buildSerialToModelMap();
+
+        // Step 2: Fetch the daily movements.
         const q = query(
             collection(db, "movimientos_cajas"), 
             where("fecha", "==", fecha),
@@ -83,8 +112,11 @@ const fetchAndRenderReport = async (fecha) => {
         let entradas = 0;
         let salidas = 0;
 
+        // Step 3: Process and render movements using the map.
         querySnapshot.forEach(docSnap => {
             const movimiento = docSnap.data();
+            const modeloCaja = serialToModelMap.get(movimiento.cajaSerie) || ''; // Find model from map
+
             const listItem = document.createElement('li');
             listItem.className = 'list-item';
 
@@ -92,7 +124,7 @@ const fetchAndRenderReport = async (fecha) => {
 
             listItem.innerHTML = `
                 <div class="item-info">
-                    <span class="caja-serie">${movimiento.cajaSerie}</span>
+                    <span class="caja-serie">${movimiento.cajaSerie} ${modeloCaja}</span>
                     <span class="usuario-info">Por: ${movimiento.usuarioNombre || 'N/A'}</span>
                     ${prestamoInfo}
                 </div>
@@ -125,14 +157,22 @@ onAuthStateChanged(auth, async (user) => {
         const userDocRef = doc(db, "users", user.uid);
         const userDocSnap = await getDoc(userDocRef);
 
-        if (userDocSnap.exists() && userDocSnap.data().role === 'supervisor') {
-            const userName = userDocSnap.data().name || user.email;
-            if (userDisplayNameElement) userDisplayNameElement.textContent = userName;
-            showPageContent();
-            initializePage();
+        if (userDocSnap.exists()) {
+            const userRole = userDocSnap.data().role;
+            // Setup global notifications
+            setupTicketNotifications(db, collection, query, where, onSnapshot, user, userRole);
+
+            if (userRole === 'supervisor') {
+                const userName = userDocSnap.data().name || user.email;
+                if (userDisplayNameElement) userDisplayNameElement.textContent = userName;
+                showPageContent();
+                initializePage();
+            } else {
+                showUnauthorized();
+                if (userDisplayNameElement) userDisplayNameElement.textContent = userDocSnap.data()?.name || user.email;
+            }
         } else {
             showUnauthorized();
-            if (userDisplayNameElement) userDisplayNameElement.textContent = userDocSnap.data()?.name || user.email;
         }
     } else {
         window.location.href = 'login.html';

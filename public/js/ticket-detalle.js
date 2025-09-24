@@ -1,4 +1,4 @@
-import { auth, db, onAuthStateChanged, doc, getDoc, updateDoc, arrayUnion, serverTimestamp, onSnapshot, deleteDoc } from './firebase-config.js';
+import { auth, db, onAuthStateChanged, doc, getDoc, updateDoc, arrayUnion, serverTimestamp, onSnapshot, deleteDoc, increment } from './firebase-config.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     const ticketAsunto = document.getElementById('ticket-asunto');
@@ -22,14 +22,59 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
 
+    const markAsRead = async () => {
+        console.log("--- Running markAsRead --- ");
+        if (!currentUserRole) {
+            console.log("markAsRead: Aborting, currentUserRole is not set.");
+            return;
+        }
+
+        console.log(`markAsRead: Current user role is '${currentUserRole}'`);
+
+        const ticketRef = doc(db, 'tickets', ticketId);
+        const ticketSnap = await getDoc(ticketRef);
+
+        if (ticketSnap.exists()) {
+            const ticketData = ticketSnap.data();
+            const updateData = {};
+
+            console.log(`markAsRead: Checking conditions for operator. operatorUid on ticket is '${ticketData.operatorUid}'. currentUser.uid is '${currentUser.uid}'`);
+
+            if (currentUserRole === 'supervisor' && (ticketData.unreadCounts?.supervisor || 0) > 0) {
+                console.log("markAsRead: Condition for SUPERVISOR met. Resetting count.");
+                updateData['unreadCounts.supervisor'] = 0;
+            } else if (currentUserRole === 'operario' && ticketData.operatorUid === currentUser.uid && (ticketData.unreadCounts?.operator || 0) > 0) {
+                console.log("markAsRead: Condition for OPERATOR met. Resetting count.");
+                updateData['unreadCounts.operator'] = 0;
+            } else {
+                console.log("markAsRead: No condition met to reset unread counts.");
+            }
+
+            if (Object.keys(updateData).length > 0) {
+                console.log("markAsRead: Calling updateDoc with:", updateData);
+                await updateDoc(ticketRef, updateData);
+            } else {
+                console.log("markAsRead: No update needed.");
+            }
+        } else {
+            console.log("markAsRead: Ticket document not found.");
+        }
+        console.log("--- Finished markAsRead ---");
+    };
+
     onAuthStateChanged(auth, async (user) => {
         if (user) {
             currentUser = user;
             const userDocSnap = await getDoc(doc(db, "users", user.uid));
             if (userDocSnap.exists()) {
-                currentUserRole = userDocSnap.data().role;
-                currentUserName = userDocSnap.data().name;
+                const userData = userDocSnap.data();
+                currentUserRole = userData.role || 'operador'; // Assume 'operador' if role is not set
+                currentUserName = userData.name;
+            } else {
+                // If user has no specific doc, they can only be an operator
+                currentUserRole = 'operador';
             }
+            await markAsRead(); // Mark as read on page load
             listenForTicketUpdates(); // Start the real-time listener
         } else {
             window.location.href = 'login.html';
@@ -115,10 +160,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             const ticketRef = doc(db, 'tickets', ticketId);
-            await updateDoc(ticketRef, {
+            
+            const updatePayload = {
                 messages: arrayUnion(newMessage),
                 lastUpdatedAt: serverTimestamp()
-            });
+            };
+
+            // Increment the unread counter for the other role
+            if (currentUserRole === 'supervisor') {
+                updatePayload['unreadCounts.operator'] = increment(1);
+            } else { // User is an operator
+                updatePayload['unreadCounts.supervisor'] = increment(1);
+            }
+
+            await updateDoc(ticketRef, updatePayload);
             mensajeRespuesta.value = '';
         } catch (error) {
             console.error("Error al enviar la respuesta:", error);

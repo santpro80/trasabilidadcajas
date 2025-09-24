@@ -79,6 +79,25 @@
         cursor: pointer;
         transition: transform 0.2s ease, box-shadow 0.2s ease;
         border-left: 5px solid #4285F4;
+        position: relative; /* Needed for badge positioning */
+    }
+
+    .notification-badge {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        background-color: #dc3545; /* Red color */
+        color: white;
+        border-radius: 50%;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 0.9em;
+        font-weight: bold;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        z-index: 1;
     }
 
     .ticket-card:hover {

@@ -202,7 +202,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    // --- FINAL SAVE LOGIC (MERGED) ---
+    // --- FINAL SAVE LOGIC (CORRECTED) ---
     saveCajaBtn.addEventListener('click', async () => {
         showNotification('Guardando caja...', 'info');
         
@@ -245,7 +245,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            await setDoc(doc(db, "Items", newCajaSerial), itemsData);
+            // Create the final document data, including the model
+            const finalDocData = {
+                ...itemsData,
+                modelo: modelName 
+            };
+
+            await setDoc(doc(db, "Items", newCajaSerial), finalDocData);
 
             const zonaDocRef = doc(db, "Cajas", zonaName);
             const zonaDocSnap = await getDoc(zonaDocRef);
@@ -269,12 +275,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 localStorage.removeItem('tracingZonaName');
             }
 
+            // Use the original itemsData for the count to be correct
+            const numItems = Object.keys(itemsData).length;
             registrarHistorial('CREACIÓN DE CAJA', {
                 cajaSerie: newCajaSerial,
                 modelo: modelName,
                 zona: zonaName,
-                numItems: Object.keys(itemsData).length,
-                mensaje: `Se creó la nueva caja "${newCajaSerial}" (Modelo: ${modelName}) con ${Object.keys(itemsData).length} ítems.`
+                numItems: numItems,
+                mensaje: `Se creó la nueva caja "${newCajaSerial}" (Modelo: ${modelName}) con ${numItems} ítems.`
             });
 
             showNotification("¡Caja guardada con éxito!", "success");

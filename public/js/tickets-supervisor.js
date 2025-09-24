@@ -1,4 +1,4 @@
-import { auth, db, onAuthStateChanged, collection, query, where, getDocs, doc, getDoc, addDoc, serverTimestamp } from './firebase-config.js';
+import { auth, db, onAuthStateChanged, collection, query, where, onSnapshot, doc, getDoc, addDoc, serverTimestamp } from './firebase-config.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     const ticketsContainer = document.getElementById('tickets-container');
@@ -8,6 +8,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let currentUser = null;
     let currentUserName = null;
+    let currentUserRole = null;
+    let unsubscribeTickets = null; // To stop the listener
 
     onAuthStateChanged(auth, async (user) => {
         if (user) {
@@ -15,9 +17,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const userDocSnap = await getDoc(doc(db, "users", user.uid));
             if (userDocSnap.exists() && userDocSnap.data().role === 'supervisor') {
                 currentUserName = userDocSnap.data().name;
-                loadTickets();
+                currentUserRole = userDocSnap.data().role;
+                listenForTickets();
             } else {
-                // If user is not a supervisor, redirect
                 window.location.href = 'tickets-operador.html';
             }
         } else {
@@ -25,36 +27,37 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    const loadTickets = async () => {
+    const listenForTickets = () => {
         if (!ticketsContainer) return;
         ticketsContainer.innerHTML = '<p>Cargando tickets...</p>';
 
+        if (unsubscribeTickets) unsubscribeTickets(); // Stop any previous listener
+
         const status = filtroEstado.value;
+        let q;
+        if (status === 'todos') {
+            q = query(collection(db, 'tickets'));
+        } else {
+            q = query(collection(db, 'tickets'), where('status', '==', status));
+        }
 
-        try {
-            let q;
-            if (status === 'todos') {
-                q = query(collection(db, 'tickets'));
-            } else {
-                q = query(collection(db, 'tickets'), where('status', '==', status));
-            }
-
-            const querySnapshot = await getDocs(q);
-
+        unsubscribeTickets = onSnapshot(q, (querySnapshot) => {
             if (querySnapshot.empty) {
-                ticketsContainer.innerHTML = `<p>No se encontraron tickets con el estado '${status}'.</p>`;
+                ticketsContainer.innerHTML = `<p>No se encontraron tickets.</p>`;
                 return;
             }
 
             let ticketsHTML = '';
             const tickets = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            tickets.sort((a, b) => b.lastUpdatedAt - a.lastUpdatedAt);
+            tickets.sort((a, b) => (b.lastUpdatedAt?.toMillis() || 0) - (a.lastUpdatedAt?.toMillis() || 0));
 
             tickets.forEach(ticket => {
                 const lastUpdate = ticket.lastUpdatedAt?.toDate().toLocaleString() || 'N/A';
+                const unreadCount = ticket.unreadCounts?.supervisor || 0;
 
                 ticketsHTML += `
                     <div class="ticket-card" data-id="${ticket.id}">
+                        ${unreadCount > 0 ? `<div class="notification-badge">${unreadCount}</div>` : ''}
                         <div class="ticket-subject">${ticket.subject}</div>
                         <div class="ticket-operator">Operador: ${ticket.operatorName}</div>
                         <div class="ticket-status status-${ticket.status}">${ticket.status}</div>
@@ -72,14 +75,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             });
 
-        } catch (error) {
+        }, (error) => {
             console.error("Error al cargar los tickets:", error);
             let errorMessage = '<p>Ocurrió un error al cargar los tickets.</p>';
             if (error.message.includes("firestore/failed-precondition")) {
                 errorMessage += '<p style="color: red; font-weight: bold;">Este error puede ser por un índice faltante en Firestore. Por favor, revisa la consola del navegador (F12). Firebase usualmente provee un link para crear el índice automáticamente.</p>';
             }
             ticketsContainer.innerHTML = errorMessage;
-        }
+        });
     };
 
     const showCreateTicketModal = () => {
@@ -117,7 +120,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             try {
                 await addDoc(collection(db, 'tickets'), {
-                    operatorUid: currentUser.uid,
+                    operatorUid: currentUser.uid, // This seems to be the supervisor's UID, acting as operator
                     operatorName: currentUserName || currentUser.email,
                     subject: subject,
                     createdAt: serverTimestamp(),
@@ -128,12 +131,16 @@ document.addEventListener('DOMContentLoaded', () => {
                             senderUid: currentUser.uid,
                             senderName: currentUserName || currentUser.email,
                             text: message,
-                            timestamp: new Date() // Use client-side timestamp
+                            timestamp: new Date()
                         }
-                    ]
+                    ],
+                    unreadCounts: { // Initialize counts
+                        supervisor: 0, // The creator (supervisor) has read it
+                        operator: 1   // The recipient (operator) has 1 unread message
+                    }
                 });
                 modal.remove();
-                loadTickets();
+                // The onSnapshot listener will automatically refresh the list
             } catch (error) {
                 console.error("Error al crear el ticket:", error);
                 alert('Ocurrió un error al crear el ticket.');
@@ -143,9 +150,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     crearTicketBtn?.addEventListener('click', showCreateTicketModal);
 
-    filtroEstado?.addEventListener('change', loadTickets);
+    filtroEstado?.addEventListener('change', listenForTickets);
 
     menuBtn?.addEventListener('click', () => {
         window.location.href = 'menu.html';
+    });
+
+    // Cleanup listener on page unload
+    window.addEventListener('beforeunload', () => {
+        if (unsubscribeTickets) unsubscribeTickets();
     });
 });

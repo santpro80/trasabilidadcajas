@@ -1,4 +1,4 @@
-import { auth, db, onAuthStateChanged, collection, query, where, getDocs, addDoc, serverTimestamp, getDoc, doc, updateDoc, arrayUnion } from './firebase-config.js';
+import { auth, db, onAuthStateChanged, collection, query, where, onSnapshot, addDoc, serverTimestamp, getDoc, doc } from './firebase-config.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     const ticketsContainer = document.getElementById('tickets-container');
@@ -7,6 +7,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let currentUser = null;
     let currentUserName = null;
+    let currentUserRole = null;
+    let unsubscribeTickets = null;
 
     onAuthStateChanged(auth, async (user) => {
         if (user) {
@@ -14,39 +16,43 @@ document.addEventListener('DOMContentLoaded', () => {
             const userDocSnap = await getDoc(doc(db, "users", user.uid));
             if (userDocSnap.exists()) {
                 currentUserName = userDocSnap.data().name;
+                currentUserRole = userDocSnap.data().role || 'operador';
             }
-            loadTickets(user.uid);
+            listenForTickets(user.uid);
         } else {
             window.location.href = 'login.html';
         }
     });
 
-    const loadTickets = async (userId) => {
+    const listenForTickets = (userId) => {
         if (!ticketsContainer) return;
         ticketsContainer.innerHTML = '<p>Cargando tickets...</p>';
 
-        try {
-            const q = query(
-                collection(db, 'tickets'),
-                where('operatorUid', '==', userId),
-                where('status', '==', 'abierto')
-            );
-            const querySnapshot = await getDocs(q);
+        if (unsubscribeTickets) unsubscribeTickets();
 
+        const q = query(
+            collection(db, 'tickets'),
+            where('operatorUid', '==', userId),
+            where('status', '==', 'abierto')
+        );
+
+        unsubscribeTickets = onSnapshot(q, (querySnapshot) => {
             if (querySnapshot.empty) {
-                ticketsContainer.innerHTML = '<p>No tienes tickets creados.</p>';
+                ticketsContainer.innerHTML = '<p>No tienes tickets abiertos.</p>';
                 return;
             }
 
             let ticketsHTML = '';
             const tickets = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            tickets.sort((a, b) => b.lastUpdatedAt - a.lastUpdatedAt);
+            tickets.sort((a, b) => (b.lastUpdatedAt?.toMillis() || 0) - (a.lastUpdatedAt?.toMillis() || 0));
 
             tickets.forEach(ticket => {
                 const lastUpdate = ticket.lastUpdatedAt?.toDate().toLocaleString() || 'N/A';
+                const unreadCount = ticket.unreadCounts?.operator || 0;
 
                 ticketsHTML += `
                     <div class="ticket-card" data-id="${ticket.id}">
+                        ${unreadCount > 0 ? `<div class="notification-badge">${unreadCount}</div>` : ''}
                         <div class="ticket-subject">${ticket.subject}</div>
                         <div class="ticket-status status-${ticket.status}">${ticket.status}</div>
                         <div class="ticket-last-update">Última actualización: ${lastUpdate}</div>
@@ -63,14 +69,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             });
 
-        } catch (error) {
+        }, (error) => {
             console.error("Error al cargar los tickets:", error);
             let errorMessage = '<p>Ocurrió un error al cargar los tickets.</p>';
             if (error.message.includes("firestore/failed-precondition")) {
                 errorMessage += '<p style="color: red; font-weight: bold;">Este error puede ser por un índice faltante en Firestore. Por favor, revisa la consola del navegador (F12). Firebase usualmente provee un link para crear el índice automáticamente.</p>';
             }
             ticketsContainer.innerHTML = errorMessage;
-        }
+        });
     };
 
     crearTicketBtn?.addEventListener('click', () => {
@@ -123,12 +129,16 @@ document.addEventListener('DOMContentLoaded', () => {
                             senderUid: currentUser.uid,
                             senderName: currentUserName || currentUser.email,
                             text: message,
-                            timestamp: new Date() // Use client-side timestamp
+                            timestamp: new Date()
                         }
-                    ]
+                    ],
+                    unreadCounts: { // Initialize counts
+                        supervisor: 1, // Notify supervisors of the new ticket
+                        operator: 0    // The creator has read it
+                    }
                 });
                 modal.remove();
-                loadTickets(currentUser.uid);
+                // The onSnapshot listener will automatically refresh the list
             } catch (error) {
                 console.error("Error al crear el ticket:", error);
                 alert('Ocurrió un error al crear el ticket.');
@@ -138,5 +148,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     menuBtn?.addEventListener('click', () => {
         window.location.href = 'menu.html';
+    });
+
+    // Cleanup listener on page unload
+    window.addEventListener('beforeunload', () => {
+        if (unsubscribeTickets) unsubscribeTickets();
     });
 });
