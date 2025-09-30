@@ -3,12 +3,21 @@ import { auth, db, onAuthStateChanged, signOut, doc, getDoc } from './firebase-c
 document.addEventListener('DOMContentLoaded', () => {
     const userDisplayElement = document.getElementById('user-display-name');
     const logoutBtn = document.getElementById('logout-btn');
+    const reportarProblemaBtn = document.getElementById('reportar-problema-btn');
 
     onAuthStateChanged(auth, async (user) => {
         if (user && userDisplayElement) {
             try {
                 const userDoc = await getDoc(doc(db, "users", user.uid));
-                userDisplayElement.textContent = userDoc.exists() ? userDoc.data().name : user.email;
+                if (userDoc.exists()) {
+                    const userData = userDoc.data();
+                    userDisplayElement.textContent = userData.name;
+                    if (userData.role === 'supervisor') {
+                        if(reportarProblemaBtn) reportarProblemaBtn.style.display = 'block';
+                    }
+                } else {
+                    userDisplayElement.textContent = user.email;
+                }
             } catch (error) {
                 console.error("Error al obtener datos del usuario:", error);
                 userDisplayElement.textContent = user.email;

@@ -35,7 +35,7 @@ export async function registerUser(email, password, name, role) {
     });
     
     alert("¡Registro exitoso!");
-    window.location.href = "dashboard.html";
+    window.location.href = "menu.html";
   } catch (error) {
     alert("Error en registro: " + error.message);
     throw error;

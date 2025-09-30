@@ -41,8 +41,6 @@
         #li-historial, #li-importar-datos {
             display: none;
         }
-
-    /* --- Modal Styles --- */
     .modal-overlay {
         position: fixed; top: 0; left: 0; width: 100%; height: 100%;
         background-color: rgba(0, 0, 0, 0.6); display: none; justify-content: center;
@@ -174,6 +172,25 @@
                             <span>Importar Datos</span>
                         </button>
                     </li>
+                    <li id="li-reportar-problema" style="display: none;">
+                        <button id="btn-reportar-problema">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                                <line x1="12" y1="9" x2="12" y2="13"></line>
+                                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                            </svg>
+                            <span>Reportar Problema</span>
+                        </button>
+                    </li>
+                    <li id="li-ver-problemas" style="display: none;">
+                        <button id="btn-ver-problemas">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                                <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+                            </svg>
+                            <span>Ver Problemas</span>
+                        </button>
+                    </li>
                 </ul>
             </nav>
         </div>
@@ -194,6 +211,8 @@
         const btnTickets = document.getElementById('btn-tickets');
         const btnEstadisticas = document.getElementById('btn-estadisticas');
         const btnEstadosCajas = document.getElementById('btn-estados-cajas');
+        const btnReportarProblema = document.getElementById('btn-reportar-problema');
+        const btnVerProblemas = document.getElementById('btn-ver-problemas');
 
         let currentUserRole = 'operario';
 
@@ -205,18 +224,22 @@
             const liTickets = document.getElementById('li-tickets');
             const liEstadisticas = document.getElementById('li-estadisticas');
             const liEstadosCajas = document.getElementById('li-estados-cajas');
+            const liReportarProblema = document.getElementById('li-reportar-problema');
+            const liVerProblemas = document.getElementById('li-ver-problemas');
 
             const isSupervisor = role === 'supervisor';
+            const isMantenimiento = role === 'mantenimiento';
 
-            // Supervisor-only buttons
             if (liHistorial) liHistorial.style.display = isSupervisor ? 'list-item' : 'none';
             if (liInformeDiario) liInformeDiario.style.display = isSupervisor ? 'list-item' : 'none';
             if (liImportarDatos) liImportarDatos.style.display = isSupervisor ? 'list-item' : 'none';
             if (liRegistrarUsuario) liRegistrarUsuario.style.display = isSupervisor ? 'list-item' : 'none';
             if (liEstadisticas) liEstadisticas.style.display = isSupervisor ? 'list-item' : 'none';
             if (liEstadosCajas) liEstadosCajas.style.display = isSupervisor ? 'list-item' : 'none';
+            if (liReportarProblema) liReportarProblema.style.display = isSupervisor ? 'list-item' : 'none';
 
-            // This button is visible for everyone
+            if (liVerProblemas) liVerProblemas.style.display = (isSupervisor || isMantenimiento) ? 'list-item' : 'none';
+
             if (liTickets) liTickets.style.display = 'list-item';
         };
 
@@ -234,7 +257,6 @@
                         currentUserRole = 'operario';
                     }
                     manageMenuVisibility(currentUserRole);
-                    // Setup ticket notifications
                     setupTicketNotifications(db, collection, query, where, onSnapshot, user, currentUserRole);
                 } catch (error) {
                     console.error("Error al obtener datos del usuario:", error);
@@ -263,14 +285,8 @@
         btnRegistrarUsuario?.addEventListener('click', () => { window.location.href = 'register.html'; });
         btnEstadisticas?.addEventListener('click', () => { window.location.href = 'estadisticas.html'; });
         btnEstadosCajas?.addEventListener('click', () => { window.location.href = 'estados-cajas.html'; });
-
-        btnTickets?.addEventListener('click', () => {
-            if (currentUserRole === 'supervisor') {
-                window.location.href = 'tickets-supervisor.html';
-            } else {
-                window.location.href = 'tickets-operador.html';
-            }
-        });
+        btnReportarProblema?.addEventListener('click', () => { window.location.href = 'reportar-problema.html'; });
+        btnVerProblemas?.addEventListener('click', () => { window.location.href = 'ver-problemas.html'; });
     </script>
 </body>
 </html>

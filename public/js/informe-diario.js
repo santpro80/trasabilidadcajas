@@ -151,7 +151,6 @@ const fetchAndRenderReport = async (fecha) => {
     }
 };
 
-// --- AUTHORIZATION AND INITIALIZATION ---
 onAuthStateChanged(auth, async (user) => {
     if (user) {
         const userDocRef = doc(db, "users", user.uid);

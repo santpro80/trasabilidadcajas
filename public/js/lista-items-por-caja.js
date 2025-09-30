@@ -45,15 +45,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const prestamoInput = document.getElementById('prestamo-input');
     const cancelPrestamoBtn = document.getElementById('cancel-prestamo-btn');
     const confirmPrestamoBtn = document.getElementById('confirm-prestamo-btn');
+    const observationModal = document.getElementById('observationModal');
+    const noObservationBtn = document.getElementById('no-observation-btn');
+    const yesObservationBtn = document.getElementById('yes-observation-btn');
 
     let allLoadedItemsData = {};
     let currentSelectedSerialNumber = '';
     let modelName = '';
     let currentEditingItem = { originalName: '', oldSerial: '' };
     let itemToDelete = null;
-let codeToDescMap = new Map();
-let unsubscribeFromItems = null;
-let currentSelectedItem = null; // New variable to track selected item
+    let codeToDescMap = new Map();
+    let unsubscribeFromItems = null;
+    let currentSelectedItem = null; // New variable to track selected item
+    let reportType = ''; // Variable to store report type
 
     onAuthStateChanged(auth, async (user) => {
         if (!user) { window.location.href = 'login.html'; return; }
@@ -372,8 +376,35 @@ let currentSelectedItem = null; // New variable to track selected item
     if (searchInput) searchInput.addEventListener('input', () => renderFilteredItems(allLoadedItemsData, searchInput.value));
     if (addItemBtn) addItemBtn.addEventListener('click', addNewItemRow);
     if (downloadPdfBtn) downloadPdfBtn.addEventListener('click', () => { if (tipoReporteModal) tipoReporteModal.style.display = 'flex'; });
-    if (btnEntrada) btnEntrada.addEventListener('click', registrarEntradaSimple);
-    if (btnSalida) btnSalida.addEventListener('click', () => { if (tipoReporteModal) tipoReporteModal.style.display = 'none'; if (prestamoModal) prestamoModal.style.display = 'flex'; if (prestamoInput) prestamoInput.focus(); });
+    
+    if (btnEntrada) btnEntrada.addEventListener('click', () => {
+        reportType = 'Entrada';
+        if (tipoReporteModal) tipoReporteModal.style.display = 'none';
+        if (observationModal) observationModal.style.display = 'flex';
+    });
+
+    if (btnSalida) btnSalida.addEventListener('click', () => {
+        reportType = 'Salida';
+        if (tipoReporteModal) tipoReporteModal.style.display = 'none';
+        if (observationModal) observationModal.style.display = 'flex';
+    });
+
+    if (noObservationBtn) noObservationBtn.addEventListener('click', () => {
+        if (observationModal) observationModal.style.display = 'none';
+        if (reportType === 'Entrada') {
+            registrarEntradaSimple();
+        } else if (reportType === 'Salida') {
+            if (prestamoModal) prestamoModal.style.display = 'flex';
+            if (prestamoInput) prestamoInput.focus();
+        }
+    });
+
+    if (yesObservationBtn) yesObservationBtn.addEventListener('click', () => {
+        if (observationModal) observationModal.style.display = 'none';
+        const url = `reportar-problema.html?serial=${encodeURIComponent(currentSelectedSerialNumber)}&modelo=${encodeURIComponent(modelName)}`;
+        window.location.href = url;
+    });
+
     if (confirmPrestamoBtn) confirmPrestamoBtn.addEventListener('click', () => { const num = prestamoInput.value.trim(); if (num) generarPDF('Salida', num); else showNotification("Por favor, ingresa un número de préstamo.", "error"); });
     if (cancelPrestamoBtn) cancelPrestamoBtn.addEventListener('click', () => { if (prestamoModal) prestamoModal.style.display = 'none'; });
     if (cancelEditBtn) cancelEditBtn.addEventListener('click', () => { if (editSerialModal) editSerialModal.style.display = 'none'; });
@@ -382,4 +413,3 @@ let currentSelectedItem = null; // New variable to track selected item
     if (logoutBtn) logoutBtn.addEventListener('click', () => signOut(auth).then(() => { if (unsubscribeFromItems) unsubscribeFromItems(); window.location.href = 'login.html'; }));
     if (menuBtn) menuBtn.addEventListener('click', () => { window.location.href = 'menu.html'; });
 });
-
