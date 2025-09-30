@@ -132,6 +132,7 @@
             display: flex;
             align-items: center;
             justify-content: space-between; /* Distribuye el espacio */
+            position: relative; /* Añadido para el posicionamiento absoluto del hijo */
         }
 
         .problema-list-item:hover {
@@ -149,8 +150,10 @@
             font-size: 1.5em;
             font-weight: 500;
             color: #555;
-            flex-grow: 1;
-            text-align: center;
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
         }
 
         .problema-details {
@@ -333,7 +336,7 @@
                 <ul id="modal-tasks-list" class="tasks-list"></ul>
             </div>
             <div class="modal-actions" id="reactivar-container" style="display: none;">
-                 <button id="reactivar-btn" class="btn-reactivar">Reactivar Caja</button>
+                 <button id="reactivar-btn" class="btn-reactivar">finalizar caja</button>
             </div>
         </div>
     </div>

@@ -70,6 +70,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 allProblemas.push({ id: problemDoc.id, ...problemDoc.data() });
             }
             
+            // Filtrar problemas resueltos para el rol de mantenimiento
+            if (userRole === 'mantenimiento') {
+                allProblemas = allProblemas.filter(p => p.estado !== 'resuelto');
+            }
+            
             allProblemas.sort((a, b) => {
                 const order = { 'nuevo': 1, 'en proceso': 2, 'resuelto': 3 };
                 return (order[a.estado] || 99) - (order[b.estado] || 99);
@@ -104,7 +109,7 @@ document.addEventListener('DOMContentLoaded', () => {
             listItem.innerHTML = `
                 <div class="problema-info">
                     <span class="serial">${problema.cajaSerial}</span>
-                    <span class="modelo">- ${problema.cajaModelo}</span>
+                    <span class="modelo">${problema.cajaModelo}</span>
                 </div>
                 <div class="problema-details">
                     <span class="fecha">${problema.fechaReporte.toDate().toLocaleDateString()}</span>
