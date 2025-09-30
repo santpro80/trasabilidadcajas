@@ -5,28 +5,26 @@ import { app, db } from "./firebase-config.js";
 const auth = getAuth(app);
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Elementos de la UI
     const userDisplayElement = document.getElementById('user-display-name');
     const logoutBtn = document.getElementById('logout-btn');
     const backBtn = document.getElementById('back-btn');
     const loadingState = document.getElementById('loading-state');
     const emptyState = document.getElementById('empty-state');
     const problemasList = document.getElementById('problemas-list');
+    const searchInput = document.getElementById('search-input');
 
-    // Elementos del Modal
     const modal = document.getElementById('problema-modal');
     const closeModalBtn = document.getElementById('close-modal-btn');
     const modalSerialModelo = document.getElementById('modal-serial-modelo');
-    const modalReportadoPor = document.getElementById('modal-reportado-por');
     const modalFecha = document.getElementById('modal-fecha');
-    const modalDescripcion = document.getElementById('modal-descripcion');
-    const modalStatusSelect = document.getElementById('modal-status-select');
+    const modalTasksList = document.getElementById('modal-tasks-list');
+    const reactivarContainer = document.getElementById('reactivar-container');
+    const reactivarBtn = document.getElementById('reactivar-btn');
 
     let currentUser = null;
     let userRole = null;
-    let allProblemas = []; // Almacenar todos los problemas
+    let allProblemas = [];
 
-    // Autenticación y carga inicial
     onAuthStateChanged(auth, async (user) => {
         if (user) {
             currentUser = user;
@@ -49,13 +47,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Navegación y cierre de sesión
     backBtn.addEventListener('click', () => window.location.href = 'menu.html');
     logoutBtn.addEventListener('click', () => {
         signOut(auth).then(() => window.location.href = 'login.html');
     });
 
-    // Cargar y mostrar los problemas
     async function loadProblemas() {
         loadingState.style.display = 'flex';
         problemasList.style.display = 'none';
@@ -63,7 +59,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         try {
             const querySnapshot = await getDocs(collection(db, "problemas_cajas"));
-            allProblemas = []; // Limpiar antes de cargar
+            allProblemas = [];
 
             if (querySnapshot.empty) {
                 emptyState.style.display = 'flex';
@@ -71,18 +67,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             for (const problemDoc of querySnapshot.docs) {
-                const problema = problemDoc.data();
-                const userDoc = await getDoc(doc(db, "users", problema.reportadoPor));
-                const reportadoPorNombre = userDoc.exists() ? userDoc.data().name : 'Desconocido';
-                
-                allProblemas.push({
-                    id: problemDoc.id,
-                    ...problema,
-                    reportadoPorNombre
-                });
+                allProblemas.push({ id: problemDoc.id, ...problemDoc.data() });
             }
             
-            // Ordenar problemas: 'nuevo' y 'en proceso' primero, 'resuelto' al final
             allProblemas.sort((a, b) => {
                 const order = { 'nuevo': 1, 'en proceso': 2, 'resuelto': 3 };
                 return (order[a.estado] || 99) - (order[b.estado] || 99);
@@ -99,7 +86,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Renderizar los items de la lista de problemas
     function displayProblemas(problemas) {
         problemasList.innerHTML = '';
         if (problemas.length === 0) {
@@ -113,7 +99,7 @@ document.addEventListener('DOMContentLoaded', () => {
             listItem.className = 'problema-list-item';
             listItem.dataset.id = problema.id;
 
-            const estadoClass = problema.estado.replace(' ', '-').toLowerCase();
+            const estadoClass = (problema.estado || 'desconocido').replace(' ', '-').toLowerCase();
 
             listItem.innerHTML = `
                 <div class="problema-info">
@@ -126,33 +112,140 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             `;
 
-            listItem.addEventListener('click', () => openModal(problema));
+            listItem.addEventListener('click', () => openModal(problema.id));
             problemasList.appendChild(listItem);
         });
 
-        problemasList.style.display = 'block';
+        problemasList.style.display = 'flex';
         emptyState.style.display = 'none';
     }
 
-    // Abrir y poblar el modal
-    function openModal(problema) {
-        modalSerialModelo.textContent = `${problema.cajaSerial} / ${problema.cajaModelo}`;
-        modalReportadoPor.textContent = problema.reportadoPorNombre;
-        modalFecha.textContent = problema.fechaReporte.toDate().toLocaleString();
-        modalDescripcion.textContent = problema.descripcion;
+    async function openModal(problemaId) {
+        const problemaRef = doc(db, 'problemas_cajas', problemaId);
+        const problemaDoc = await getDoc(problemaRef);
 
-        // Poblar y seleccionar el estado actual en el select
-        modalStatusSelect.innerHTML = `
-            <option value="nuevo" ${problema.estado === 'nuevo' ? 'selected' : ''}>Nuevo</option>
-            <option value="en proceso" ${problema.estado === 'en proceso' ? 'selected' : ''}>En Proceso</option>
-            <option value="resuelto" ${problema.estado === 'resuelto' ? 'selected' : ''}>Resuelto</option>
-        `;
-        modalStatusSelect.dataset.id = problema.id; // Guardar id para la actualización
+        if (!problemaDoc.exists()) {
+            console.error("El problema no existe.");
+            return;
+        }
+
+        let problemaData = { id: problemaDoc.id, ...problemaDoc.data() };
+
+        // Cambiar estado a "en proceso" si es "nuevo"
+        if (problemaData.estado === 'nuevo') {
+            await updateDoc(problemaRef, { estado: 'en proceso' });
+            problemaData.estado = 'en proceso';
+            // Actualizar UI de la lista principal
+            const listItem = problemasList.querySelector(`[data-id="${problemaId}"]`);
+            if (listItem) {
+                const estadoEl = listItem.querySelector('.estado');
+                estadoEl.textContent = 'en proceso';
+                estadoEl.className = 'estado en-proceso';
+            }
+        }
+
+        modalSerialModelo.textContent = `${problemaData.cajaSerial} / ${problemaData.cajaModelo}`;
+        modalFecha.textContent = problemaData.fechaReporte.toDate().toLocaleString();
+        
+        renderTasks(problemaData);
+
+        reactivarBtn.onclick = () => reactivarCaja(problemaData.id);
 
         modal.style.display = 'flex';
     }
 
-    // Cerrar el modal
+    function renderTasks(problema) {
+        modalTasksList.innerHTML = '';
+        let allTasksCompleted = true;
+
+        const tasks = Array.isArray(problema.tareas) ? problema.tareas : [];
+
+        if (tasks.length === 0) {
+            const noTaskItem = document.createElement('li');
+            noTaskItem.textContent = 'No hay tareas específicas descritas.';
+            noTaskItem.style.color = '#888';
+            noTaskItem.style.padding = '15px';
+            modalTasksList.appendChild(noTaskItem);
+            allTasksCompleted = true;
+        } else {
+            tasks.forEach((task, index) => {
+                const taskItem = document.createElement('li');
+                taskItem.className = 'task-item';
+                if (task.completada) {
+                    taskItem.classList.add('completed');
+                }
+
+                const taskText = document.createElement('span');
+                taskText.textContent = task.texto;
+
+                const doneButton = document.createElement('button');
+                doneButton.textContent = 'Tarea Realizada';
+                doneButton.className = 'btn-task-done';
+                doneButton.disabled = task.completada;
+                
+                doneButton.addEventListener('click', () => {
+                    markTaskAsDone(problema, index);
+                });
+
+                taskItem.appendChild(taskText);
+                taskItem.appendChild(doneButton);
+                modalTasksList.appendChild(taskItem);
+
+                if (!task.completada) {
+                    allTasksCompleted = false;
+                }
+            });
+        }
+
+        checkReactivarState(allTasksCompleted);
+    }
+    
+    async function markTaskAsDone(problema, taskIndex) {
+        const problemaRef = doc(db, 'problemas_cajas', problema.id);
+        
+        const tasks = Array.isArray(problema.tareas) ? [...problema.tareas] : [];
+
+        if (tasks[taskIndex]) {
+            tasks[taskIndex].completada = true;
+        }
+
+        try {
+            await updateDoc(problemaRef, { tareas: tasks });
+            
+            problema.tareas = tasks;
+            renderTasks(problema);
+
+        } catch (error) {
+            console.error("Error al marcar la tarea como completada:", error);
+        }
+    }
+
+    function checkReactivarState(allTasksCompleted) {
+        if (allTasksCompleted) {
+            reactivarContainer.style.display = 'block';
+        } else {
+            reactivarContainer.style.display = 'none';
+        }
+    }
+
+    async function reactivarCaja(problemaId) {
+        const problemaRef = doc(db, 'problemas_cajas', problemaId);
+        try {
+            await updateDoc(problemaRef, { estado: 'resuelto' });
+            
+            // Actualizar UI en la lista principal
+            const problemInList = allProblemas.find(p => p.id === problemaId);
+            if (problemInList) {
+                problemInList.estado = 'resuelto';
+            }
+            displayProblemas(allProblemas); // Re-renderizar para ordenar
+            
+            closeModal();
+        } catch (error) {
+            console.error("Error al reactivar la caja:", error);
+        }
+    }
+
     function closeModal() {
         modal.style.display = 'none';
     }
@@ -164,27 +257,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Actualizar estado desde el modal
-    modalStatusSelect.addEventListener('change', async (e) => {
-        const problemId = e.target.dataset.id;
-        const newStatus = e.target.value;
-        const problemRef = doc(db, 'problemas_cajas', problemId);
-
-        try {
-            await updateDoc(problemRef, { estado: newStatus });
-            // Actualizar la UI instantáneamente
-            const changedProblem = allProblemas.find(p => p.id === problemId);
-            if (changedProblem) {
-                changedProblem.estado = newStatus;
-            }
-            
-            // Re-renderizar toda la lista para reflejar el cambio de estado
-            displayProblemas(allProblemas);
-            closeModal(); // Cierra el modal después de actualizar
-
-        } catch (error) {
-            console.error("Error al actualizar estado: ", error);
-        }
+    searchInput.addEventListener('input', (e) => {
+        const searchTerm = e.target.value.toLowerCase();
+        const filteredProblemas = allProblemas.filter(p => 
+            p.cajaSerial.toLowerCase().includes(searchTerm) ||
+            p.cajaModelo.toLowerCase().includes(searchTerm)
+        );
+        displayProblemas(filteredProblemas);
     });
-
 });
