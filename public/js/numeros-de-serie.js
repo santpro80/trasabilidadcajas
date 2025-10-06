@@ -90,7 +90,7 @@ document.addEventListener('DOMContentLoaded', () => {
             modelNameDisplay.textContent = "Error: Faltan datos";
             showState(errorState); return;
         }
-        modelNameDisplay.textContent = `Números de Serie para: ${currentModelName}`;
+        modelNameDisplay.textContent = `Números de Serie para: ${currentModelName.toUpperCase()}`;
 
         try {
             const zonaDocRef = doc(db, "Cajas", currentZonaName);
@@ -117,7 +117,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         registrarBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>`;
                         registrarBtn.addEventListener('click', async (e) => {
                             e.stopPropagation();
-                            openConfirmEntryModal(serial); // Open custom modal instead of window.confirm
+                            openConfirmEntryModal(serial);
                         });
                         buttonsContainer.appendChild(registrarBtn);
 
@@ -136,7 +136,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         
                         const serialContainer = document.createElement('div');
                         serialContainer.className = 'serial-container';
-                        serialContainer.innerHTML = `<span class="serial-text">${serial}</span>`;
+                        serialContainer.innerHTML = `<span class="serial-text">${serial.toUpperCase()}</span>`;
                         serialContainer.addEventListener('click', () => {
                             const url = `lista-items-por-caja.html?selectedSerialNumber=${encodeURIComponent(serial)}&modelName=${encodeURIComponent(currentModelName)}&zonaName=${encodeURIComponent(currentZonaName)}`;
                             window.location.href = url;
@@ -163,11 +163,9 @@ document.addEventListener('DOMContentLoaded', () => {
         cancelDeleteBtn.disabled = true;
 
         try {
-            // Borramos el documento de ítems
             const itemDocRef = doc(db, "Items", serialToDelete);
             await deleteDoc(itemDocRef);
 
-            // Actualizamos la lista de series en el documento de la zona
             const zonaDocRef = doc(db, "Cajas", currentZonaName);
             const zonaDocSnap = await getDoc(zonaDocRef);
             if (zonaDocSnap.exists()) {
@@ -180,14 +178,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             }
             
-            // --- REGISTRO DE HISTORIAL ---
             registrarHistorial('ELIMINACIÓN DE CAJA', {
                 cajaSerie: serialToDelete,
                 modelo: currentModelName,
-                mensaje: `Se eliminó la caja "${serialToDelete}" (Modelo: ${currentModelName}) y todos sus ítems.`
+                mensaje: `Se eliminó la caja "${serialToDelete.toUpperCase()}" (Modelo: ${currentModelName.toUpperCase()}) y todos sus ítems.`
             });
 
-            showNotification(`Caja "${serialToDelete}" eliminada con éxito.`, 'success');
+            showNotification(`Caja "${serialToDelete.toUpperCase()}" eliminada con éxito.`, 'success');
             
             closeDeleteModal();
             loadSerialNumbers();
@@ -202,10 +199,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
     
-    // Functions for entry confirmation modal
     const openConfirmEntryModal = (serial) => {
         serialToConfirmEntry = serial;
-        confirmEntryModalText.textContent = `¿Estás seguro de que deseas registrar una entrada para la caja "${serial}"?`;
+        confirmEntryModalText.textContent = `¿Estás seguro de que deseas registrar una entrada para la caja "${serial.toUpperCase()}"?`;
         confirmEntryModal.style.display = 'flex';
     };
 
@@ -214,10 +210,9 @@ document.addEventListener('DOMContentLoaded', () => {
         serialToConfirmEntry = null;
     };
 
-    // ... (El resto de funciones y listeners como openDeleteModal, closeDeleteModal, etc., no cambian)
     const openDeleteModal = (serial) => {
         serialToDelete = serial;
-        deleteModalText.textContent = `¿Estás seguro de que deseas eliminar la caja "${serial}" y todos sus ítems? Esta acción es permanente.`;
+        deleteModalText.textContent = `¿Estás seguro de que deseas eliminar la caja "${serial.toUpperCase()}" y todos sus ítems? Esta acción es permanente.`;
         deleteConfirmModal.style.display = 'flex';
     };
     const closeDeleteModal = () => {
@@ -227,27 +222,18 @@ document.addEventListener('DOMContentLoaded', () => {
     cancelDeleteBtn.addEventListener('click', closeDeleteModal);
     confirmDeleteBtn.addEventListener('click', deleteCaja);
 
-    // Event listeners for new entry confirmation modal
     cancelEntryBtn.addEventListener('click', closeConfirmEntryModal);
     confirmEntryBtn.addEventListener('click', async () => {
         if (!serialToConfirmEntry) return;
 
-        // Optionally show a spinner or disable buttons here if the action takes time
-        // modalSpinner.style.display = 'block'; // If you want to reuse the spinner
-        // confirmEntryBtn.disabled = true;
-        // cancelEntryBtn.disabled = true;
-
         try {
-            showNotification(`Registrando entrada para ${serialToConfirmEntry}...`, 'info');
+            showNotification(`Registrando entrada para ${serialToConfirmEntry.toUpperCase()}...`, 'info');
             await registrarMovimientoCaja('Entrada', serialToConfirmEntry, currentModelName);
-            showNotification(`Entrada de caja "${serialToConfirmEntry}" registrada.`, 'success');
+            showNotification(`Entrada de caja "${serialToConfirmEntry.toUpperCase()}" registrada.`, 'success');
         } catch (error) {
-            showNotification(`Error al registrar entrada para "${serialToConfirmEntry}".`, 'error');
+            showNotification(`Error al registrar entrada para "${serialToConfirmEntry.toUpperCase()}".`, 'error');
             console.error("Error al registrar entrada:", error);
         } finally {
-            // modalSpinner.style.display = 'none';
-            // confirmEntryBtn.disabled = false;
-            // cancelEntryBtn.disabled = false;
             closeConfirmEntryModal();
         }
     });
@@ -255,7 +241,7 @@ document.addEventListener('DOMContentLoaded', () => {
     addCajaBtn.addEventListener('click', () => {
         localStorage.setItem('tracingStartTime', Date.now());
         localStorage.setItem('tracingModelName', currentModelName);
-        localStorage.setItem('tracingZonaName', currentZonaName); // Store zonaName for context
+        localStorage.setItem('tracingZonaName', currentZonaName);
         window.location.href = `agregar-caja.html?modelName=${encodeURIComponent(currentModelName)}&zonaName=${encodeURIComponent(currentZonaName)}`;
     });
     backBtn.addEventListener('click', () => {

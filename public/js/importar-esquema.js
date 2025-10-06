@@ -63,7 +63,7 @@ document.addEventListener('DOMContentLoaded', () => {
             zonas.sort().forEach(zonaId => {
                 const option = document.createElement('option');
                 option.value = zonaId;
-                option.textContent = zonaId;
+                option.textContent = zonaId.toUpperCase();
                 zonasSelect.appendChild(option);
             });
         } catch (error) {
@@ -95,7 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 models.sort().forEach(modelId => {
                     const option = document.createElement('option');
                     option.value = modelId;
-                    option.textContent = modelId;
+                    option.textContent = modelId.toUpperCase();
                     modelosSelect.appendChild(option);
                 });
                 modelosSelect.disabled = false;
@@ -134,6 +134,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const processAndUploadSchema = (modelName, file) => {
         showLoading(true);
+
+        // === CORRECCIÓN: Sanitizar el nombre del modelo para Firestore ===
+        const sanitizedModelName = modelName.replace(/\//g, '_');
+        // =================================================================
+
         Papa.parse(file, {
             header: false,
             skipEmptyLines: true,
@@ -144,9 +149,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     return;
                 }
 
-                // ==================================================================
-                // MODIFICACIÓN CLAVE: Construir un objeto plano, no un array.
-                // ==================================================================
                 const schemaToSave = {};
                 let itemCount = 0;
 
@@ -155,9 +157,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const descripcion = row[1]?.trim();
 
                     if (codigo && descripcion) {
-                        // El nombre del campo será "codigo;descripcion"
                         const fieldName = `${codigo};${descripcion}`;
-                        // El valor será una cadena vacía, como una plantilla
                         schemaToSave[fieldName] = "";
                         itemCount++;
                     }
@@ -170,10 +170,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 try {
-                    const esquemaDocRef = doc(db, "esquemas_modelos", modelName);
-                    // Guardamos el objeto plano directamente.
+                    // Usar el nombre sanitizado para la referencia del documento
+                    const esquemaDocRef = doc(db, "esquemas_modelos", sanitizedModelName);
+                    
                     await setDoc(esquemaDocRef, schemaToSave);
-                    showMessage(`Esquema del modelo "${modelName}" guardado con ${itemCount} ítems.`, 'success');
+                    // Mostrar el nombre original en el mensaje de éxito
+                    showMessage(`Esquema del modelo "${modelName.toUpperCase()}" guardado con ${itemCount} ítems.`, 'success');
                 } catch (error) {
                     console.error(`Error al subir el esquema para ${modelName}:`, error);
                     showMessage(`Error al guardar en la base de datos: ${error.message}`, 'error');

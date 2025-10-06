@@ -66,7 +66,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         
-        modelNameDisplay.textContent = `Modelos para: ${zonaName}`;
+        modelNameDisplay.textContent = `Modelos para: ${zonaName.toUpperCase()}`;
 
         try {
             const docRef = doc(db, "Cajas", zonaName);
@@ -86,7 +86,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 modelNames.forEach(modelName => {
                     const listItem = document.createElement('li');
                     listItem.className = 'list-item';
-                    listItem.textContent = modelName;
+                    listItem.textContent = modelName.toUpperCase();
 
                     listItem.addEventListener('click', () => {
                         window.location.href = `numeros-de-serie.html?modelName=${encodeURIComponent(modelName)}&zonaName=${encodeURIComponent(zonaName)}`;
@@ -126,11 +126,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (searchBar) {
         searchBar.addEventListener('input', (e) => {
-            const searchTerm = e.target.value.toLowerCase();
+            const searchTerm = e.target.value.toUpperCase();
             const listItems = modelFieldsList.getElementsByTagName('li');
             
             Array.from(listItems).forEach(item => {
-                const itemText = item.textContent.toLowerCase();
+                const itemText = item.textContent.toUpperCase();
                 if (itemText.includes(searchTerm)) {
                     item.style.display = 'block';
                 } else {
