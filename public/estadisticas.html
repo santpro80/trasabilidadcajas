@@ -11,7 +11,10 @@
         .btn-back { background-color: #f0f4f8; color: #4285F4; padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; }
         .main-content { padding: 40px 20px; max-width: 900px; margin: 0 auto; width: 90%; }
         .stats-card { background-color: #ffffff; border-radius: 15px; padding: 30px 40px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2); }
-        .stats-card h1 { color: #4285F4; text-align: center; margin-top: 0; }
+        .stats-card h1 { color: #4285F4; text-align: center; margin: 0; }
+        .month-navigation { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .month-navigation button { background-color: #4285F4; color: white; border: none; padding: 8px 16px; border-radius: 5px; cursor: pointer; }
+        .month-navigation button:disabled { background-color: #a0c2fa; cursor: not-allowed; }
         .stats-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         .stats-table th, .stats-table td { padding: 12px 15px; border: 1px solid #ddd; text-align: left; }
         .stats-table thead { background-color: #f0f4f8; }
@@ -64,7 +67,11 @@
 
     <main class="main-content">
         <div class="stats-card">
-            <h1 id="month-title">Cargando...</h1>
+            <div class="month-navigation">
+                <button id="prev-month-btn">&lt; Anterior</button>
+                <h1 id="month-title">Cargando...</h1>
+                <button id="next-month-btn">Siguiente &gt;</button>
+            </div>
             <div id="stats-container">
                 <p>Cargando estadísticas...</p>
             </div>

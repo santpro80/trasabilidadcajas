@@ -3,6 +3,8 @@ import { db, collection, query, where, getDocs, doc, getDoc, unSanitizeFieldName
 document.addEventListener('DOMContentLoaded', () => {
     const statsContainer = document.getElementById('stats-container');
     const monthTitle = document.getElementById('month-title');
+    const prevMonthBtn = document.getElementById('prev-month-btn');
+    const nextMonthBtn = document.getElementById('next-month-btn');
 
     // Modal elements
     const consumptionModal = document.getElementById('consumption-modal');
@@ -21,6 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Data storage for downloads
     let currentBoxStatsData = [];
     let currentItemConsumptionData = {};
+    let currentDate = new Date();
 
     // Helper function to download CSV
     const downloadCSV = (csvString, filename) => {
@@ -37,7 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    const loadMonthlyStats = async () => {
+    const loadMonthlyStats = async (date) => {
         if (!statsContainer || !monthTitle) {
             console.error("Required elements for statistics are not found on the page.");
             return;
@@ -46,11 +49,10 @@ document.addEventListener('DOMContentLoaded', () => {
         statsContainer.innerHTML = '<p>Cargando estadísticas...</p>';
 
         try {
-            const now = new Date();
-            const currentMonthISO = now.toISOString().slice(0, 7); // Formato YYYY-MM
+            const currentMonthISO = date.toISOString().slice(0, 7); // Formato YYYY-MM
             
             const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
-            monthTitle.textContent = `Salidas de Cajas - ${monthNames[now.getMonth()]} ${now.getFullYear()}`;
+            monthTitle.textContent = `Salidas de Cajas - ${monthNames[date.getMonth()]} ${date.getFullYear()}`;
 
             // 1. Get all models from esquemas_modelos
             const schemasSnapshot = await getDocs(collection(db, "esquemas_modelos"));
@@ -62,7 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 modelCounts[modelName] = 0;
             });
 
-            // 2. Get checkout movements for the current month
+            // 2. Get checkout movements for the selected month
             const q = query(
                 collection(db, "movimientos_cajas"),
                 where("mes", "==", currentMonthISO),
@@ -93,6 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
             statsContainer.innerHTML = '<p>Ocurrió un error al cargar las estadísticas.</p>';
             currentBoxStatsData = [];
         }
+        updateNavButtons();
     };
 
     const renderStatsTable = (modelCounts) => {
@@ -143,8 +146,7 @@ document.addEventListener('DOMContentLoaded', () => {
         consumptionModal.style.display = 'flex';
 
         try {
-            const now = new Date();
-            const currentMonthISO = now.toISOString().slice(0, 7); // Formato YYYY-MM
+            const currentMonthISO = currentDate.toISOString().slice(0, 7); // Formato YYYY-MM
 
             // 1. Get all possible items for this model from esquemas_modelos
             const schemaDocSnap = await getDoc(doc(db, "esquemas_modelos", modelName));
@@ -213,6 +215,12 @@ document.addEventListener('DOMContentLoaded', () => {
         consumedItemsContainer.innerHTML = listHTML;
     };
 
+    const updateNavButtons = () => {
+        const now = new Date();
+        const nextMonth = new Date(currentDate.getMonth() + 1, 1);
+        nextMonthBtn.disabled = nextMonth > now;
+    };
+
     // Modal event listeners
     closeModalBtn?.addEventListener('click', () => {
         consumptionModal.style.display = 'none';
@@ -226,9 +234,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Download button event listeners
     downloadBoxStatsBtn?.addEventListener('click', () => {
-        const now = new Date();
         const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
-        const filename = `Salidas_Cajas_${monthNames[now.getMonth()]}_${now.getFullYear()}.csv`;
+        const filename = `Salidas_Cajas_${monthNames[currentDate.getMonth()]}_${currentDate.getFullYear()}.csv`;
 
         let csvContent = "Modelo de Caja;Cantidad de Salidas\n";
         currentBoxStatsData.forEach(([modelName, count]) => {
@@ -238,10 +245,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     downloadItemConsumptionBtn?.addEventListener('click', () => {
-        const now = new Date();
         const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
         const modelNameForFile = modalTitle.textContent.replace('Consumo de Items para "', '').replace('"', ''); // Extract model name from modal title
-        const filename = `Consumo_Items_${modelNameForFile}_${monthNames[now.getMonth()]}_${now.getFullYear()}.csv`;
+        const filename = `Consumo_Items_${modelNameForFile}_${monthNames[currentDate.getMonth()]}_${currentDate.getFullYear()}.csv`;
 
         let csvContent = "Código;Descripción;Cantidad Consumida\n";
         const sortedItems = Object.entries(currentItemConsumptionData).sort(([, a], [, b]) => b - a);
@@ -312,5 +318,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // Event listener for the new button
     showAvgTracingTimeBtn?.addEventListener('click', loadAndRenderAvgTracingTimes);
 
-    loadMonthlyStats();
+    prevMonthBtn.addEventListener('click', () => {
+        currentDate.setMonth(currentDate.getMonth() - 1);
+        loadMonthlyStats(currentDate);
+    });
+
+    nextMonthBtn.addEventListener('click', () => {
+        currentDate.setMonth(currentDate.getMonth() + 1);
+        loadMonthlyStats(currentDate);
+    });
+
+    loadMonthlyStats(currentDate);
 });
