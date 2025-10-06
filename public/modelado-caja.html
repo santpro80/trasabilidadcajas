@@ -126,6 +126,19 @@
             box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
 
+        .search-bar-container {
+            margin-bottom: 15px;
+        }
+
+        .search-bar {
+            width: 100%;
+            padding: 10px 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 1em;
+            box-sizing: border-box;
+        }
+
         /* --- Estados (Cargando, Vacío, Error) --- */
         .loading-state, .error-state, .empty-state {
             display: flex;
@@ -198,6 +211,9 @@
         </div>
 
         <div class="list-container">
+            <div class="search-bar-container">
+                <input type="text" id="search-bar" class="search-bar" placeholder="Buscar campos...">
+            </div>
             <div id="loading-state" class="loading-state">
                 <div class="spinner"></div>
                 <p>Cargando campos del modelo...</p>

@@ -287,6 +287,14 @@
         btnEstadosCajas?.addEventListener('click', () => { window.location.href = 'estados-cajas.html'; });
         btnReportarProblema?.addEventListener('click', () => { window.location.href = 'reportar-problema.html'; });
         btnVerProblemas?.addEventListener('click', () => { window.location.href = 'ver-problemas.html'; });
+
+        btnTickets?.addEventListener('click', () => {
+            if (currentUserRole === 'supervisor') {
+                window.location.href = 'tickets-supervisor.html';
+            } else {
+                window.location.href = 'tickets-operador.html';
+            }
+        });
     </script>
 </body>
 </html>

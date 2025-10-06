@@ -8,7 +8,6 @@ import {
 } from './firebase-config.js';
 
 document.addEventListener('DOMContentLoaded', () => {
-    // --- Elementos del DOM ---
     const modelNameDisplay = document.getElementById('model-name-display');
     const modelFieldsList = document.getElementById('modelFieldsList');
     const userDisplayName = document.getElementById('user-display-name');
@@ -18,15 +17,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const loadingState = document.getElementById('loading-state');
     const errorState = document.getElementById('error-state');
     const emptyState = document.getElementById('empty-state');
+    const searchBar = document.getElementById('search-bar');
 
-    // --- Lógica de Autenticación y Carga de Nombre ---
     onAuthStateChanged(auth, async (user) => {
         if (!user) {
             window.location.href = 'login.html';
             return;
         }
 
-        // ===== ÁREA DE CORRECCIÓN: Lógica para mostrar el nombre =====
         if (userDisplayName) {
             try {
                 const userDocRef = doc(db, "users", user.uid);
@@ -42,12 +40,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 userDisplayName.textContent = user.email;
             }
         }
-        // =============================================================
 
         loadModelDetails();
     });
 
-    // --- Función para mostrar el estado correcto ---
     const showState = (stateElement) => {
         if (loadingState) loadingState.style.display = 'none';
         if (errorState) errorState.style.display = 'none';
@@ -59,7 +55,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // --- Función para Cargar y Mostrar los Detalles del Modelo ---
     const loadModelDetails = async () => {
         showState(loadingState);
         const urlParams = new URLSearchParams(window.location.search);
@@ -110,7 +105,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // --- Lógica de Navegación ---
     if (backBtn) {
         backBtn.addEventListener('click', () => {
             window.location.href = 'modelos-de-cajas.html';
@@ -127,6 +121,22 @@ document.addEventListener('DOMContentLoaded', () => {
     if (menuBtn) {
         menuBtn.addEventListener('click', () => {
             window.location.href = 'menu.html';
+        });
+    }
+
+    if (searchBar) {
+        searchBar.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            const listItems = modelFieldsList.getElementsByTagName('li');
+            
+            Array.from(listItems).forEach(item => {
+                const itemText = item.textContent.toLowerCase();
+                if (itemText.includes(searchTerm)) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
         });
     }
 });
