@@ -53,13 +53,13 @@ document.addEventListener('DOMContentLoaded', () => {
         let startDate = null;
         if (startDateInput.value) {
             startDate = new Date(startDateInput.value);
-            startDate.setHours(0, 0, 0, 0); // Start of the day in local timezone
+            startDate.setHours(0, 0, 0, 0); 
         }
 
         let endDate = null;
         if (endDateInput.value) {
             endDate = new Date(endDateInput.value);
-            endDate.setHours(23, 59, 59, 999); // End of the day in local timezone
+            endDate.setHours(23, 59, 59, 999); 
         }
 
         const searchTerm = searchInput.value.toLowerCase();
@@ -68,9 +68,8 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log("Filtro - Fecha Fin (Local):", endDate ? endDate.toLocaleString() : "N/A");
 
         const filteredItems = allHistoryItems.filter(item => {
-            // Filtro por fecha
             if (item.timestamp) {
-                const itemDate = item.timestamp.toDate(); // Firestore Timestamp converted to JS Date (local timezone)
+                const itemDate = item.timestamp.toDate(); 
                 
                 console.log("  Item - Fecha (Local):", itemDate.toLocaleString());
                 console.log("  Item - Fecha (UTC):", itemDate.toUTCString());
@@ -86,11 +85,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
-            // Filtro por término de búsqueda
             const user = (item.usuarioNombre || '').toLowerCase();
             const action = (item.accion || '').toLowerCase();
-            // ===== CORRECCIÓN AQUÍ =====
-            // Se usa el operador 'optional chaining' (?.) para leer 'mensaje' de forma segura.
             const message = (item.detalles?.mensaje || '').toLowerCase();
             
             if (searchTerm && !(user.includes(searchTerm) || action.includes(searchTerm) || message.includes(searchTerm))) {
@@ -114,9 +110,6 @@ document.addEventListener('DOMContentLoaded', () => {
         items.forEach(item => {
             const row = document.createElement('tr');
             const date = item.timestamp ? item.timestamp.toDate().toLocaleString('es-AR', { hour12: false }) : 'N/A';
-            
-            // ===== CORRECCIÓN AQUÍ =====
-            // Si item.detalles.mensaje no existe, muestra 'Sin detalles'.
             const detalleMensaje = item.detalles?.mensaje || 'Sin detalles';
 
             row.innerHTML = `

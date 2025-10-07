@@ -132,13 +132,12 @@ document.addEventListener('DOMContentLoaded', () => {
                             timestamp: new Date()
                         }
                     ],
-                    unreadCounts: { // Initialize counts
-                        supervisor: 1, // Notify supervisors of the new ticket
-                        operator: 0    // The creator has read it
+                    unreadCounts: { 
+                        supervisor: 1, 
+                        operator: 0    
                     }
                 });
                 modal.remove();
-                // The onSnapshot listener will automatically refresh the list
             } catch (error) {
                 console.error("Error al crear el ticket:", error);
                 alert('Ocurrió un error al crear el ticket.');
@@ -149,8 +148,6 @@ document.addEventListener('DOMContentLoaded', () => {
     menuBtn?.addEventListener('click', () => {
         window.location.href = 'menu.html';
     });
-
-    // Cleanup listener on page unload
     window.addEventListener('beforeunload', () => {
         if (unsubscribeTickets) unsubscribeTickets();
     });

@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (loginForm) {
         loginForm.addEventListener("submit", async (e) => {
             e.preventDefault();
-            const username = usernameInput.value.trim(); // Obtenemos el valor tal cual lo escribe el usuario por ahora
+            const username = usernameInput.value.trim(); 
             const password = passwordInput.value;
 
             if (messageArea) messageArea.style.display = 'none';
@@ -18,7 +18,6 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log(`Buscando usuario con username: "${username}"`);
             
             try {
-                // Forzamos la búsqueda en mayúsculas, como en el registro
                 const usernameInUpperCase = username.toUpperCase();
                 console.log(`Buscando en Firestore con el valor en mayúsculas: "${usernameInUpperCase}"`);
 

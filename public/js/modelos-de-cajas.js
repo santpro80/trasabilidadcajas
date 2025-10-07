@@ -82,7 +82,6 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     if (backBtn) {
-        // La corrección está aquí: se usa '=>' en lugar de '->'
         backBtn.addEventListener('click', () => {
             window.location.href = 'menu.html';
         });

@@ -1,5 +1,3 @@
-// public/js/importar-datos.js
-
 import {
     db,
     auth,
@@ -9,12 +7,7 @@ import {
     getDoc,
     setDoc
 } from './firebase-config.js';
-
-// ==================================================================
-// MODIFICACIÓN CLAVE: Función de sanitización final y robusta
-// ==================================================================
 function sanitizeFieldName(name) {
-    // Reemplaza la barra, puntos y comas con secuencias de texto únicas
     return name.replace(/\//g, '_slash_').replace(/\./g, '_dot_').replace(/,/g, '_comma_');
 }
 

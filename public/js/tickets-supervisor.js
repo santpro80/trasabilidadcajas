@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentUser = null;
     let currentUserName = null;
     let currentUserRole = null;
-    let unsubscribeTickets = null; // To stop the listener
+    let unsubscribeTickets = null; 
 
     onAuthStateChanged(auth, async (user) => {
         if (user) {
@@ -31,7 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!ticketsContainer) return;
         ticketsContainer.innerHTML = '<p>Cargando tickets...</p>';
 
-        if (unsubscribeTickets) unsubscribeTickets(); // Stop any previous listener
+        if (unsubscribeTickets) unsubscribeTickets(); 
 
         const status = filtroEstado.value;
         let q;
@@ -120,7 +120,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             try {
                 await addDoc(collection(db, 'tickets'), {
-                    operatorUid: currentUser.uid, // This seems to be the supervisor's UID, acting as operator
+                    operatorUid: currentUser.uid, 
                     operatorName: currentUserName || currentUser.email,
                     subject: subject,
                     createdAt: serverTimestamp(),
@@ -134,13 +134,12 @@ document.addEventListener('DOMContentLoaded', () => {
                             timestamp: new Date()
                         }
                     ],
-                    unreadCounts: { // Initialize counts
-                        supervisor: 0, // The creator (supervisor) has read it
-                        operator: 1   // The recipient (operator) has 1 unread message
+                    unreadCounts: { 
+                        supervisor: 0,
+                        operator: 1   
                     }
                 });
                 modal.remove();
-                // The onSnapshot listener will automatically refresh the list
             } catch (error) {
                 console.error("Error al crear el ticket:", error);
                 alert('Ocurrió un error al crear el ticket.');
@@ -155,8 +154,6 @@ document.addEventListener('DOMContentLoaded', () => {
     menuBtn?.addEventListener('click', () => {
         window.location.href = 'menu.html';
     });
-
-    // Cleanup listener on page unload
     window.addEventListener('beforeunload', () => {
         if (unsubscribeTickets) unsubscribeTickets();
     });

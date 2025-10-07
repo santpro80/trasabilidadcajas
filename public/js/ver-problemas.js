@@ -69,8 +69,6 @@ document.addEventListener('DOMContentLoaded', () => {
             for (const problemDoc of querySnapshot.docs) {
                 allProblemas.push({ id: problemDoc.id, ...problemDoc.data() });
             }
-            
-            // Filtrar problemas resueltos para el rol de mantenimiento
             if (userRole === 'mantenimiento') {
                 allProblemas = allProblemas.filter(p => p.estado !== 'resuelto');
             }
@@ -135,12 +133,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         let problemaData = { id: problemaDoc.id, ...problemaDoc.data() };
-
-        // Cambiar estado a "en proceso" si es "nuevo"
         if (problemaData.estado === 'nuevo') {
             await updateDoc(problemaRef, { estado: 'en proceso' });
             problemaData.estado = 'en proceso';
-            // Actualizar UI de la lista principal
             const listItem = problemasList.querySelector(`[data-id="${problemaId}"]`);
             if (listItem) {
                 const estadoEl = listItem.querySelector('.estado');
@@ -237,13 +232,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const problemaRef = doc(db, 'problemas_cajas', problemaId);
         try {
             await updateDoc(problemaRef, { estado: 'resuelto' });
-            
-            // Actualizar UI en la lista principal
             const problemInList = allProblemas.find(p => p.id === problemaId);
             if (problemInList) {
                 problemInList.estado = 'resuelto';
             }
-            displayProblemas(allProblemas); // Re-renderizar para ordenar
+            displayProblemas(allProblemas); 
             
             closeModal();
         } catch (error) {

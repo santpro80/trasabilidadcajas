@@ -1,14 +1,11 @@
-// public/js/numeros-de-serie.js
-
 import {
     db, auth, onAuthStateChanged, signOut,
     doc, getDoc, deleteDoc, updateDoc,
-    registrarHistorial, // <-- Importamos la nueva función
+    registrarHistorial, 
     registrarMovimientoCaja
 } from './firebase-config.js';
 
 document.addEventListener('DOMContentLoaded', () => {
-    // ... (la declaración de elementos del DOM no cambia)
     const modelNameDisplay = document.getElementById('model-name-display');
     const serialNumbersList = document.getElementById('serialNumbersList');
     const addCajaBtn = document.getElementById('add-caja-btn');
@@ -24,8 +21,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
     const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
     const modalSpinner = document.getElementById('modal-spinner');
-
-    // New elements for entry confirmation modal
     const confirmEntryModal = document.getElementById('confirmEntryModal');
     const confirmEntryModalText = document.getElementById('confirm-entry-modal-text');
     const cancelEntryBtn = document.getElementById('cancel-entry-btn');
@@ -34,10 +29,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentModelName = '';
     let currentZonaName = '';
     let serialToDelete = null;
-    let serialToConfirmEntry = null; // New variable to store serial for entry confirmation
+    let serialToConfirmEntry = null;
     let userRole = 'operario'; 
-
-    // ... (La función showNotification no cambia)
     let notificationTimeout;
     const showNotification = (message, type = 'success') => {
         const toast = document.getElementById('notification-toast');
@@ -52,7 +45,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     onAuthStateChanged(auth, async (user) => {
-        // ... (Esta función no cambia)
+
         if (!user) { window.location.href = 'login.html'; return; }
         
         try {
@@ -73,8 +66,6 @@ document.addEventListener('DOMContentLoaded', () => {
             loadSerialNumbers();
         }
     });
-
-    // ... (La función showState y loadSerialNumbers no cambian)
     const showState = (stateElement) => {
         [loadingState, errorState, emptyState, serialNumbersList].forEach(el => el.style.display = 'none');
         if (stateElement) { stateElement.style.display = 'block'; }
@@ -110,7 +101,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         let buttonsContainer = document.createElement('div');
                         buttonsContainer.className = 'action-buttons-container';
 
-                        // Botón de Registrar Entrada (visible para todos)
                         const registrarBtn = document.createElement('button');
                         registrarBtn.className = 'btn-register-entry';
                         registrarBtn.title = 'Registrar Entrada Simple';
@@ -121,7 +111,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         });
                         buttonsContainer.appendChild(registrarBtn);
 
-                        // Botón de Eliminar (solo para supervisores)
                         if (userRole === 'supervisor') {
                             const deleteBtn = document.createElement('button');
                             deleteBtn.className = 'btn-delete-caja';

@@ -4,10 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Programa de Trazabilidad</title>
-    <!-- Enlace a tu archivo de estilos CSS -->
     <link rel="stylesheet" href="css/styles.css">
     <style>
-        /* Estilos específicos para index.html */
         body {
             font-family: 'Inter', Arial, sans-serif;
             margin: 0;
@@ -15,11 +13,11 @@
             min-height: 100vh;
             display: flex;
             flex-direction: column;
-            background: linear-gradient(135deg, #6e8efb, #a777e3); /* Fondo degradado original */
+            background: linear-gradient(135deg, #6e8efb, #a777e3); 
             color: #2c3e50;
             text-align: center;
-            justify-content: center; /* Centrar contenido verticalmente */
-            align-items: center; /* Centrar contenido horizontalmente */
+            justify-content: center; 
+            align-items: center; 
         }
 
         .auth-container {
@@ -29,7 +27,7 @@
             padding: 40px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
             width: 90%;
-            max-width: 400px; /* Ancho máximo para el contenedor de autenticación */
+            max-width: 400px; 
             border: 1px solid rgba(255, 255, 255, 0.3);
             animation: fadeIn 0.8s ease-out;
             box-sizing: border-box;
@@ -37,7 +35,7 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            text-align: center; /* Asegura que el texto dentro esté centrado */
+            text-align: center; 
         }
 
         .logo-container {
@@ -45,7 +43,7 @@
         }
 
         .logo {
-            width: 120px; /* Tamaño del logo */
+            width: 120px; 
             height: auto;
         }
 
@@ -71,7 +69,7 @@
             font-size: 1.1em;
             font-weight: 600;
             transition: background-color 0.3s ease, transform 0.2s ease;
-            width: 100%; /* Botón ocupa todo el ancho del contenedor */
+            width: 100%; 
             box-sizing: border-box;
         }
 
@@ -80,14 +78,10 @@
             transform: translateY(-2px);
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
-
-        /* Animación global de aparición */
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
         }
-
-        /* Responsive Design para pantallas pequeñas */
         @media (max-width: 768px) {
             .auth-container {
                 padding: 30px;
@@ -116,18 +110,13 @@
 <body>
     <div class="auth-container">
         <div class="logo-container">
-            <!-- Asegúrate de que la ruta de tu logo sea correcta -->
             <img src="assets/logo.png" alt="Logo" class="logo">
         </div>
         
         <h1>Bienvenido al Programa de Trazabilidad</h1>
         <p>Gestiona tus cajas e ítems con seguridad y eficiencia. Por favor, inicia sesión o regístrate para continuar.</p>
-        
-        <!-- Agregamos el ID al botón para poder controlarlo con JavaScript -->
         <button class="btn-primary" id="btn-start">Comenzar</button>
     </div>
-
-    <!-- Enlace a tu archivo de JavaScript -->
     <script type="module" src="js/index.js"></script>
 </body>
 </html>

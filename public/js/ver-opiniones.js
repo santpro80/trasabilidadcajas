@@ -85,8 +85,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     replyItem.querySelector('.reply-body').textContent = reply.respuesta;
                     repliesList.appendChild(replyItem);
                 });
-
-                // Configurar formulario de respuesta
                 const replyTextarea = opinionItem.querySelector('.reply-textarea');
                 const btnReply = opinionItem.querySelector('.btn-reply');
 
@@ -95,8 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (replyText) {
                         await addReply(opinionId, replyText);
                         replyTextarea.value = '';
-                        // Recargar solo esa opinión para ver la nueva respuesta
-                        loadOpinions(); // Simple reload for now
+                        loadOpinions(); 
                     }
                 });
 

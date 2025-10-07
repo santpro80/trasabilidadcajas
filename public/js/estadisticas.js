@@ -5,31 +5,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const monthTitle = document.getElementById('month-title');
     const prevMonthBtn = document.getElementById('prev-month-btn');
     const nextMonthBtn = document.getElementById('next-month-btn');
-
-    // Modal elements
     const consumptionModal = document.getElementById('consumption-modal');
     const modalTitle = document.getElementById('consumption-modal-title');
     const consumedItemsContainer = document.getElementById('consumed-items-container');
     const closeModalBtn = document.querySelector('.close-btn');
-
-    // Download buttons
     const downloadBoxStatsBtn = document.getElementById('download-box-stats-btn');
     const downloadItemConsumptionBtn = document.getElementById('download-item-consumption-btn');
-
-    // New elements for average tracing time
     const showAvgTracingTimeBtn = document.getElementById('show-avg-tracing-time-btn');
     const avgTracingTimeResultsDiv = document.getElementById('avg-tracing-time-results');
-
-    // Data storage for downloads
     let currentBoxStatsData = [];
     let currentItemConsumptionData = {};
     let currentDate = new Date();
-
-    // Helper function to download CSV
     const downloadCSV = (csvString, filename) => {
         const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement('a');
-        if (link.download !== undefined) { // Feature detection
+        if (link.download !== undefined) { 
             const url = URL.createObjectURL(blob);
             link.setAttribute('href', url);
             link.setAttribute('download', filename);
@@ -49,22 +39,19 @@ document.addEventListener('DOMContentLoaded', () => {
         statsContainer.innerHTML = '<p>Cargando estadísticas...</p>';
 
         try {
-            const currentMonthISO = date.toISOString().slice(0, 7); // Formato YYYY-MM
+            const currentMonthISO = date.toISOString().slice(0, 7); 
             
             const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
             monthTitle.textContent = `Salidas de Cajas - ${monthNames[date.getMonth()]} ${date.getFullYear()}`;
 
-            // 1. Get all models from esquemas_modelos
             const schemasSnapshot = await getDocs(collection(db, "esquemas_modelos"));
             const allModelNames = schemasSnapshot.docs.map(doc => doc.id);
 
-            // Initialize all models with 0 checkouts
             const modelCounts = {};
             allModelNames.forEach(modelName => {
                 modelCounts[modelName] = 0;
             });
 
-            // 2. Get checkout movements for the selected month
             const q = query(
                 collection(db, "movimientos_cajas"),
                 where("mes", "==", currentMonthISO),
@@ -73,7 +60,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const querySnapshot = await getDocs(q);
 
-            // 3. Update counts with actual checkout data
             querySnapshot.forEach(doc => {
                 const data = doc.data();
                 if (data.modelName && modelCounts.hasOwnProperty(data.modelName)) {
@@ -82,7 +68,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             const sortedModels = Object.entries(modelCounts).sort(([, a], [, b]) => b - a);
-            currentBoxStatsData = sortedModels; // Store data for download
+            currentBoxStatsData = sortedModels; 
 
             if (sortedModels.length === 0) {
                 statsContainer.innerHTML = '<p>No se encontraron modelos de cajas definidos.</p>';
@@ -99,7 +85,6 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const renderStatsTable = (modelCounts) => {
-        // modelCounts is already sorted here from loadMonthlyStats
         let tableHTML = `
             <table class="stats-table">
                 <thead>
@@ -146,22 +131,19 @@ document.addEventListener('DOMContentLoaded', () => {
         consumptionModal.style.display = 'flex';
 
         try {
-            const currentMonthISO = currentDate.toISOString().slice(0, 7); // Formato YYYY-MM
+            const currentMonthISO = currentDate.toISOString().slice(0, 7); 
 
-            // 1. Get all possible items for this model from esquemas_modelos
             const schemaDocSnap = await getDoc(doc(db, "esquemas_modelos", modelName));
 
             let allPossibleItems = {};
             if (schemaDocSnap.exists()) {
                 const schemaData = schemaDocSnap.data();
                 Object.keys(schemaData).forEach(sanitizedItemName => {
-                    // Initialize all items from schema with 0 consumption
                     allPossibleItems[sanitizedItemName] = 0;
                 });
             }
 
-            // 2. Get actual consumption data for the month
-            const sanitizedModel = sanitizeFieldName(modelName); // Use the imported sanitizeFieldName function
+            const sanitizedModel = sanitizeFieldName(modelName); 
             const statsDocRef = doc(db, "estadisticas_consumo", currentMonthISO);
             const docSnap = await getDoc(statsDocRef);
 
@@ -170,20 +152,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 const modelConsumptionData = allConsumptionData[sanitizedModel];
 
                 if (modelConsumptionData) {
-                    // Merge actual consumption data into allPossibleItems
                     Object.keys(modelConsumptionData).forEach(sanitizedItemName => {
                         allPossibleItems[sanitizedItemName] = modelConsumptionData[sanitizedItemName];
                     });
                 }
             }
 
-            // 3. Render the combined data
             if (Object.keys(allPossibleItems).length > 0) {
-                currentItemConsumptionData = allPossibleItems; // Store data for download
+                currentItemConsumptionData = allPossibleItems; 
                 renderConsumedItems(allPossibleItems);
             } else {
                 consumedItemsContainer.innerHTML = '<p>No se encontraron ítems definidos para este modelo o no hay datos de consumo.</p>';
-                currentItemConsumptionData = {}; // Clear data if no results
+                currentItemConsumptionData = {}; 
             }
 
         } catch (error) {
@@ -221,7 +201,6 @@ document.addEventListener('DOMContentLoaded', () => {
         nextMonthBtn.disabled = nextMonth > now;
     };
 
-    // Modal event listeners
     closeModalBtn?.addEventListener('click', () => {
         consumptionModal.style.display = 'none';
     });
@@ -232,7 +211,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Download button event listeners
     downloadBoxStatsBtn?.addEventListener('click', () => {
         const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
         const filename = `Salidas_Cajas_${monthNames[currentDate.getMonth()]}_${currentDate.getFullYear()}.csv`;
@@ -259,7 +237,6 @@ document.addEventListener('DOMContentLoaded', () => {
         downloadCSV(csvContent, filename);
     });
 
-    // New function to load and render average tracing times
     const loadAndRenderAvgTracingTimes = async () => {
         if (!avgTracingTimeResultsDiv) return;
 
@@ -267,7 +244,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             const querySnapshot = await getDocs(collection(db, "tracingTimes"));
-            const modelDurations = {}; // { "Model A": [1000, 2000, 1500], ... }
+            const modelDurations = {}; 
 
             querySnapshot.forEach(doc => {
                 const data = doc.data();
@@ -292,7 +269,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     const sum = durations.reduce((a, b) => a + b, 0);
                     const averageMs = sum / durations.length;
 
-                    // Format duration to human-readable string
                     const totalSeconds = Math.floor(averageMs / 1000);
                     const minutes = Math.floor(totalSeconds / 60);
                     const seconds = totalSeconds % 60;
@@ -301,7 +277,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     let formattedTime = '';
                     if (minutes > 0) formattedTime += `${minutes}m `;
                     formattedTime += `${seconds}s`;
-                    if (minutes === 0) formattedTime += ` ${milliseconds}ms`; // Show ms only if less than a minute
+                    if (minutes === 0) formattedTime += ` ${milliseconds}ms`; 
 
                     resultsHTML += `<li><strong>${modelName}</strong>: ${formattedTime}</li>`;
                 }
@@ -315,7 +291,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // Event listener for the new button
     showAvgTracingTimeBtn?.addEventListener('click', loadAndRenderAvgTracingTimes);
 
     prevMonthBtn.addEventListener('click', () => {

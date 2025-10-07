@@ -56,8 +56,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let itemToDelete = null;
     let codeToDescMap = new Map();
     let unsubscribeFromItems = null;
-    let currentSelectedItem = null; // New variable to track selected item
-    let reportType = ''; // Variable to store report type
+    let currentSelectedItem = null; 
+    let reportType = ''; 
 
     onAuthStateChanged(auth, async (user) => {
         if (!user) { window.location.href = 'login.html'; return; }
@@ -147,27 +147,21 @@ document.addEventListener('DOMContentLoaded', () => {
                     <button class="btn-delete-item" title="Eliminar ítem"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
                 </div>`;
             
-            // Add a single click event listener to the entire list item
             listItem.addEventListener('click', (e) => {
-                // Check if the click originated from the delete button or its SVG icon/path
                 if (e.target.closest('.btn-delete-item')) {
-                    // If it's the delete button, its own handler (with stopPropagation) will manage it
                     return;
                 }
-                // Remove highlight from previously selected item
                 if (currentSelectedItem) {
                     currentSelectedItem.classList.remove('selected');
                 }
-                // Add highlight to the newly selected item
                 listItem.classList.add('selected');
                 currentSelectedItem = listItem;
 
-                // Otherwise, open the edit modal
                 openEditModal(originalItemName, itemValue);
             });
 
             listItem.querySelector('.btn-delete-item').addEventListener('click', (e) => {
-                e.stopPropagation(); // Prevent the click from bubbling up to the listItem
+                e.stopPropagation(); 
                 openDeleteModal(sanitizedName, originalItemName);
             });
             itemsList.appendChild(listItem);
@@ -265,7 +259,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const itemDocRef = doc(db, "Items", currentSelectedSerialNumber);
             await updateDoc(itemDocRef, { [sanitizeFieldName(currentEditingItem.originalName)]: newSerial });
 
-            // Si el ítem se marca para reemplazar, registramos el consumo.
             if (newSerial === 'REEMPLAZAR') {
                 await registrarConsumoItem(modelName, currentEditingItem.originalName);
             }
@@ -349,7 +342,6 @@ document.addEventListener('DOMContentLoaded', () => {
             pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 10, 10, pdfWidth - 20, pdfHeight > 277 ? 277 : pdfHeight);
             pdf.save(`Reporte_Caja_${currentSelectedSerialNumber}.pdf`);
 
-            // Registrar el movimiento después de generar el PDF, usando la función centralizada
             await registrarMovimientoCaja(tipo, currentSelectedSerialNumber, modelName, prestamoNum);
 
         }).catch(err => { 

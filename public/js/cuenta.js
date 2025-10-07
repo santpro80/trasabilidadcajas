@@ -53,7 +53,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (changePasswordForm) {
         changePasswordForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            // Lógica para cambiar contraseña (sin cambios)
         });
     }
 });

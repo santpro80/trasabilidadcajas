@@ -4,7 +4,6 @@ import {
 } from './firebase-config.js';
 import { setupTicketNotifications } from './global-notifications.js';
 
-// --- UTILITIES ---
 let notificationTimeout;
 const showNotification = (message, type = 'success') => {
     const toast = document.getElementById('notification-toast');
@@ -25,7 +24,6 @@ const formatDate = (timestamp) => {
     });
 };
 
-// --- DOM ELEMENTS ---
 const userDisplayNameElement = document.getElementById('user-display-name');
 const logoutBtn = document.getElementById('logout-btn');
 const menuBtn = document.getElementById('menu-btn');
@@ -40,7 +38,6 @@ const salidasList = document.getElementById('salidas-list');
 const entradasCount = document.getElementById('entradas-count');
 const salidasCount = document.getElementById('salidas-count');
 
-// --- STATE MANAGEMENT ---
 const showPageContent = () => {
     mainContent.style.display = 'flex';
     unauthorizedState.style.display = 'none';
@@ -57,16 +54,13 @@ const showState = (stateElement) => {
     if (stateElement) stateElement.style.display = 'block';
 };
 
-// --- DATA FETCHING AND RENDERING ---
 
-// Builds a map from serial number to model name for efficient lookup.
 const buildSerialToModelMap = async () => {
     const serialMap = new Map();
     try {
         const zonasSnapshot = await getDocs(collection(db, "Cajas"));
         zonasSnapshot.forEach(zonaDoc => {
             const zonaData = zonaDoc.data();
-            // Iterate over each field in the zone document (the fields are the model names)
             for (const modelName in zonaData) {
                 if (typeof zonaData[modelName] === 'string') {
                     const serials = zonaData[modelName].split(',').filter(Boolean);
@@ -92,10 +86,7 @@ const fetchAndRenderReport = async (fecha) => {
     salidasCount.textContent = '0';
 
     try {
-        // Step 1: Build the lookup map.
         const serialToModelMap = await buildSerialToModelMap();
-
-        // Step 2: Fetch the daily movements.
         const q = query(
             collection(db, "movimientos_cajas"), 
             where("fecha", "==", fecha),
@@ -111,11 +102,9 @@ const fetchAndRenderReport = async (fecha) => {
 
         let entradas = 0;
         let salidas = 0;
-
-        // Step 3: Process and render movements using the map.
         querySnapshot.forEach(docSnap => {
             const movimiento = docSnap.data();
-            const modeloCaja = serialToModelMap.get(movimiento.cajaSerie) || ''; // Find model from map
+            const modeloCaja = serialToModelMap.get(movimiento.cajaSerie) || ''; 
 
             const listItem = document.createElement('li');
             listItem.className = 'list-item';
@@ -142,7 +131,7 @@ const fetchAndRenderReport = async (fecha) => {
 
         entradasCount.textContent = entradas;
         salidasCount.textContent = salidas;
-        showState(null); // Hide all states
+        showState(null); 
 
     } catch (error) {
         console.error("Error al cargar el informe:", error);
@@ -158,7 +147,6 @@ onAuthStateChanged(auth, async (user) => {
 
         if (userDocSnap.exists()) {
             const userRole = userDocSnap.data().role;
-            // Setup global notifications
             setupTicketNotifications(db, collection, query, where, onSnapshot, user, userRole);
 
             if (userRole === 'supervisor') {
@@ -179,20 +167,13 @@ onAuthStateChanged(auth, async (user) => {
 });
 
 const initializePage = () => {
-    // Set date to today
     const today = new Date().toISOString().split('T')[0];
     reportDateInput.value = today;
-
-    // Initial fetch
     fetchAndRenderReport(today);
-
-    // Add event listener for date change
     reportDateInput.addEventListener('change', () => {
         fetchAndRenderReport(reportDateInput.value);
     });
 };
-
-// --- GLOBAL EVENT LISTENERS ---
 logoutBtn?.addEventListener('click', () => {
     signOut(auth).then(() => {
         window.location.href = 'login.html';

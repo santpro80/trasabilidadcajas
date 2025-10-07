@@ -1,4 +1,4 @@
-// public/js/importar-esquema.js
+
 
 import {
     db,
@@ -13,7 +13,6 @@ import {
 } from './firebase-config.js';
 
 document.addEventListener('DOMContentLoaded', () => {
-    // --- Elementos del DOM ---
     const zonasSelect = document.getElementById('zonasSelect');
     const modelosSelect = document.getElementById('modelosSelect');
     const schemaFileInput = document.getElementById('schemaFileInput');
@@ -24,7 +23,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const logoutBtn = document.getElementById('logout-btn');
     const backBtn = document.getElementById('back-btn');
 
-    // --- Funciones de UI ---
     const showMessage = (msg, type = 'info') => {
         if (messageDiv) {
             messageDiv.textContent = msg;
@@ -39,7 +37,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (show && messageDiv) messageDiv.style.display = 'none';
     };
 
-    // --- Lógica de Autenticación y Carga Inicial ---
     onAuthStateChanged(auth, (user) => {
         if (user) {
             if (userDisplayName) userDisplayName.textContent = user.displayName || user.email;
@@ -47,9 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             window.location.href = 'login.html';
         }
-    });
-
-    // --- Cargar las Zonas Corporales ---
+    })
     const loadZonasCorporales = async () => {
         try {
             const querySnapshot = await getDocs(collection(db, "Cajas"));
@@ -72,7 +67,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // --- Cargar Modelos de Caja cuando se selecciona una Zona ---
     zonasSelect.addEventListener('change', async () => {
         const selectedZona = zonasSelect.value;
         modelosSelect.innerHTML = '<option value="">Cargando modelos...</option>';
@@ -108,14 +102,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     
-    // --- Lógica de Navegación ---
     backBtn.addEventListener('click', () => window.location.href = 'redir-import.html');
     logoutBtn.addEventListener('click', async () => {
         await signOut(auth);
         window.location.href = 'login.html';
     });
     
-    // --- Lógica Principal de Subida de Esquema ---
     uploadSchemaBtn.addEventListener('click', () => {
         const selectedModel = modelosSelect.value;
         const file = schemaFileInput.files[0];
@@ -135,9 +127,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const processAndUploadSchema = (modelName, file) => {
         showLoading(true);
 
-        // === CORRECCIÓN: Sanitizar el nombre del modelo para Firestore ===
         const sanitizedModelName = modelName.replace(/\//g, '_');
-        // =================================================================
 
         Papa.parse(file, {
             header: false,
@@ -170,11 +160,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 try {
-                    // Usar el nombre sanitizado para la referencia del documento
                     const esquemaDocRef = doc(db, "esquemas_modelos", sanitizedModelName);
                     
                     await setDoc(esquemaDocRef, schemaToSave);
-                    // Mostrar el nombre original en el mensaje de éxito
                     showMessage(`Esquema del modelo "${modelName.toUpperCase()}" guardado con ${itemCount} ítems.`, 'success');
                 } catch (error) {
                     console.error(`Error al subir el esquema para ${modelName}:`, error);

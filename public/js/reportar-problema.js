@@ -5,7 +5,6 @@ import { app, db } from "./firebase-config.js";
 const auth = getAuth(app);
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Elementos del formulario
     const cajaSerialInput = document.getElementById('cajaSerialInput');
     const cajaModeloInput = document.getElementById('cajaModeloInput');
     const problemaCheckboxes = document.querySelectorAll('input[name="problema"]');
@@ -17,8 +16,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const backBtn = document.getElementById('back-btn');
 
     let currentUser = null;
-
-    // Chequeo de autenticación y pre-llenado de datos
     onAuthStateChanged(auth, (user) => {
         if (user) {
             currentUser = user;
@@ -35,13 +32,9 @@ document.addEventListener('DOMContentLoaded', () => {
             window.location.href = 'login.html';
         }
     });
-
-    // Botón para volver atrás
     backBtn.addEventListener('click', () => {
         window.history.back();
     });
-
-    // Mostrar/ocultar el campo de texto para "Otro"
     otroCheckbox.addEventListener('change', () => {
         if (otroCheckbox.checked) {
             otroProblemaContainer.style.display = 'block';
@@ -49,8 +42,6 @@ document.addEventListener('DOMContentLoaded', () => {
             otroProblemaContainer.style.display = 'none';
         }
     });
-
-    // Lógica para enviar el reporte
     enviarReporteBtn.addEventListener('click', async () => {
         const serial = cajaSerialInput.value.trim();
         const modelo = cajaModeloInput.value.trim();
@@ -58,8 +49,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const otroProblema = otroProblemaTextarea.value.trim();
 
         const tareas = [];
-
-        // Validaciones
         if (!serial || !modelo) {
             messageDiv.textContent = 'El número de serie y el modelo son obligatorios.';
             messageDiv.style.color = 'red';
@@ -92,13 +81,11 @@ document.addEventListener('DOMContentLoaded', () => {
             messageDiv.style.color = 'red';
             return;
         }
-
-        // Envío a Firestore con la nueva estructura de tareas
         try {
             await addDoc(collection(db, 'problemas_cajas'), {
                 cajaSerial: serial,
                 cajaModelo: modelo,
-                tareas: tareas, // <--- Nuevo campo de tareas
+                tareas: tareas, 
                 reportadoPor: currentUser.uid,
                 fechaReporte: serverTimestamp(),
                 estado: 'nuevo'
@@ -106,8 +93,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
             messageDiv.textContent = '¡Reporte enviado con éxito!';
             messageDiv.style.color = 'green';
-
-            // Limpiar el formulario
             cajaSerialInput.value = '';
             cajaModeloInput.value = '';
             problemaCheckboxes.forEach(checkbox => checkbox.checked = false);

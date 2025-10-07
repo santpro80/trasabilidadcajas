@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentUser = null;
     let currentUserRole = null;
     let currentUserName = null;
-    let unsubscribe = null; // To stop the listener when leaving the page
+    let unsubscribe = null; 
 
     if (!ticketId) {
         window.location.href = 'menu.html';
@@ -68,14 +68,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const userDocSnap = await getDoc(doc(db, "users", user.uid));
             if (userDocSnap.exists()) {
                 const userData = userDocSnap.data();
-                currentUserRole = userData.role || 'operador'; // Assume 'operador' if role is not set
+                currentUserRole = userData.role || 'operador'; 
                 currentUserName = userData.name;
             } else {
-                // If user has no specific doc, they can only be an operator
                 currentUserRole = 'operador';
             }
-            await markAsRead(); // Mark as read on page load
-            listenForTicketUpdates(); // Start the real-time listener
+            await markAsRead(); 
+            listenForTicketUpdates(); 
         } else {
             window.location.href = 'login.html';
         }
@@ -87,13 +86,11 @@ document.addEventListener('DOMContentLoaded', () => {
         unsubscribe = onSnapshot(ticketRef, (docSnap) => {
             if (!docSnap.exists()) {
                 alert('El ticket no existe o fue eliminado.');
-                window.location.href = 'tickets-supervisor.html'; // Go back to the list
+                window.location.href = 'tickets-supervisor.html'; 
                 return;
             }
 
             const ticket = docSnap.data();
-
-            // Security check
             if (currentUserRole !== 'supervisor' && ticket.operatorUid !== currentUser.uid) {
                 alert('No tienes permiso para ver este ticket.');
                 window.location.href = 'menu.html';
@@ -103,24 +100,21 @@ document.addEventListener('DOMContentLoaded', () => {
             ticketAsunto.textContent = ticket.subject;
             renderMessages(ticket.messages || []);
 
-            // Hide all action buttons by default
             cerrarTicketBtn.style.display = 'none';
             eliminarTicketBtn.style.display = 'none';
-
-            // Update UI based on ticket status
             if (ticket.status === 'cerrado') {
                 mensajeRespuesta.disabled = true;
                 enviarRespuestaBtn.disabled = true;
                 mensajeRespuesta.placeholder = 'Este ticket está cerrado.';
                 if (currentUserRole === 'supervisor') {
-                    eliminarTicketBtn.style.display = 'block'; // Show delete button
+                    eliminarTicketBtn.style.display = 'block'; 
                 }
-            } else { // Ticket is open
+            } else { 
                 mensajeRespuesta.disabled = false;
                 enviarRespuestaBtn.disabled = false;
                 mensajeRespuesta.placeholder = 'Escribe tu respuesta...';
                 if (currentUserRole === 'supervisor') {
-                    cerrarTicketBtn.style.display = 'block'; // Show close button
+                    cerrarTicketBtn.style.display = 'block'; 
                 }
             }
         }, (error) => {
@@ -143,7 +137,6 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
         });
         mensajesContainer.innerHTML = messagesHTML;
-        // Always scroll to the bottom to show the latest message
         mensajesContainer.scrollTop = mensajesContainer.scrollHeight;
     };
 
@@ -155,7 +148,7 @@ document.addEventListener('DOMContentLoaded', () => {
             senderUid: currentUser.uid,
             senderName: currentUserName || currentUser.email,
             text: text,
-            timestamp: new Date() // Use client-side timestamp
+            timestamp: new Date() 
         };
 
         try {
@@ -165,11 +158,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 messages: arrayUnion(newMessage),
                 lastUpdatedAt: serverTimestamp()
             };
-
-            // Increment the unread counter for the other role
             if (currentUserRole === 'supervisor') {
                 updatePayload['unreadCounts.operator'] = increment(1);
-            } else { // User is an operator
+            } else { 
                 updatePayload['unreadCounts.supervisor'] = increment(1);
             }
 
@@ -183,8 +174,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     mensajeRespuesta?.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault(); // Prevent new line
-            enviarRespuestaBtn.click(); // Trigger send button click
+            e.preventDefault(); 
+            enviarRespuestaBtn.click(); 
         }
     });
 
@@ -218,14 +209,12 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             await deleteDoc(ticketRef);
             alert('Se ha enviado la solicitud de eliminación. Serás redirigido a la lista de tickets.');
-            window.location.href = 'tickets-supervisor.html'; // Force redirect
+            window.location.href = 'tickets-supervisor.html'; 
         } catch (error) {
             console.error("Error al eliminar el ticket:", error);
             alert(`Ocurrió un error al intentar eliminar el ticket: ${error.message}`);
         }
     });
-
-    // Stop the listener when the user navigates away
     window.addEventListener('beforeunload', () => {
         if (unsubscribe) {
             unsubscribe();

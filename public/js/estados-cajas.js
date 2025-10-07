@@ -5,10 +5,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const logoutBtn = document.getElementById('logout-btn');
     const listContainer = document.getElementById('list-container');
     const loadingState = document.getElementById('loading-state');
-    const searchInput = document.getElementById('searchBoxStatusInput'); // NEW
+    const searchInput = document.getElementById('searchBoxStatusInput'); 
 
-    let allBoxesData = {}; // To store the original fetched data
-    let allStatusData = new Map(); // To store the original fetched status map
+    let allBoxesData = {}; 
+    let allStatusData = new Map(); 
 
     onAuthStateChanged(auth, async (user) => {
         if (!user) {
@@ -28,14 +28,12 @@ document.addEventListener('DOMContentLoaded', () => {
         listContainer.appendChild(loadingState);
 
         try {
-            // Step 1: Fetch all statuses and put them in a map for easy lookup
             const statusSnapshot = await getDocs(collection(db, "caja_estados"));
-            allStatusData.clear(); // Clear previous data
+            allStatusData.clear(); 
             statusSnapshot.forEach(doc => {
                 allStatusData.set(doc.id, doc.data());
             });
 
-            // Step 2: Fetch all boxes from all zones
             const tempAllBoxesByModel = {};
             const zonasSnapshot = await getDocs(collection(db, "Cajas"));
             
@@ -50,7 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         serials.forEach(serial => {
                             tempAllBoxesByModel[modelName].push(serial);
                         });
-                    } else if (Array.isArray(zonaData[modelName])) { // Handle if serials are stored as array
+                    } else if (Array.isArray(zonaData[modelName])) { 
                         if (!tempAllBoxesByModel[modelName]) {
                             tempAllBoxesByModel[modelName] = [];
                         }
@@ -60,10 +58,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
             });
-            allBoxesData = tempAllBoxesByModel; // Store the original data
+            allBoxesData = tempAllBoxesByModel;
 
-            // Step 3: Render initial view (unfiltered)
-            filterAndRenderStates(searchInput.value); // Render with initial search term (empty)
+            filterAndRenderStates(searchInput.value); 
 
         } catch (error) {
             console.error("Error cargando los estados de las cajas: ", error);
@@ -71,9 +68,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // NEW: Filter function
     const filterAndRenderStates = (searchTerm) => {
-        listContainer.innerHTML = ''; // Clear previous content
+        listContainer.innerHTML = ''; 
         const lowerCaseSearchTerm = searchTerm.toLowerCase();
         const filteredBoxesByModel = {};
 
@@ -82,7 +78,6 @@ document.addEventListener('DOMContentLoaded', () => {
         for (const modelName of sortedModels) {
             const boxesInModel = allBoxesData[modelName];
             const filteredBoxes = boxesInModel.filter(serial => {
-                // Search by serial number or model name
                 return serial.toLowerCase().includes(lowerCaseSearchTerm) || 
                        modelName.toLowerCase().includes(lowerCaseSearchTerm);
             });
@@ -100,9 +95,8 @@ document.addEventListener('DOMContentLoaded', () => {
         renderActualStates(filteredBoxesByModel, allStatusData);
     };
 
-    // Renamed from renderStates to renderActualStates to avoid confusion
     const renderActualStates = (boxesToRenderByModel, statusMap) => {
-        listContainer.innerHTML = ''; // Clear loading/empty state
+        listContainer.innerHTML = ''; 
 
         const sortedModels = Object.keys(boxesToRenderByModel).sort();
 
@@ -120,7 +114,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             boxesToRenderByModel[modelName].sort().forEach(serial => {
                 const statusData = statusMap.get(serial);
-                const status = statusData ? statusData.status : 'Disponible'; // Default to Disponible
+                const status = statusData ? statusData.status : 'Disponible'; 
                 
                 const listItem = document.createElement('li');
                 listItem.className = 'list-item';
@@ -139,7 +133,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
     
-    // Event Listeners
     searchInput.addEventListener('input', () => filterAndRenderStates(searchInput.value)); // NEW
 
     logoutBtn?.addEventListener('click', () => {

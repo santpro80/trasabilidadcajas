@@ -9,7 +9,6 @@ import { doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs
 
 const auth = getAuth(app);
 
-// Función de Login
 export async function loginUser(email, password) {
   try {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
@@ -20,7 +19,6 @@ export async function loginUser(email, password) {
   }
 }
 
-// Función de Registro (optimizada con validación de supervisor)
 export async function registerUser(email, password, name, role) {
   try {
     if (password.length < 6) throw new Error("La contraseña debe tener al menos 6 caracteres");
@@ -41,8 +39,6 @@ export async function registerUser(email, password, name, role) {
     throw error;
   }
 }
-
-// Función de Logout
 export async function logoutUser() {
   try {
     await signOut(auth);
@@ -52,10 +48,6 @@ export async function logoutUser() {
   }
 }
 
-// ----- Código para manejo del DOM -----
-// (Esto debería moverse a los archivos HTML correspondientes)
-
-// Verificación segura de elementos
 const registerModal = document.getElementById("register-modal");
 if (registerModal) {
   document.getElementById("open-register-btn")?.addEventListener("click", () => {

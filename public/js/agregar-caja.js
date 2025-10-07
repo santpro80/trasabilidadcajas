@@ -13,7 +13,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let modelName = '', zonaName = '';
     let codeToDescMap = new Map();
 
-    // --- Notification Helper ---
     let notificationTimeout;
     const showNotification = (message, type = 'error') => {
         if(messageDiv) {
@@ -32,7 +31,6 @@ document.addEventListener('DOMContentLoaded', () => {
         input.setSelectionRange(originalSelectionStart, originalSelectionEnd);
     };
 
-    // --- Initialization ---
     onAuthStateChanged(auth, async (user) => {
         if (!user) { window.location.href = 'login.html'; return; }
         if (userDisplayName) {
@@ -56,7 +54,6 @@ document.addEventListener('DOMContentLoaded', () => {
         loadSchemaAndBuildForm();
     });
 
-    // --- Loads schema and renders the initial list of items ---
     const loadSchemaAndBuildForm = async () => {
         const urlParams = new URLSearchParams(window.location.search);
         modelName = urlParams.get('modelName');
@@ -96,12 +93,11 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    // --- Renders a row for an item defined in the schema ---
     const renderStaticItemRow = (itemName) => {
         const [itemCode, description] = itemName.split(';');
         const formGroup = document.createElement('div');
         formGroup.className = 'form-group static-item-row';
-        formGroup.dataset.itemName = itemName; // Store original name
+        formGroup.dataset.itemName = itemName; 
         formGroup.innerHTML = `
             <div class="item-details">
                 <label><span style="font-weight: bold;">Código: ${itemCode}</span><br><span style="font-style: italic;">${description || ''}</span></label>
@@ -116,7 +112,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    // --- Renders a temporary row for a NEW, dynamic item ---
     const addDynamicItemRow = () => {
         if (document.querySelector('.dynamic-item-row-new')) {
             showNotification("Ya estás agregando un ítem nuevo.", "error");
@@ -149,7 +144,6 @@ document.addEventListener('DOMContentLoaded', () => {
         applyEnterNavigation();
     };
 
-    // --- Converts the temporary dynamic row into a static one ---
     const saveDynamicItem = (rowElement) => {
         const codeInput = rowElement.querySelector('.manual-code-input');
         const serialInput = rowElement.querySelector('.item-serial-input');
@@ -173,7 +167,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const itemName = `${itemCode};${description}`;
         
-        // Convert to a static row, similar to the schema ones
         rowElement.className = 'form-group static-item-row';
         rowElement.dataset.itemName = itemName;
         rowElement.innerHTML = `
@@ -187,7 +180,6 @@ document.addEventListener('DOMContentLoaded', () => {
         applyEnterNavigation();
     };
 
-    // --- Utility for Enter key navigation ---
     const applyEnterNavigation = () => {
         const allInputs = document.querySelectorAll('#cajaSerialInput, .item-serial-input, .manual-code-input');
         allInputs.forEach((input, index) => {
@@ -202,7 +194,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    // --- FINAL SAVE LOGIC (CORRECTED) ---
     saveCajaBtn.addEventListener('click', async () => {
         showNotification('Guardando caja...', 'info');
         
@@ -245,7 +236,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            // Create the final document data, including the model
             const finalDocData = {
                 ...itemsData,
                 modelo: modelName 
@@ -263,7 +253,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
-            // --- Save Tracing Time ---
             const tracingStartTime = localStorage.getItem('tracingStartTime');
             const tracingModelName = localStorage.getItem('tracingModelName');
             if (tracingStartTime && tracingModelName) {
@@ -275,7 +264,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 localStorage.removeItem('tracingZonaName');
             }
 
-            // Use the original itemsData for the count to be correct
             const numItems = Object.keys(itemsData).length;
             registrarHistorial('CREACIÓN DE CAJA', {
                 cajaSerie: newCajaSerial,
@@ -296,7 +284,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // New function to save tracing time
     const saveTracingTime = async (model, duration) => {
         try {
             await addDoc(collection(db, "tracingTimes"), {
@@ -311,7 +298,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // --- Attach event listeners ---
     addItemBtn.addEventListener('click', addDynamicItemRow);
     backBtn.addEventListener('click', () => window.history.back());
     logoutBtn.addEventListener('click', () => signOut(auth).then(() => window.location.href = 'login.html'));

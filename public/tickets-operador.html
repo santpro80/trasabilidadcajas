@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mis Tickets</title>
     <style>
-    /* General body styles */
     body {
         font-family: 'Inter', Arial, sans-serif;
         margin: 0;
@@ -13,8 +12,6 @@
         background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
         color: #333;
     }
-
-    /* Header styles */
     header {
         background-color: rgba(255, 255, 255, 0.9);
         backdrop-filter: blur(5px);
@@ -33,16 +30,12 @@
         margin: 0;
         font-size: 1.5em;
     }
-
-    /* Main content container */
     main {
         padding: 25px;
         max-width: 900px;
         margin: 0 auto;
         width: 100%;
     }
-
-    /* Button styles */
     button {
         cursor: pointer;
         border-radius: 8px;
@@ -64,8 +57,6 @@
         font-size: 1.1em;
         margin-bottom: 25px;
     }
-
-    /* Ticket cards styles */
     #tickets-container {
         display: grid;
         gap: 20px;
@@ -79,14 +70,14 @@
         cursor: pointer;
         transition: transform 0.2s ease, box-shadow 0.2s ease;
         border-left: 5px solid #4285F4;
-        position: relative; /* Needed for badge positioning */
+        position: relative; 
     }
 
     .notification-badge {
         position: absolute;
         top: 15px;
         right: 15px;
-        background-color: #dc3545; /* Red color */
+        background-color: #dc3545; 
         color: white;
         border-radius: 50%;
         width: 24px;
@@ -123,21 +114,19 @@
     }
 
     .status-abierto {
-        background-color: #e8f5e9; /* Light green */
-        color: #2e7d32; /* Dark green */
+        background-color: #e8f5e9; 
+        color: #2e7d32; 
     }
 
     .status-cerrado {
-        background-color: #ffebee; /* Light red */
-        color: #c62828; /* Dark red */
+        background-color: #ffebee; 
+        color: #c62828; 
     }
 
     .ticket-last-update {
         font-size: 0.85em;
         color: #666;
     }
-
-    /* Modal styles (reusing and extending from menu.html) */
     .modal-overlay {
         position: fixed;
         top: 0;
@@ -176,7 +165,7 @@
         border-radius: 8px;
         font-family: inherit;
         font-size: 1em;
-        box-sizing: border-box; /* Important for width */
+        box-sizing: border-box; 
     }
 
     .modal-content textarea {
@@ -208,8 +197,6 @@
         background-color: #6c757d;
         color: white;
     }
-
-    /* Message container styles */
     #mensajes-container {
         background-color: #f0f2f5;
         border-radius: 12px;
@@ -269,8 +256,6 @@
     .message.sent .message-date {
         color: #e0e0e0;
     }
-
-    /* Reply container styles */
     #respuesta-container {
         margin-top: 20px;
         display: flex;
@@ -316,7 +301,6 @@
     <main>
         <button id="crear-ticket-btn">Crear Nuevo Ticket</button>
         <div id="tickets-container">
-            <!-- Aquí se cargarán los tickets del operador -->
         </div>
     </main>
     <script type="module" src="js/tickets-operador.js"></script>

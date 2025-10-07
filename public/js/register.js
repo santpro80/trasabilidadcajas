@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const confirmPasswordInput = document.getElementById('confirm-password');
     const roleSelect = document.getElementById('role');
     const supervisorPasswordGroup = document.getElementById('supervisor-password-group');
-    const supervisorPasswordInput = document.getElementById('supervisor-password'); // Este es el campo para la contraseña del supervisor
+    const supervisorPasswordInput = document.getElementById('supervisor-password'); 
     const messageArea = document.getElementById('message-area');
     const submitBtn = document.getElementById('submit-btn');
 
@@ -59,7 +59,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         try {
-            // Si el nuevo rol es 'supervisor', requerir re-autenticación
             if (role === 'supervisor') {
                 if (!supervisorPassword) {
                     throw new Error('Debes introducir tu contraseña de supervisor para confirmar.');
@@ -67,9 +66,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 const credential = EmailAuthProvider.credential(currentUser.email, supervisorPassword);
                 await reauthenticateWithCredential(currentUser, credential);
             }
-
-            // --- Si la re-autenticación es exitosa (o no era necesaria), proceder a crear el usuario ---
-
             const usersRef = collection(db, "users");
             const q = query(usersRef, where("username", "==", username));
             const querySnapshot = await getDocs(q);

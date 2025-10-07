@@ -1,4 +1,4 @@
-/**
+/** *
  * Sets up a real-time listener on the tickets collection to display a global notification badge.
  * The badge shows the total number of unread messages for the current user's role.
  * 

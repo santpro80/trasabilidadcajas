@@ -57,10 +57,9 @@ export const registrarMovimientoCaja = async (tipo, cajaSerie, modelName, presta
         const userDocSnap = await getDoc(doc(db, "users", user.uid));
         const userName = userDocSnap.exists() ? userDocSnap.data().name : user.email;
         const fecha = new Date();
-        const fechaISO = fecha.toISOString().split('T')[0]; // Formato YYYY-MM-DD
-        const mesISO = fecha.toISOString().slice(0, 7); // Formato YYYY-MM
+        const fechaISO = fecha.toISOString().split('T')[0];
+        const mesISO = fecha.toISOString().slice(0, 7); 
 
-        // 1. Registrar el movimiento (lógica existente)
         const movimientoData = {
             cajaSerie: cajaSerie,
             modelName: modelName,
@@ -79,7 +78,6 @@ export const registrarMovimientoCaja = async (tipo, cajaSerie, modelName, presta
         await addDoc(collection(db, "movimientos_cajas"), movimientoData);
         console.log(`Movimiento de caja '${tipo}' para '${cajaSerie}' registrado.`);
 
-        // 2. Actualizar el estado de la caja (nueva lógica)
         const nuevoEstado = tipo === 'Salida' ? 'Prestada' : 'Disponible';
         const estadoDocRef = doc(db, "caja_estados", cajaSerie);
         const estadoData = {
@@ -106,7 +104,7 @@ export const registrarConsumoItem = async (modelName, itemName) => {
 
     try {
         const fecha = new Date();
-        const mesISO = fecha.toISOString().slice(0, 7); // Formato YYYY-MM
+        const mesISO = fecha.toISOString().slice(0, 7); 
         const statsDocRef = doc(db, "estadisticas_consumo", mesISO);
 
         const sanitizedModel = sanitizeFieldName(modelName);
@@ -118,8 +116,6 @@ export const registrarConsumoItem = async (modelName, itemName) => {
             }
         };
 
-        // setDoc con merge:true crea el documento si no existe,
-        // y anida/actualiza los campos sin sobreescribir el documento entero.
         await setDoc(statsDocRef, updateData, { merge: true });
 
         console.log(`Consumo registrado para item: ${itemName} en modelo: ${modelName}`);

@@ -23,8 +23,6 @@
     .stats-table tbody tr:nth-child(even) { background-color: #f9f9f9; }
         .stats-table tbody tr.clickable-row { cursor: pointer; }
         .stats-table tbody tr.clickable-row:hover { background-color: #e9ecef; }
-
-        /* Modal Styles */
         .modal-overlay { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); justify-content: center; align-items: center; }
         .modal-content { background-color: #fefefe; margin: auto; padding: 20px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); width: 80%; max-width: 600px; }
         .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ddd; padding-bottom: 10px; margin-bottom: 15px; }
@@ -39,7 +37,7 @@
         .consumed-item .item-count { font-weight: bold; color: #dc3545; font-size: 1.2em; }
     .consumed-item .item-count { font-weight: bold; color: #dc3545; font-size: 1.2em; }
         .btn-download-excel {
-            background-color: #28a745; /* Green */
+            background-color: #28a745;  
             color: white;
             padding: 10px 15px;
             border: none;
@@ -47,8 +45,8 @@
             cursor: pointer;
             font-size: 1em;
             margin-top: 20px;
-            display: block; /* Make it a block element to take full width or center it */
-            width: fit-content; /* Adjust width to content */
+            display: block; 
+            width: fit-content; 
             margin-left: auto;
             margin-right: auto;
         }
@@ -79,12 +77,9 @@
             
             <button id="show-avg-tracing-time-btn" class="btn-download-excel" style="margin-top: 20px;">Mostrar Tiempo Promedio de Trazado</button>
             <div id="avg-tracing-time-results" style="margin-top: 20px;">
-                <!-- Results will be displayed here -->
             </div>
         </div>
     </main>
-
-    <!-- Modal para Consumo de Items -->
     <div id="consumption-modal" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-header">
