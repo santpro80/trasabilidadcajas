@@ -304,18 +304,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    const registrarEntradaSimple = async () => {
-        if (tipoReporteModal) tipoReporteModal.style.display = 'none';
-        showNotification('Registrando entrada...', 'info');
-        try {
-            // Usamos la función centralizada, pasando el N° de serie de la caja actual
-            await registrarMovimientoCaja('Entrada', currentSelectedSerialNumber, modelName);
-            showNotification('Entrada registrada en el informe diario.', 'success');
-        } catch (error) {
-            showNotification('Error al registrar la entrada.', 'error');
-            // El error ya se loguea en la función central
-        }
-    };
 
     const generarPDF = (tipo, prestamoNum = null) => {
         if (typeof html2canvas === 'undefined' || typeof window.jspdf === 'undefined') { showNotification("Error: Faltan librerías para PDF.", "error"); return; }
@@ -392,7 +380,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (noObservationBtn) noObservationBtn.addEventListener('click', () => {
         if (observationModal) observationModal.style.display = 'none';
         if (reportType === 'Entrada') {
-            registrarEntradaSimple();
+            generarPDF('Entrada');
         } else if (reportType === 'Salida') {
             if (prestamoModal) prestamoModal.style.display = 'flex';
             if (prestamoInput) prestamoInput.focus();
