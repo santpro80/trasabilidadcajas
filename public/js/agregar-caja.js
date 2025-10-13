@@ -22,7 +22,6 @@ document.addEventListener('DOMContentLoaded', () => {
             notificationTimeout = setTimeout(() => { messageDiv.textContent = ''; }, 3000);
         }
     };
-
     const forceUppercase = (event) => {
         const input = event.target;
         const originalSelectionStart = input.selectionStart;
@@ -111,7 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
             applyEnterNavigation(); 
         });
     };
-
+ 
     const addDynamicItemRow = () => {
         if (document.querySelector('.dynamic-item-row-new')) {
             showNotification("Ya estás agregando un ítem nuevo.", "error");

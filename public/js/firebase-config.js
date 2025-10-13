@@ -7,6 +7,7 @@ import {
     getFirestore, doc, getDoc, setDoc, updateDoc, deleteField,
     deleteDoc, collection, query, orderBy, onSnapshot, getDocs, addDoc, serverTimestamp, where, increment, arrayUnion
 } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-functions.js';
 
 const firebaseConfig = {
     apiKey: "AIzaSyBtj9fa0St2IMZgo4jfNPsz_3EMVtioyGU",
@@ -18,9 +19,10 @@ const firebaseConfig = {
     measurementId: "G-SZDRGMZS4X"
 };
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
+export const app = initializeApp(firebaseConfig);
+export const auth = getAuth(app);
+export const db = getFirestore(app);
+export const functions = getFunctions(app, 'us-central1');
 
 export function sanitizeFieldName(name) { return name.replace(/\//g, '_slash_').replace(/\./g, '_dot_').replace(/,/g, '_comma_'); }
 export function unSanitizeFieldName(name) { return name.replace(/_comma_/g, ',').replace(/_dot_/g, '.').replace(/_slash_/g, '/'); }
@@ -126,7 +128,7 @@ export const registrarConsumoItem = async (modelName, itemName) => {
 };
 
 export { 
-    app, auth, db, onAuthStateChanged, signOut, signInWithEmailAndPassword,
+    httpsCallable, onAuthStateChanged, signOut, signInWithEmailAndPassword,
     createUserWithEmailAndPassword, updatePassword, reauthenticateWithCredential,
     EmailAuthProvider, doc, getDoc, setDoc, updateDoc, deleteField, deleteDoc,
     collection, query, orderBy, onSnapshot, getDocs, where, serverTimestamp, addDoc, increment, arrayUnion

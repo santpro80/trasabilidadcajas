@@ -84,7 +84,7 @@
             <h1>Menú Principal</h1>
             <nav class="menu-nav">
                 <ul>
-                    <li>
+                    <li id="li-cajas">
                         <button id="btn-cajas">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <rect x="2" y="7" width="20" height="15" rx="2" ry="2"></rect>
@@ -150,6 +150,17 @@
                             <span>Registrar Usuario</span>
                         </button>
                     </li>
+                    <li id="li-gestion-usuarios" style="display: none;">
+                        <button id="btn-gestion-usuarios">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="9" cy="7" r="4"></circle>
+                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                            </svg>
+                            <span>Gestión de Usuarios</span>
+                        </button>
+                    </li>
                     <li id="li-tickets">
                         <button id="btn-tickets">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -213,10 +224,12 @@
         const btnEstadosCajas = document.getElementById('btn-estados-cajas');
         const btnReportarProblema = document.getElementById('btn-reportar-problema');
         const btnVerProblemas = document.getElementById('btn-ver-problemas');
+        const btnGestionUsuarios = document.getElementById('btn-gestion-usuarios');
 
         let currentUserRole = 'operario';
 
         const manageMenuVisibility = (role) => {
+            const liCajas = document.getElementById('li-cajas');
             const liHistorial = document.getElementById('li-historial');
             const liInformeDiario = document.getElementById('li-informe-diario');
             const liImportarDatos = document.getElementById('li-importar-datos');
@@ -226,14 +239,17 @@
             const liEstadosCajas = document.getElementById('li-estados-cajas');
             const liReportarProblema = document.getElementById('li-reportar-problema');
             const liVerProblemas = document.getElementById('li-ver-problemas');
+            const liGestionUsuarios = document.getElementById('li-gestion-usuarios');
 
             const isSupervisor = role === 'supervisor';
             const isMantenimiento = role === 'mantenimiento';
 
+            if (liCajas) liCajas.style.display = isMantenimiento ? 'none' : 'list-item';
             if (liHistorial) liHistorial.style.display = isSupervisor ? 'list-item' : 'none';
             if (liInformeDiario) liInformeDiario.style.display = isSupervisor ? 'list-item' : 'none';
             if (liImportarDatos) liImportarDatos.style.display = isSupervisor ? 'list-item' : 'none';
             if (liRegistrarUsuario) liRegistrarUsuario.style.display = isSupervisor ? 'list-item' : 'none';
+            if (liGestionUsuarios) liGestionUsuarios.style.display = isSupervisor ? 'list-item' : 'none';
             if (liEstadisticas) liEstadisticas.style.display = isSupervisor ? 'list-item' : 'none';
             if (liEstadosCajas) liEstadosCajas.style.display = isSupervisor ? 'list-item' : 'none';
             if (liReportarProblema) liReportarProblema.style.display = isSupervisor ? 'list-item' : 'none';
@@ -283,6 +299,7 @@
         btnCuenta?.addEventListener('click', () => { window.location.href = 'cuenta.html'; });
         btnImportarDatos?.addEventListener('click', () => { window.location.href = 'redir-import.html'; });
         btnRegistrarUsuario?.addEventListener('click', () => { window.location.href = 'register.html'; });
+        btnGestionUsuarios?.addEventListener('click', () => { window.location.href = 'gestion-usuarios.html'; });
         btnEstadisticas?.addEventListener('click', () => { window.location.href = 'estadisticas.html'; });
         btnEstadosCajas?.addEventListener('click', () => { window.location.href = 'estados-cajas.html'; });
         btnReportarProblema?.addEventListener('click', () => { window.location.href = 'reportar-problema.html'; });

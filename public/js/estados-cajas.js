@@ -51,9 +51,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     } else if (Array.isArray(zonaData[modelName])) { 
                         if (!tempAllBoxesByModel[modelName]) {
                             tempAllBoxesByModel[modelName] = [];
-                        }
+                        }POST https://us-central1-cajas-secuela.cloudfunctions.net/setCustomUserRole 500 (Internal Server Error)
+s @ service.ts:96
+postJSON @ service.ts:255
+callAtURL @ service.ts:345
+await in callAtURL
+call @ service.ts:196
+callable @ service.ts:392
+(anónimo) @ gestion-usuarios.js:58
+gestion-usuarios.js:64 Error al asignar rol: FirebaseError: INTERNAL
                         zonaData[modelName].forEach(serial => {
-                            tempAllBoxesByModel[modelName].push(serial);
+                            tempAllBoxesByModel[modelName].push(serial); 
                         });
                     }
                 }
