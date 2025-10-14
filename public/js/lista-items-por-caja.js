@@ -298,6 +298,35 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
 
+    const uploadPdfToOneDrive = async (pdfBlob, fileName, tipo) => {
+        // URL de la Azure Function (reemplazar con la URL real cuando la despleguemos)
+        const functionUrl = 'URL_DE_LA_AZURE_FUNCTION_AQUI'; 
+
+        const formData = new FormData();
+        formData.append('pdf', pdfBlob, fileName);
+
+        try {
+            showNotification('Subiendo PDF a OneDrive...', 'info');
+            const response = await fetch(`${functionUrl}?tipo=${tipo}`, {
+                method: 'POST',
+                body: formData,
+                // No se necesita 'Content-Type', el navegador lo establece por nosotros con FormData
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                showNotification('PDF subido a OneDrive con éxito.', 'success');
+                console.log('Respuesta de la función:', result);
+            } else {
+                const errorText = await response.text();
+                throw new Error(`Error del servidor: ${response.status} ${response.statusText} - ${errorText}`);
+            }
+        } catch (error) {
+            showNotification('Error al subir el PDF a OneDrive.', 'error');
+            console.error('Error en uploadPdfToOneDrive:', error);
+        }
+    };
+
     const generarPDF = (tipo, prestamoNum = null) => {
         if (typeof html2canvas === 'undefined' || typeof window.jspdf === 'undefined') { showNotification("Error: Faltan librerías para PDF.", "error"); return; }
         const template = document.getElementById('pdf-template');
@@ -340,6 +369,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const pdfWidth = pdf.internal.pageSize.getWidth();
             const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
             pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 10, 10, pdfWidth - 20, pdfHeight > 277 ? 277 : pdfHeight);
+            
+            // Generar nombre de archivo y Blob
+            const fileName = `Reporte_Caja_${currentSelectedSerialNumber}_${new Date().toISOString()}.pdf`;
+            const pdfBlob = pdf.output('blob');
+
+            // Subir a OneDrive
+            await uploadPdfToOneDrive(pdfBlob, fileName, tipo);
+
+            // Guardar localmente (opcional, lo mantenemos por ahora)
             pdf.save(`Reporte_Caja_${currentSelectedSerialNumber}.pdf`);
 
             await registrarMovimientoCaja(tipo, currentSelectedSerialNumber, modelName, prestamoNum);

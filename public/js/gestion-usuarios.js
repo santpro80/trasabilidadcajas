@@ -52,7 +52,18 @@ document.addEventListener('DOMContentLoaded', () => {
                         showMessage('Asignando rol...', 'info');
 
                         try {
-                            await auth.currentUser.getIdToken(true);
+                            // --- INICIO: CÓDIGO DE DEPURACIÓN DE TOKEN ---
+                            console.log("Forzando actualización del token para depuración...");
+                            await auth.currentUser.getIdToken(true); // Forzar actualización
+                            const idToken = await auth.currentUser.getIdToken();
+                            try {
+                                const payload = JSON.parse(atob(idToken.split('.')[1]));
+                                console.log("CONTENIDO COMPLETO DEL TOKEN (CLAIMS):", payload);
+                            } catch (e) {
+                                console.error("No se pudo decodificar el token:", e);
+                            }
+                            // --- FIN: CÓDIGO DE DEPURACIÓN DE TOKEN ---
+
                             const setCustomUserRole = httpsCallable(functions, 'setCustomUserRole');
                             const result = await setCustomUserRole({ email: email, role: role });
                             

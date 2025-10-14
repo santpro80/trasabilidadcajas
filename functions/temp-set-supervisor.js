@@ -17,7 +17,7 @@ async function setSupervisor() {
     const user = await admin.auth().getUserByEmail(emailToMakeSupervisor);
 
     console.log(`Asignando el rol 'supervisor' al UID: ${user.uid}...`);
-    await admin.auth().setCustomUserClaims(user.uid, { rol: 'supervisor' });
+    await admin.auth().setCustomUserClaims(user.uid, { role: 'supervisor' });
 
     console.log('----------------------------------------------------');
     console.log(`¡Éxito! El usuario ${emailToMakeSupervisor} ahora es supervisor.`);
