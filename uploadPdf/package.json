@@ -1,0 +1,12 @@
+{
+  "name": "upload-pdf-function",
+  "version": "1.0.0",
+  "description": "Azure Function to upload PDFs to OneDrive.",
+  "main": "index.js",
+  "dependencies": {
+    "@azure/msal-node": "^1.17.2",
+    "@microsoft/microsoft-graph-client": "^3.0.7",
+    "busboy": "^1.6.0",
+    "isomorphic-fetch": "^3.0.0"
+  }
+}
