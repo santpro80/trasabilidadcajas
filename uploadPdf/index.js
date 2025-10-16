@@ -42,8 +42,8 @@ function parseMultipart(req) {
 
         busboy.on("error", (err) => reject(err));
 
-        // Escribimos el body raw de la request en busboy para que lo procese
-        busboy.end(req.rawBody);
+        // Escribimos el body de la request en busboy para que lo procese
+        busboy.end(req.body);
     });
 }
 
