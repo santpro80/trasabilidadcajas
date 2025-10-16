@@ -22,6 +22,16 @@ jobs:
         run: npm install
         working-directory: ./uploadPdf
 
+      - name: 'Azure Login'
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: 'DEBUG - List Accessible Function Apps'
+        run: |
+          echo "Listing accessible function apps..."
+          az functionapp list --query "[].name" -o tsv
+
       - name: 'Deploy to Azure Functions'
         uses: Azure/functions-action@v1
         id: fa
