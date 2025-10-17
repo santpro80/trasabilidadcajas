@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Prueba de Subida de Archivos a OneDrive</title>
+    <style>
+        body { font-family: sans-serif; margin: 2em; }
+        form { border: 1px solid #ccc; padding: 1em; border-radius: 5px; }
+        input { margin-top: 0.5em; }
+    </style>
+</head>
+<body>
+    <h1>Prueba de Subida de Archivos</h1>
+    <p>Esto enviará un archivo a la carpeta "Entrada" de tu OneDrive.</p>
+    
+    <form action="https://intanciapdfsvillalba-g9amc0c0b9daecc8.brazilsouth-01.azurewebsites.net/api/uploadPdf?tipo=Entrada" method="post" enctype="multipart/form-data">
+        <label for="file">Selecciona un archivo PDF:</label><br>
+        <input type="file" name="file" id="file" accept=".pdf" required>
+        <br><br>
+        <input type="submit" value="Subir Archivo">
+    </form>
+</body>
+</html>
