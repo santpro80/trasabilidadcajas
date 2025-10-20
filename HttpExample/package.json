@@ -1,0 +1,8 @@
+{
+  "name": "http-example",
+  "version": "1.0.0",
+  "description": "A simple Hello World function.",
+  "main": "index.js",
+  "author": "Gemini",
+  "dependencies": {}
+}
