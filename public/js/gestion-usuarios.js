@@ -77,7 +77,16 @@ document.addEventListener('DOMContentLoaded', () => {
                             } else if (error.code === 'functions/internal') {
                                 showMessage('Error interno del servidor. Revisa los logs de la función.', 'error');
                             } else {
-                                showMessage(`Error: ${error.message}`, 'error');
+                                showMessage(`Error: ${error.message}`, 'erroRun Azure/functions-action@v1
+Using RBAC for authentication, GitHub Action will perform resource validation.
+Error: Execution Exception (state: ValidateAzureResource) (step: Invocation)
+Error:   Resource intanciapdfsvillalba-g9amc0c0b9daecc8 of type Microsoft.Web/Sites doesn't exist.
+Error:     Error: Resource intanciapdfsvillalba-g9amc0c0b9daecc8 of type Microsoft.Web/Sites doesn't exist.
+    at AzureResourceFilterUtility.<anonymous> (/home/runner/work/_actions/Azure/functions-action/v1/node_modules/azure-actions-appservice-rest/Utilities/AzureResourceFilterUtility.js:26:23)
+    at Generator.next (<anonymous>)
+    at fulfilled (/home/runner/work/_actions/Azure/functions-action/v1/node_modules/azure-actions-appservice-rest/Utilities/AzureResourceFilterUtility.js:5:58)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+Error: Deployment Failed!r');
                             }
                         }
                     });
@@ -101,5 +110,3 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 });
-// Trigger workflow
-// Trigger workflow again
