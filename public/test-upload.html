@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test de Subida de PDF a Azure</title>
+    <style>
+        body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #f4f4f9; }
+        .container { background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); text-align: center; }
+        h1 { color: #333; }
+        input[type="file"] { margin-top: 1rem; }
+        .tipo-selector { margin: 1rem 0; }
+        button { background-color: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 1rem; margin-top: 1rem; }
+        button:disabled { background-color: #ccc; }
+        #status { margin-top: 1rem; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Subir PDF a OneDrive vía Azure</h1>
+        
+        <input type="file" id="pdf-file-input" accept="application/pdf">
+
+        <div class="tipo-selector">
+            <label>
+                <input type="radio" name="tipo" value="Entrada" checked>
+                Entrada
+            </label>
+            <label>
+                <input type="radio" name="tipo" value="Salida">
+                Salida
+            </label>
+        </div>
+
+        <button id="upload-button">Subir Archivo</button>
+
+        <div id="status"></div>
+    </div>
+
+    <script>
+        const pdfFileInput = document.getElementById('pdf-file-input');
+        const uploadButton = document.getElementById('upload-button');
+        const statusDiv = document.getElementById('status');
+        
+        // URL de tu función de Azure. ¡Asegúrate de que sea la correcta!
+        const azureFunctionUrl = "https://pdfupload-func-santi-bcc7fchmehckhsfg.brazilsouth-01.azurewebsites.net/api/uploadPdf";
+        console.log("antes de hacer click");
+        uploadButton.addEventListener('click', async () => {
+            console.log("--- Inicio de subida ---");
+
+            const file = pdfFileInput.files[0];
+            if (!file) {
+                console.error("No se seleccionó ningún archivo.");
+                statusDiv.textContent = "Por favor, selecciona un archivo PDF.";
+                statusDiv.style.color = "red";
+                return;
+            }
+            console.log("Archivo seleccionado:", file.name, `(${Math.round(file.size / 1024)} KB)`);
+
+            const tipo = document.querySelector('input[name="tipo"]:checked').value;
+            console.log("Tipo seleccionado:", tipo);
+
+            const urlConTipo = `${azureFunctionUrl}?tipo=${tipo}`;
+            console.log("URL de destino:", urlConTipo);
+
+            statusDiv.textContent = "Subiendo archivo...";
+            statusDiv.style.color = "blue";
+            uploadButton.disabled = true;
+
+            const formData = new FormData();
+            formData.append("file", file);
+            console.log("FormData creado y listo para enviar.");
+
+            try {
+                console.log("Enviando petición POST con fetch...");
+                const response = await fetch(urlConTipo, {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                console.log("Respuesta recibida del servidor. Estado:", response.status, response.statusText);
+                const result = await response.json();
+                console.log("Cuerpo de la respuesta (JSON):", result);
+
+                if (response.ok) {
+                    statusDiv.textContent = `¡Éxito! Archivo subido: ${result.fileName}`;
+                    statusDiv.style.color = "green";
+                    console.log("Respuesta de OneDrive:", result.onedrive_response);
+                } else {
+                    throw new Error(result.message || `Error ${response.status}`);
+                }
+
+            } catch (error) {
+                statusDiv.textContent = `Error: ${error.message}`;
+                statusDiv.style.color = "red";
+                console.error("Error capturado en el bloque catch:", error);
+            } finally {
+                uploadButton.disabled = false;
+                console.log("--- Fin de subida ---");
+            }
+        });
+    </script>
+
+</body>
+</html>

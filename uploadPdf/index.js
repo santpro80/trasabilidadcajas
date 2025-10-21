@@ -1,11 +1,9 @@
-
 const msal = require("@azure/msal-node");
 const { Client } = require("@microsoft/microsoft-graph-client");
 require("isomorphic-fetch"); // Polifill para la API Fetch
 const Busboy = require("busboy");
 
 // Configuración de MSAL para la autenticación.
-// Lee las variables de entorno que configuramos en Azure.
 const msalConfig = {
     auth: {
         clientId: process.env.CLIENT_ID,
@@ -17,14 +15,12 @@ const msalConfig = {
 const cca = new msal.ConfidentialClientApplication(msalConfig);
 
 // --- Función para parsear el formulario multipart/form-data ---
-// Extrae el stream del archivo y su nombre.
 function parseMultipart(req) {
     return new Promise((resolve, reject) => {
         const busboy = Busboy({ headers: req.headers });
         let fileData = { stream: null, name: null, mimeType: null };
 
         busboy.on("file", (fieldname, file, { filename, mimeType }) => {
-            // Solo procesamos el primer archivo encontrado
             if (!fileData.stream) {
                 fileData.stream = file;
                 fileData.name = filename;
@@ -42,7 +38,6 @@ function parseMultipart(req) {
 
         busboy.on("error", (err) => reject(err));
 
-        // Escribimos el body de la request en busboy para que lo procese
         busboy.end(req.body);
     });
 }
@@ -51,6 +46,9 @@ function parseMultipart(req) {
 // --- Función principal de Azure ---
 module.exports = async function (context, req) {
     context.log("Función 'uploadPdf' procesando una solicitud.");
+
+    // ID del sitio de SharePoint obtenido del Explorador de Graph.
+    const siteId = "m365x63639251.sharepoint.com,99bec355-c27b-412a-bd2b-515e818490e0,92ce2085-1c97-4587-9d6c-2e4350a4b0d3";
 
     const tipo = req.query.tipo;
     if (!tipo || (tipo.toLowerCase() !== 'entrada' && tipo.toLowerCase() !== 'salida')) {
@@ -83,23 +81,21 @@ module.exports = async function (context, req) {
             },
         });
 
-        // 4. Definir la ruta de subida en OneDrive
-        // Asumimos que los archivos se guardan en la carpeta raíz de OneDrive,
-        // dentro de una carpeta "Entrada" o "Salida".
-        const uploadPath = `/root:/${tipo}/${fileName}`;
-        context.log(`Ruta de subida en OneDrive: ${uploadPath}`);
+        // 4. Definir la ruta de subida en el Drive del sitio de SharePoint
+        // ¡Esta es la línea que corregimos!
+        const uploadPath = `/sites/${siteId}/drive/root:/${tipo}/${fileName}:/content`;
+        context.log(`Ruta de subida en SharePoint: ${uploadPath}`);
 
         // 5. Subir el archivo
-        // Usamos `stream` para subir directamente el stream del archivo sin guardarlo en memoria.
         const response = await graphClient.api(uploadPath).put(fileStream);
 
-        context.log("Archivo subido a OneDrive con éxito.");
+        context.log("Archivo subido a SharePoint con éxito.");
         context.res = {
             status: 200,
             body: {
-                message: "Archivo subido a OneDrive con éxito.",
+                message: "Archivo subido a SharePoint con éxito.",
                 fileName: fileName,
-                onedrive_response: response,
+                sharepoint_response: response,
             },
             headers: {
                 'Content-Type': 'application/json'
