@@ -145,3 +145,5 @@ local.settings.json
 
 # Google Cloud Credentials
 serviceAccountKey.json
+
+functions/credentials.js

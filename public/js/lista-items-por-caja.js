@@ -5,6 +5,24 @@ import {
     registrarMovimientoCaja, sanitizeFieldName, unSanitizeFieldName, registrarConsumoItem
 } from './firebase-config.js';
 
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-functions.js";
+
+// --- 1. Configuración de Firebase (para funciones) ---
+const firebaseConfig = {
+    apiKey: "AIzaSyBtj9fa0St2IMZgo4jfNPsz_3EMVtioyGU",
+    authDomain: "cajas-secuela.firebaseapp.com",
+    projectId: "cajas-secuela",
+    storageBucket: "cajas-secuela.firebasestorage.app",
+    messagingSenderId: "551056516132",
+    appId: "1:551056516132:web:88b9da72dd8dd1a8e7a4b1",
+    measurementId: "G-SZDRGMZS4X"
+};
+
+const app = initializeApp(firebaseConfig);
+const functions = getFunctions(app, 'us-central1');
+const uploadPdfToOneDriveCallable = httpsCallable(functions, 'uploadPdfToOneDrive');
+
 let notificationTimeout;
 const showNotification = (message, type = 'success') => {
     const toast = document.getElementById('notification-toast');
@@ -17,6 +35,8 @@ const showNotification = (message, type = 'success') => {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
+    console.log("DOM completamente cargado y analizado");
+
     const userDisplayNameElement = document.getElementById('user-display-name');
     const logoutBtn = document.getElementById('logout-btn');
     const backBtn = document.getElementById('back-btn');
@@ -60,7 +80,12 @@ document.addEventListener('DOMContentLoaded', () => {
     let reportType = ''; 
 
     onAuthStateChanged(auth, async (user) => {
-        if (!user) { window.location.href = 'login.html'; return; }
+        if (!user) { 
+            console.log("Usuario no autenticado, redirigiendo a login.html");
+            window.location.href = 'login.html'; 
+            return; 
+        }
+        console.log("Usuario autenticado:", user.uid);
         if (userDisplayNameElement) {
             const userDoc = await getDoc(doc(db, "users", user.uid));
             userDisplayNameElement.textContent = userDoc.exists() ? userDoc.data().name : user.email;
@@ -69,29 +94,41 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     const initializePage = async () => {
+        console.log("Iniciando initializePage...");
         const urlParams = new URLSearchParams(window.location.search);
         currentSelectedSerialNumber = urlParams.get('selectedSerialNumber');
         modelName = urlParams.get('modelName');
+        
         if (!currentSelectedSerialNumber || !modelName) { 
+            console.error("Error: Faltan parámetros 'selectedSerialNumber' o 'modelName' en la URL.");
             if (boxSerialNumberDisplay) boxSerialNumberDisplay.textContent = 'Error: Faltan parámetros';
             showState(errorState);
             return; 
         }
+        
+        console.log(`Cargando datos para caja: ${currentSelectedSerialNumber}, modelo: ${modelName}`);
         if (boxSerialNumberDisplay) boxSerialNumberDisplay.textContent = `Items para Caja: ${currentSelectedSerialNumber}`;
+        
         try {
             const schemaDocRef = doc(db, "esquemas_modelos", modelName);
             const schemaDocSnap = await getDoc(schemaDocRef);
             if (schemaDocSnap.exists()) {
+                console.log("Esquema de modelo encontrado, construyendo mapa de códigos.");
                 buildSchemaMap(Object.keys(schemaDocSnap.data()));
             }
+
             if (unsubscribeFromItems) unsubscribeFromItems();
             const itemDocRef = doc(db, "Items", currentSelectedSerialNumber);
+            
+            console.log("Estableciendo listener de onSnapshot para los ítems de la caja.");
             unsubscribeFromItems = onSnapshot(itemDocRef, (itemDocSnap) => {
+                console.log("Datos de ítems recibidos desde onSnapshot.");
                 allLoadedItemsData = itemDocSnap.exists() ? itemDocSnap.data() : {};
                 renderFilteredItems(allLoadedItemsData, searchInput ? searchInput.value : '');
             });
+            console.log("initializePage completado exitosamente.");
         } catch (error) {
-            console.error("Error en inicialización:", error);
+            console.error("Error fatal en initializePage:", error);
             showState(errorState);
         }
     };
@@ -297,40 +334,58 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    const uploadFileToOneDrive = (fileBlob, fileName, oneDriveFolderPath) => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(fileBlob);
+            reader.onloadend = async () => {
+                try {
+                    // El resultado incluye el prefijo data URL (ej. "data:application/pdf;base64,"), que debe ser eliminado.
+                    const base64String = reader.result.split(',')[1];
 
-    const uploadPdfToOneDrive = async (pdfBlob, fileName, tipo) => {
-        // URL de la Azure Function (reemplazar con la URL real cuando la despleguemos)
-        const functionUrl = 'URL_DE_LA_AZURE_FUNCTION_AQUI'; 
+                    showNotification('Subiendo archivo a OneDrive...', 'info');
+                    console.log(`Llamando a la función 'uploadPdfToOneDrive' para el archivo: ${fileName}`);
 
-        const formData = new FormData();
-        formData.append('pdf', pdfBlob, fileName);
+                    const result = await uploadPdfToOneDriveCallable({
+                        pdfBase64: base64String,
+                        fileName: fileName,
+                        folderPath: oneDriveFolderPath
+                    });
 
-        try {
-            showNotification('Subiendo PDF a OneDrive...', 'info');
-            const response = await fetch(`${functionUrl}?tipo=${tipo}`, {
-                method: 'POST',
-                body: formData,
-                // No se necesita 'Content-Type', el navegador lo establece por nosotros con FormData
-            });
+                    showNotification(result.data.message, 'success');
+                    console.log('Éxito: Archivo subido a OneDrive:', result.data);
+                    resolve(result.data);
 
-            if (response.ok) {
-                const result = await response.json();
-                showNotification('PDF subido a OneDrive con éxito.', 'success');
-                console.log('Respuesta de la función:', result);
-            } else {
-                const errorText = await response.text();
-                throw new Error(`Error del servidor: ${response.status} ${response.statusText} - ${errorText}`);
-            }
-        } catch (error) {
-            showNotification('Error al subir el PDF a OneDrive.', 'error');
-            console.error('Error en uploadPdfToOneDrive:', error);
-        }
+                } catch (error) {
+                    showNotification(`Error en la subida a OneDrive: ${error.message}`, 'error');
+                    console.error('Error fatal en uploadFileToOneDrive:', error);
+                    reject(error);
+                }
+            };
+            reader.onerror = (error) => {
+                console.error('Error al leer el blob del PDF:', error);
+                reject(new Error('No se pudo procesar el archivo PDF para la subida.'));
+            };
+        });
     };
 
     const generarPDF = (tipo, prestamoNum = null) => {
-        if (typeof html2canvas === 'undefined' || typeof window.jspdf === 'undefined') { showNotification("Error: Faltan librerías para PDF.", "error"); return; }
+        console.log(`Iniciando generarPDF para tipo: ${tipo}`);
+        if (!currentSelectedSerialNumber) {
+            showNotification("Error: No se ha seleccionado un número de serie de caja.", "error");
+            return;
+        }
+        if (typeof html2canvas === 'undefined' || typeof window.jspdf === 'undefined') { 
+            console.error("Error: Faltan librerías para PDF (html2canvas o jsPDF).");
+            showNotification("Error: Faltan librerías para PDF.", "error"); 
+            return; 
+        }
         const template = document.getElementById('pdf-template');
-        if (!template) { showNotification("Error: Falta la plantilla para el PDF.", "error"); return; }
+        if (!template) { 
+            console.error("Error: Falta la plantilla para el PDF (#pdf-template).");
+            showNotification("Error: Falta la plantilla para el PDF.", "error"); 
+            return; 
+        }
         showNotification('Generando PDF...', 'info');
         const pdfTitle = document.getElementById('pdf-report-title');
         const pdfBoxSerial = document.getElementById('pdf-box-serial');
@@ -364,27 +419,38 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
         html2canvas(template, { scale: 2, useCORS: true }).then(async canvas => {
+            console.log("html2canvas completado, generando blob de PDF.");
             const { jsPDF } = window.jspdf;
             const pdf = new jsPDF('p', 'mm', 'a4');
             const pdfWidth = pdf.internal.pageSize.getWidth();
             const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
             pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 10, 10, pdfWidth - 20, pdfHeight > 277 ? 277 : pdfHeight);
             
-            // Generar nombre de archivo y Blob
-            const fileName = `Reporte_Caja_${currentSelectedSerialNumber}_${new Date().toISOString()}.pdf`;
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = (now.getMonth() + 1).toString().padStart(2, '0');
+            const day = now.getDate().toString().padStart(2, '0');
+            const hours = now.getHours().toString().padStart(2, '0');
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+            const seconds = now.getSeconds().toString().padStart(2, '0');
+            const formattedDate = `${year}${month}${day}_${hours}${minutes}${seconds}`;
+            const fileName = `Reporte_Caja_${currentSelectedSerialNumber}_${formattedDate}.pdf`;
             const pdfBlob = pdf.output('blob');
 
-            // Subir a OneDrive
-            await uploadPdfToOneDrive(pdfBlob, fileName, tipo);
-
-            // Guardar localmente (opcional, lo mantenemos por ahora)
-            pdf.save(`Reporte_Caja_${currentSelectedSerialNumber}.pdf`);
-
-            await registrarMovimientoCaja(tipo, currentSelectedSerialNumber, modelName, prestamoNum);
+            const oneDriveFolderPath = `01-CAJAS-SEGUIMINETO/04-registro-de-${tipo.toLowerCase()}-de-cajas`;
+            
+            try {
+                await uploadFileToOneDrive(pdfBlob, fileName, oneDriveFolderPath);
+                pdf.save(`Reporte_Caja_${currentSelectedSerialNumber}.pdf`);
+                await registrarMovimientoCaja(tipo, currentSelectedSerialNumber, modelName, prestamoNum);
+            } catch (uploadError) {
+                console.error("El proceso de subida a OneDrive o registro falló. El PDF no se guardará localmente ni se registrará el movimiento para evitar inconsistencias.", uploadError);
+                showNotification("Error crítico al subir o registrar. Operación cancelada.", "error");
+            }
 
         }).catch(err => { 
             showNotification('Error al generar la imagen para el PDF.', 'error'); 
-            console.error("Error en html2canvas:", err);
+            console.error("Error fatal en html2canvas:", err);
         });
         if (tipoReporteModal) tipoReporteModal.style.display = 'none';
         if (prestamoModal) prestamoModal.style.display = 'none';
@@ -393,7 +459,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (searchInput) searchInput.addEventListener('input', () => renderFilteredItems(allLoadedItemsData, searchInput.value));
     if (addItemBtn) addItemBtn.addEventListener('click', addNewItemRow);
-    if (downloadPdfBtn) downloadPdfBtn.addEventListener('click', () => { if (tipoReporteModal) tipoReporteModal.style.display = 'flex'; });
+    if (downloadPdfBtn) downloadPdfBtn.addEventListener('click', () => { 
+        console.log("Botón de reporte presionado, mostrando modal de tipo de reporte.");
+        if (tipoReporteModal) tipoReporteModal.style.display = 'flex'; 
+    });
     
     if (btnEntrada) btnEntrada.addEventListener('click', () => {
         reportType = 'Entrada';

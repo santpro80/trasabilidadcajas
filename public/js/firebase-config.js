@@ -1,4 +1,5 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
+import { initializeAppCheck, ReCaptchaV3Provider } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app-check.js';
 import { 
     getAuth, onAuthStateChanged, signOut, signInWithEmailAndPassword,
     createUserWithEmailAndPassword, updatePassword, reauthenticateWithCredential, EmailAuthProvider
@@ -20,6 +21,18 @@ const firebaseConfig = {
 };
 
 export const app = initializeApp(firebaseConfig);
+
+// Enable App Check debug mode
+self.FIREBASE_APPCHECK_DEBUG_TOKEN = 'd29325f5-b651-4ccf-accc-620340596658';
+
+// Initialize App Check
+const appCheck = initializeAppCheck(app, {
+  provider: new ReCaptchaV3Provider('6LdcUP0rAAAAALVX9EZGz1Hw3u-ICSL3AmA_43W4'),
+
+  // Optional: set to true if you want to allow clients without App Check
+  // to access your backend resources. Default is false.
+  isTokenAutoRefreshEnabled: true
+});
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const functions = getFunctions(app, 'us-central1');
