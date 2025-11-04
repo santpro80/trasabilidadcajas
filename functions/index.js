@@ -23,7 +23,7 @@ exports.initiateOneDriveOAuth = functions.https.onCall((request) => {
 
   // Configuration for Microsoft OAuth
   const tenantId = 'common'; // Your Tenant ID
-  const clientId = 'a1d0e902-a2c9-45bf-8946-caabce7b4987'; // Your Client ID
+  const clientId = '706bf438-e836-49dc-a418-ae8aecb200cd'; // Your Client ID
   
   // The redirectUri must point to your handleOneDriveRedirect function.
   // IMPORTANT: Ensure this URL is registered in your Azure App Registration.
@@ -97,7 +97,7 @@ exports.handleOneDriveRedirect = functions.https.onRequest(async (req, res) => {
     const clientSecret = oneDriveClientSecret.value();
 
     const tenantId = 'common';
-    const clientId = 'a1d0e902-a2c9-45bf-8946-caabce7b4987';
+    const clientId = '706bf438-e836-49dc-a418-ae8aecb200cd';
     const tokenResponse = await axios.post(
       `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`,
       new URLSearchParams({
@@ -139,8 +139,8 @@ exports.handleOneDriveRedirect = functions.https.onRequest(async (req, res) => {
  * @return {Promise<object>} The new token data from Microsoft.
  */
 async function refreshAccessToken(refreshToken) {
-  const tenantId = '99b8b8ef-30d8-4de6-a5cf-2dd8f4dc3e85';
-  const clientId = 'a1d0e902-a2c9-45bf-8946-caabce7b4987';
+  const tenantId = 'common';
+  const clientId = '706bf438-e836-49dc-a418-ae8aecb200cd';
   const clientSecret = oneDriveClientSecret.value();
 
   try {

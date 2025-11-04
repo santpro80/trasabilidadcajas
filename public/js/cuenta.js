@@ -40,7 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     console.log("Llamando a la función de Firebase 'initiateOneDriveOAuth'...");
                     const result = await initiateOAuth({ 
                         redirectUri: 'https://handleonedriveredirect-dutd52zycq-uc.a.run.app',
-                        origin: window.location.origin
+                        origin: window.location.origin + window.location.pathname
                     });
                     console.log("Función de Firebase ejecutada con éxito. Resultado:", result);
                     const authUrl = result.data.authUrl;
