@@ -20,6 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             listenForTickets(user.uid);
         } else {
+            localStorage.setItem('redirectAfterLogin', window.location.href);
             window.location.href = 'login.html';
         }
     });

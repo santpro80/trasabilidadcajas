@@ -31,7 +31,10 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     onAuthStateChanged(auth, async (user) => {
-        if (!user) { window.location.href = 'login.html'; return; }
+        if (!user) {
+            localStorage.setItem('redirectAfterLogin', window.location.href);
+            window.location.href = 'login.html'; return;
+        }
         if (userDisplayName) {
             const userDoc = await getDoc(doc(db, "users", user.uid));
             userDisplayName.textContent = userDoc.exists() ? userDoc.data().name : user.email;

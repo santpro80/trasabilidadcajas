@@ -55,8 +55,8 @@
 
         // --- 2. Configuración de Microsoft/OneDrive ---
         const microsoftConfig = {
-            clientId: "a1d0e902-a2c9-45bf-8946-caabce7b4987",
-            redirectUri: "http://localhost:8081/test-upload.html", 
+            clientId: "706bf438-e836-49dc-a418-ae8aecb200cd",
+            redirectUri: "https://santpro80.github.io/trasabilidadcajas/test-upload.html",
             scope: "files.readwrite offline_access",
             authUrl: "https://login.microsoftonline.com/common/oauth2/v2.0/authorize"
         };
@@ -197,6 +197,14 @@
                     uploadBtn.disabled = false;
                     fileInput.disabled = false;
                     window.history.replaceState({}, document.title, window.location.pathname);
+
+                    // --- MEJORA DE EXPERIENCIA DE USUARIO ---
+                    // Después de autenticar, revisamos si hay una URL de redirección guardada.
+                    const redirectUrl = localStorage.getItem('redirectAfterOneDriveAuth');
+                    if (redirectUrl) {
+                        localStorage.removeItem('redirectAfterOneDriveAuth'); // Limpiamos para la próxima vez
+                        window.location.href = redirectUrl; // Volvemos a la página original
+                    }
                 } catch (error) {
                     statusDiv.textContent = "Error al intercambiar el código.";
                     tokenDisplay.textContent = error;

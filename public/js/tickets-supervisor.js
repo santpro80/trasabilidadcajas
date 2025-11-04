@@ -21,6 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 listenForTickets();
             } else {
                 window.location.href = 'tickets-operador.html';
+                localStorage.setItem('redirectAfterLogin', window.location.href); // Added for consistency, though it redirects to another app page
             }
         } else {
             window.location.href = 'login.html';

@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     onAuthStateChanged(auth, async (user) => {
         if (!user) {
+            localStorage.setItem('redirectAfterLogin', window.location.href);
             window.location.href = 'login.html';
             return;
         }

@@ -81,7 +81,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     onAuthStateChanged(auth, async (user) => {
         if (!user) { 
-            console.log("Usuario no autenticado, redirigiendo a login.html");
+            console.log("Usuario no autenticado, redirigiendo a login.html"); 
+            localStorage.setItem('redirectAfterLogin', window.location.href);
             window.location.href = 'login.html'; 
             return; 
         }
@@ -340,25 +341,25 @@ document.addEventListener('DOMContentLoaded', () => {
             reader.readAsDataURL(fileBlob);
             reader.onloadend = async () => {
                 try {
-                    // El resultado incluye el prefijo data URL (ej. "data:application/pdf;base64,"), que debe ser eliminado.
+                    // El resultado incluye el prefijo data URL (ej. "data:application/pdf;base64,"), lo eliminamos.
                     const base64String = reader.result.split(',')[1];
 
                     showNotification('Subiendo archivo a OneDrive...', 'info');
                     console.log(`Llamando a la función 'uploadPdfToOneDrive' para el archivo: ${fileName}`);
 
+                    // ¡Simple! Solo llamamos a la función con los datos del archivo.
+                    // No hay tokens, no hay nada más.
                     const result = await uploadPdfToOneDriveCallable({
                         pdfBase64: base64String,
                         fileName: fileName,
                         folderPath: oneDriveFolderPath
                     });
 
-                    showNotification(result.data.message, 'success');
-                    console.log('Éxito: Archivo subido a OneDrive:', result.data);
-                    resolve(result.data);
-
+                    showNotification(result.data.message || 'Archivo subido con éxito.', 'success');
+                    resolve(result);
                 } catch (error) {
                     showNotification(`Error en la subida a OneDrive: ${error.message}`, 'error');
-                    console.error('Error fatal en uploadFileToOneDrive:', error);
+                    console.error('Error al llamar a la Cloud Function de subida:', error);
                     reject(error);
                 }
             };
@@ -368,6 +369,7 @@ document.addEventListener('DOMContentLoaded', () => {
             };
         });
     };
+
 
     const generarPDF = (tipo, prestamoNum = null) => {
         console.log(`Iniciando generarPDF para tipo: ${tipo}`);
