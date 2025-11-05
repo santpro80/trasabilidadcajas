@@ -88,6 +88,16 @@ export const registrarMovimientoCaja = async (tipo, cajaSerie, modelName, presta
 
         if (tipo === 'Salida' && prestamoNum) {
             movimientoData.prestamoNum = prestamoNum;
+
+            // NUEVO: Crear un documento en la colección 'prestamos' para búsqueda rápida.
+            const prestamoDocRef = doc(db, "prestamos", prestamoNum);
+            await setDoc(prestamoDocRef, {
+                cajaSerie: cajaSerie,
+                modelName: modelName,
+                usuarioNombre: userName,
+                usuarioEmail: user.email,
+                timestamp: serverTimestamp()
+            });
         }
 
         await addDoc(collection(db, "movimientos_cajas"), movimientoData);

@@ -89,7 +89,7 @@ const fetchAndRenderReport = async (fecha) => {
         const serialToModelMap = await buildSerialToModelMap();
         const q = query(
             collection(db, "movimientos_cajas"), 
-            where("fecha", "==", fecha),
+            where("fecha", "==", fecha), // Corregido de "fechaISO" a "fecha"
             orderBy("timestamp", "desc")
         );
 

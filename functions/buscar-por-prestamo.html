@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buscar por Préstamo | Sistema de Trazabilidad</title>
+    <link rel="icon" href="assets/logo.png" type="image/png">
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        .main-content {
+            max-width: 900px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+
+        .search-card {
+            background-color: #ffffff;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+            margin-bottom: 30px;
+        }
+
+        .search-container {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .search-container input {
+            flex-grow: 1;
+            padding: 12px 15px;
+            font-size: 1rem;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+        }
+
+        .search-container button {
+            padding: 12px 25px;
+            font-size: 1rem;
+            font-weight: 500;
+            background-color: #4285F4;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .search-container button:hover {
+            background-color: #357ae8;
+        }
+
+        .results-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .result-item {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .result-item .info .caja-serie {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .result-item .info .modelo,
+        .result-item .info .usuario {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .result-item .timestamp {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #555;
+        }
+
+        .state-message {
+            text-align: center;
+            padding: 40px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <header class="app-header">
+        <div class="header-left">
+            <button id="menu-btn" class="btn-menu">Menú</button>
+        </div>
+        <div class="user-info">
+            <span id="user-display-name"></span>
+            <button id="logout-btn" class="logout-btn">Cerrar sesión</button>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div class="search-card">
+            <h1>Buscar Caja por Número de Préstamo</h1>
+            <div class="search-container">
+                <input type="text" id="prestamo-search-input" placeholder="Ingresa el número de préstamo...">
+                <button id="search-btn">Buscar</button>
+            </div>
+        </div>
+
+        <div id="loading-state" class="state-message" style="display: none;">Cargando...</div>
+        <div id="empty-state" class="state-message" style="display: block;">
+            <p>Ingresa un número de préstamo para comenzar la búsqueda.</p>
+        </div>
+        <div id="error-state" class="state-message" style="display: none;">
+            <p>Ocurrió un error. Inténtalo de nuevo.</p>
+        </div>
+
+        <div id="results-container" class="results-container">
+            <!-- Los resultados de la búsqueda se insertarán aquí -->
+        </div>
+    </main>
+
+    <script type="module" src="js/buscar-por-prestamo.js"></script>
+</body>
+</html>

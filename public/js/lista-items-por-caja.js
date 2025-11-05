@@ -346,9 +346,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     showNotification('Subiendo archivo a OneDrive...', 'info');
                     console.log(`Llamando a la función 'uploadPdfToOneDrive' para el archivo: ${fileName}`);
-
-                    // ¡Simple! Solo llamamos a la función con los datos del archivo.
-                    // No hay tokens, no hay nada más.
                     const result = await uploadPdfToOneDriveCallable({
                         pdfBase64: base64String,
                         fileName: fileName,
@@ -441,13 +438,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const oneDriveFolderPath = `01-CAJAS-SEGUIMINETO/04-registro-de-${tipo.toLowerCase()}-de-cajas`;
             
+            // 1. Intentar subir a OneDrive (operación no crítica)
             try {
+                console.log("Intentando subir PDF a OneDrive...");
                 await uploadFileToOneDrive(pdfBlob, fileName, oneDriveFolderPath);
+                console.log("PDF subido a OneDrive con éxito.");
+            } catch (oneDriveError) {
+                console.error("Falló la subida a OneDrive, pero el proceso continuará.", oneDriveError);
+                showNotification("Falló la subida a OneDrive, pero el reporte se guardará localmente.", "error");
+            }
+
+            // 2. Ejecutar operaciones críticas (guardado local y registro en DB)
+            try {
                 pdf.save(`Reporte_Caja_${currentSelectedSerialNumber}.pdf`);
+                console.log("PDF guardado localmente. Registrando movimiento de caja...");
                 await registrarMovimientoCaja(tipo, currentSelectedSerialNumber, modelName, prestamoNum);
-            } catch (uploadError) {
-                console.error("El proceso de subida a OneDrive o registro falló. El PDF no se guardará localmente ni se registrará el movimiento para evitar inconsistencias.", uploadError);
-                showNotification("Error crítico al subir o registrar. Operación cancelada.", "error");
+            } catch (criticalError) {
+                console.error("Error crítico al guardar el PDF localmente o registrar el movimiento.", criticalError);
+                showNotification("Error crítico al guardar el reporte. Operación cancelada.", "error");
             }
 
         }).catch(err => { 
@@ -461,6 +469,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (searchInput) searchInput.addEventListener('input', () => renderFilteredItems(allLoadedItemsData, searchInput.value));
     if (addItemBtn) addItemBtn.addEventListener('click', addNewItemRow);
+    console.log("debuddedante for ´pr que estamos de verdad ")
     if (downloadPdfBtn) downloadPdfBtn.addEventListener('click', () => { 
         console.log("Botón de reporte presionado, mostrando modal de tipo de reporte.");
         if (tipoReporteModal) tipoReporteModal.style.display = 'flex'; 
