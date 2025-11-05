@@ -6,7 +6,7 @@ import {
 } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
 import { 
     getFirestore, doc, getDoc, setDoc, updateDoc, deleteField,
-    deleteDoc, collection, query, orderBy, onSnapshot, getDocs, addDoc, serverTimestamp, where, increment, arrayUnion
+    deleteDoc, collection, query, orderBy, onSnapshot, getDocs, addDoc, serverTimestamp, where, increment, arrayUnion, limit
 } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-functions.js';
 
@@ -153,6 +153,6 @@ export const registrarConsumoItem = async (modelName, itemName) => {
 export { 
     httpsCallable, onAuthStateChanged, signOut, signInWithEmailAndPassword,
     createUserWithEmailAndPassword, updatePassword, reauthenticateWithCredential,
-    EmailAuthProvider, doc, getDoc, setDoc, updateDoc, deleteField, deleteDoc,
+    EmailAuthProvider, doc, getDoc, setDoc, updateDoc, deleteField, deleteDoc, limit,
     collection, query, orderBy, onSnapshot, getDocs, where, serverTimestamp, addDoc, increment, arrayUnion
 };

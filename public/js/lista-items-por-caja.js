@@ -482,6 +482,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     if (btnSalida) btnSalida.addEventListener('click', () => {
+        console.log("Botón 'Entrada' clickeado.");
         reportType = 'Salida';
         if (tipoReporteModal) tipoReporteModal.style.display = 'none';
         if (observationModal) observationModal.style.display = 'flex';
@@ -489,6 +490,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (noObservationBtn) noObservationBtn.addEventListener('click', () => {
         if (observationModal) observationModal.style.display = 'none';
+        console.log(`Generando reporte de tipo: ${reportType}`);
         if (reportType === 'Entrada') {
             generarPDF('Entrada');
         } else if (reportType === 'Salida') {

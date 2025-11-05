@@ -1,12 +1,12 @@
 import {
     auth,
     db,
-    functions,
     onAuthStateChanged,
     signOut,
     getDoc,
     doc,
-} from './firebase-config.js'; // No necesitamos httpsCallable
+    collection, query, where, orderBy, getDocs, limit
+} from './firebase-config.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     const userDisplayNameElement = document.getElementById('user-display-name');
@@ -56,19 +56,47 @@ document.addEventListener('DOMContentLoaded', () => {
         resultsContainer.innerHTML = '';
 
         try {
-            // NUEVO: Consultar directamente a Firestore
+            // 1. Buscar la información de SALIDA en la colección 'prestamos'
             const prestamoDocRef = doc(db, "prestamos", numeroPrestamo);
-            const docSnap = await getDoc(prestamoDocRef);
+            const salidaDocSnap = await getDoc(prestamoDocRef);
 
-            if (!docSnap.exists()) {
+            if (!salidaDocSnap.exists()) {
                 emptyState.querySelector('p').textContent = `No se encontraron cajas para el préstamo "${numeroPrestamo}".`;
                 showState('empty');
                 return;
             }
 
-            // Creamos un array con un solo elemento para reutilizar la función renderResults
-            const prestamoData = [docSnap.data()];
-            renderResults(prestamoData);
+            const salidaData = salidaDocSnap.data();
+            const cajaSerie = salidaData.cajaSerie;
+            const salidaTimestamp = salidaData.timestamp;
+
+            // 2. Buscar la información de ENTRADA correspondiente
+            const movimientosQuery = query(
+                collection(db, "movimientos_cajas"),
+                where("cajaSerie", "==", cajaSerie),
+                where("tipo", "==", "Entrada"),
+                where("timestamp", ">", salidaTimestamp),
+                orderBy("timestamp", "asc"),
+                limit(1)
+            );
+            const entradaSnapshot = await getDocs(movimientosQuery);
+            const entradaData = entradaSnapshot.empty ? null : entradaSnapshot.docs[0].data();
+            const entradaTimestamp = entradaData ? entradaData.timestamp : null;
+
+            // 3. Buscar los ÍTEMS CONSUMIDOS en el historial
+            const consumoQuery = query(
+                collection(db, "historial"),
+                where("detalles.cajaSerie", "==", cajaSerie),
+                where("detalles.valorNuevo", "==", "REEMPLAZAR"),
+                where("timestamp", ">", salidaTimestamp),
+                // Si la caja ya entró, solo mostramos consumo hasta esa fecha
+                ...(entradaTimestamp ? [where("timestamp", "<", entradaTimestamp)] : [])
+            );
+            const consumoSnapshot = await getDocs(consumoQuery);
+            const itemsConsumidos = consumoSnapshot.docs.map(doc => doc.data().detalles);
+
+            // 4. Renderizar toda la información junta
+            renderResults(salidaData, entradaData, itemsConsumidos);
             showState('results');
 
         } catch (error) {
@@ -78,32 +106,55 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    const renderResults = (movimientos) => {
-        resultsContainer.innerHTML = '';
-        movimientos.forEach(mov => {
-            const resultItem = document.createElement('div');
-            resultItem.className = 'result-item';
+    const renderResults = (salida, entrada, consumidos) => {
+        resultsContainer.innerHTML = ''; // Limpiamos resultados anteriores
 
-            // Convertir el timestamp de Firestore a un objeto Date de JavaScript
-            const fecha = mov.timestamp ? new Date(mov.timestamp.seconds * 1000).toLocaleString('es-AR') : 'Fecha no disponible';
+        // --- Tarjeta Principal con info de Salida y Entrada ---
+        const resultCard = document.createElement('div');
+        resultCard.className = 'result-card';
 
-            resultItem.innerHTML = `
-                <div class="info">
-                    <div class="caja-serie">${mov.cajaSerie || 'N/A'}</div>
-                    <div class="modelo">Modelo: ${mov.modelName || 'No especificado'}</div>
-                    <div class="usuario">Registrado por: ${mov.usuarioNombre || 'N/A'}</div>
+        const fechaSalida = salida.timestamp ? new Date(salida.timestamp.seconds * 1000).toLocaleString('es-AR') : 'N/A';
+        const fechaEntrada = entrada ? new Date(entrada.timestamp.seconds * 1000).toLocaleString('es-AR') : 'Aún no registrada';
+
+        resultCard.innerHTML = `
+            <div class="result-header">
+                <div class="caja-serie">${salida.cajaSerie || 'N/A'}</div>
+                <div class="modelo">${salida.modelName || 'No especificado'}</div>
+            </div>
+            <div class="movements">
+                <div class="movement-item">
+                    <span class="movement-label salida">Salida:</span>
+                    <span class="movement-date">${fechaSalida}</span>
+                    <span class="movement-user">por ${salida.usuarioNombre || 'N/A'}</span>
                 </div>
-                <div class="timestamp">${fecha}</div>
-            `;
-            
-            // Añadir evento para ir al detalle de la caja
-            resultItem.addEventListener('click', () => {
-                const url = `lista-items-por-caja.html?selectedSerialNumber=${encodeURIComponent(mov.cajaSerie)}&modelName=${encodeURIComponent(mov.modelName)}`;
-                window.location.href = url;
-            });
+                <div class="movement-item">
+                    <span class="movement-label entrada">Entrada:</span>
+                    <span class="movement-date">${fechaEntrada}</span>
+                    ${entrada ? `<span class="movement-user">por ${entrada.usuarioNombre || 'N/A'}</span>` : ''}
+                </div>
+            </div>
+        `;
 
-            resultsContainer.appendChild(resultItem);
+        // --- Tarjeta de Ítems Consumidos ---
+        if (consumidos.length > 0) {
+            const consumoCard = document.createElement('div');
+            consumoCard.className = 'consumo-card';
+            let itemsHTML = consumidos.map(item => `<li>${item.itemDescripcion}</li>`).join('');
+            
+            consumoCard.innerHTML = `
+                <h3>Ítems Consumidos en este Préstamo</h3>
+                <ul>${itemsHTML}</ul>
+            `;
+            resultCard.appendChild(consumoCard);
+        }
+
+        // Añadir evento para ir al detalle de la caja
+        resultCard.addEventListener('click', () => {
+            const url = `lista-items-por-caja.html?selectedSerialNumber=${encodeURIComponent(salida.cajaSerie)}&modelName=${encodeURIComponent(salida.modelName)}`;
+            window.location.href = url;
         });
+
+        resultsContainer.appendChild(resultCard);
     };
 
     searchBtn.addEventListener('click', performSearch);
