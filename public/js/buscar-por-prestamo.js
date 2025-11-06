@@ -56,7 +56,6 @@ document.addEventListener('DOMContentLoaded', () => {
         resultsContainer.innerHTML = '';
 
         try {
-            // 1. Buscar la información de SALIDA en la colección 'prestamos'
             const prestamoDocRef = doc(db, "prestamos", numeroPrestamo);
             const salidaDocSnap = await getDoc(prestamoDocRef);
 
@@ -70,7 +69,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const cajaSerie = salidaData.cajaSerie;
             const salidaTimestamp = salidaData.timestamp;
 
-            // 2. Buscar la información de ENTRADA correspondiente
             const movimientosQuery = query(
                 collection(db, "movimientos_cajas"),
                 where("cajaSerie", "==", cajaSerie),
@@ -82,20 +80,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const entradaSnapshot = await getDocs(movimientosQuery);
             const entradaData = entradaSnapshot.empty ? null : entradaSnapshot.docs[0].data();
             const entradaTimestamp = entradaData ? entradaData.timestamp : null;
-
-            // 3. Buscar los ÍTEMS CONSUMIDOS en el historial
             const consumoQuery = query(
                 collection(db, "historial"),
                 where("detalles.cajaSerie", "==", cajaSerie),
                 where("detalles.valorNuevo", "==", "REEMPLAZAR"),
                 where("timestamp", ">", salidaTimestamp),
-                // Si la caja ya entró, solo mostramos consumo hasta esa fecha
                 ...(entradaTimestamp ? [where("timestamp", "<", entradaTimestamp)] : [])
             );
             const consumoSnapshot = await getDocs(consumoQuery);
             const itemsConsumidos = consumoSnapshot.docs.map(doc => doc.data().detalles);
-
-            // 4. Renderizar toda la información junta
             renderResults(salidaData, entradaData, itemsConsumidos);
             showState('results');
 
@@ -107,9 +100,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const renderResults = (salida, entrada, consumidos) => {
-        resultsContainer.innerHTML = ''; // Limpiamos resultados anteriores
-
-        // --- Tarjeta Principal con info de Salida y Entrada ---
+        resultsContainer.innerHTML = ''; 
         const resultCard = document.createElement('div');
         resultCard.className = 'result-card';
 
@@ -135,11 +126,10 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
         `;
 
-        // --- Tarjeta de Ítems Consumidos ---
         if (consumidos.length > 0) {
             const consumoCard = document.createElement('div');
             consumoCard.className = 'consumo-card';
-            let itemsHTML = consumidos.map(item => `<li>${item.itemDescripcion}</li>`).join('');
+            let itemsHTML = consumidos.map(item => `<li>${item.itemDescripcion} (Serie: ${item.valorAnterior})</li>`).join('');
             
             consumoCard.innerHTML = `
                 <h3>Ítems Consumidos en este Préstamo</h3>
@@ -147,8 +137,6 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
             resultCard.appendChild(consumoCard);
         }
-
-        // Añadir evento para ir al detalle de la caja
         resultCard.addEventListener('click', () => {
             const url = `lista-items-por-caja.html?selectedSerialNumber=${encodeURIComponent(salida.cajaSerie)}&modelName=${encodeURIComponent(salida.modelName)}`;
             window.location.href = url;
@@ -156,7 +144,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         resultsContainer.appendChild(resultCard);
     };
-
     searchBtn.addEventListener('click', performSearch);
     searchInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
