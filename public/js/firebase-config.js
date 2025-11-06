@@ -115,6 +115,19 @@ export const registrarMovimientoCaja = async (tipo, cajaSerie, modelName, presta
         await setDoc(estadoDocRef, estadoData, { merge: true });
         console.log(`Estado de la caja '${cajaSerie}' actualizado a '${nuevoEstado}'.`);
 
+        // Registrar en el historial general
+        const accionHistorial = `CAJA: ${tipo.toUpperCase()}`;
+        let mensajeHistorial = `Se registró la ${tipo.toLowerCase()} de la caja "${cajaSerie}".`;
+        if (tipo === 'Salida' && prestamoNum) {
+            mensajeHistorial += ` Asignada al préstamo N° ${prestamoNum}.`;
+        }
+        await registrarHistorial(accionHistorial, {
+            cajaSerie: cajaSerie,
+            tipoMovimiento: tipo,
+            prestamoNum: prestamoNum || null,
+            mensaje: mensajeHistorial
+        });
+
     } catch (error) {
         console.error("Error al registrar movimiento de caja:", error);
         throw error;

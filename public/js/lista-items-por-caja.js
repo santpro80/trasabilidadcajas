@@ -335,37 +335,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    const uploadFileToOneDrive = (fileBlob, fileName, oneDriveFolderPath) => {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.readAsDataURL(fileBlob);
-            reader.onloadend = async () => {
-                try {
-                    // El resultado incluye el prefijo data URL (ej. "data:application/pdf;base64,"), lo eliminamos.
-                    const base64String = reader.result.split(',')[1];
-
-                    showNotification('Subiendo archivo a OneDrive...', 'info');
-                    console.log(`Llamando a la función 'uploadPdfToOneDrive' para el archivo: ${fileName}`);
-                    const result = await uploadPdfToOneDriveCallable({
-                        pdfBase64: base64String,
-                        fileName: fileName,
-                        folderPath: oneDriveFolderPath
-                    });
-
-                    showNotification(result.data.message || 'Archivo subido con éxito.', 'success');
-                    resolve(result);
-                } catch (error) {
-                    showNotification(`Error en la subida a OneDrive: ${error.message}`, 'error');
-                    console.error('Error al llamar a la Cloud Function de subida:', error);
-                    reject(error);
-                }
-            };
-            reader.onerror = (error) => {
-                console.error('Error al leer el blob del PDF:', error);
-                reject(new Error('No se pudo procesar el archivo PDF para la subida.'));
-            };
-        });
-    };
+    
 
 
     const generarPDF = (tipo, prestamoNum = null) => {

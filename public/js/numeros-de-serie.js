@@ -21,6 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
     const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
     const modalSpinner = document.getElementById('modal-spinner');
+    const serialSearchInput = document.getElementById('search-input');
     const confirmEntryModal = document.getElementById('confirmEntryModal');
     const confirmEntryModalText = document.getElementById('confirm-entry-modal-text');
     const cancelEntryBtn = document.getElementById('cancel-entry-btn');
@@ -30,6 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentZonaName = '';
     let serialToDelete = null;
     let serialToConfirmEntry = null;
+    let allSerials = [];
     let userRole = 'operario'; 
     let notificationTimeout;
     const showNotification = (message, type = 'success') => {
@@ -91,57 +93,65 @@ document.addEventListener('DOMContentLoaded', () => {
             if (zonaDocSnap.exists()) {
                 const serialsString = zonaDocSnap.data()[currentModelName];
                 if (serialsString && typeof serialsString === 'string') {
-                    const serials = serialsString.split(',').map(s => s.trim()).filter(Boolean);
-                    if (serials.length === 0) { showState(emptyState); return; }
-
-                    serials.forEach(serial => {
-                        const li = document.createElement('li');
-                        li.className = 'list-item';
-                        
-                        let buttonsContainer = document.createElement('div');
-                        buttonsContainer.className = 'action-buttons-container';
-
-                        const registrarBtn = document.createElement('button');
-                        registrarBtn.className = 'btn-register-entry';
-                        registrarBtn.title = 'Registrar Entrada Simple';
-                        registrarBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>`;
-                        registrarBtn.addEventListener('click', async (e) => {
-                            e.stopPropagation();
-                            openConfirmEntryModal(serial);
-                        });
-                        buttonsContainer.appendChild(registrarBtn);
-
-                        if (userRole === 'supervisor') {
-                            const deleteBtn = document.createElement('button');
-                            deleteBtn.className = 'btn-delete-caja';
-                            deleteBtn.title = 'Eliminar caja';
-                            deleteBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
-                            deleteBtn.addEventListener('click', (e) => {
-                                e.stopPropagation();
-                                openDeleteModal(serial);
-                            });
-                            buttonsContainer.appendChild(deleteBtn);
-                        }
-                        
-                        const serialContainer = document.createElement('div');
-                        serialContainer.className = 'serial-container';
-                        serialContainer.innerHTML = `<span class="serial-text">${serial.toUpperCase()}</span>`;
-                        serialContainer.addEventListener('click', () => {
-                            const url = `lista-items-por-caja.html?selectedSerialNumber=${encodeURIComponent(serial)}&modelName=${encodeURIComponent(currentModelName)}&zonaName=${encodeURIComponent(currentZonaName)}`;
-                            window.location.href = url;
-                        });
-
-                        li.appendChild(serialContainer);
-                        li.appendChild(buttonsContainer);
-                        serialNumbersList.appendChild(li);
-                    });
-                    showState(serialNumbersList);
+                    allSerials = serialsString.split(',').map(s => s.trim()).filter(Boolean);
+                    renderSerialNumbers(allSerials);
                 } else { showState(emptyState); }
             } else { showState(emptyState); }
         } catch (error) {
             console.error("Error cargando números de serie:", error);
             showState(errorState);
         }
+    };
+
+    const renderSerialNumbers = (serials) => {
+        serialNumbersList.innerHTML = '';
+        if (serials.length === 0) {
+            showState(emptyState);
+            return;
+        }
+
+        serials.forEach(serial => {
+            const li = document.createElement('li');
+            li.className = 'list-item';
+            
+            let buttonsContainer = document.createElement('div');
+            buttonsContainer.className = 'action-buttons-container';
+
+            const registrarBtn = document.createElement('button');
+            registrarBtn.className = 'btn-register-entry';
+            registrarBtn.title = 'Registrar Entrada Simple';
+            registrarBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>`;
+            registrarBtn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                openConfirmEntryModal(serial);
+            });
+            buttonsContainer.appendChild(registrarBtn);
+
+            if (userRole === 'supervisor') {
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'btn-delete-caja';
+                deleteBtn.title = 'Eliminar caja';
+                deleteBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
+                deleteBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    openDeleteModal(serial);
+                });
+                buttonsContainer.appendChild(deleteBtn);
+            }
+            
+            const serialContainer = document.createElement('div');
+            serialContainer.className = 'serial-container';
+            serialContainer.innerHTML = `<span class="serial-text">${serial.toUpperCase()}</span>`;
+            serialContainer.addEventListener('click', () => {
+                const url = `lista-items-por-caja.html?selectedSerialNumber=${encodeURIComponent(serial)}&modelName=${encodeURIComponent(currentModelName)}&zonaName=${encodeURIComponent(currentZonaName)}`;
+                window.location.href = url;
+            });
+
+            li.appendChild(serialContainer);
+            li.appendChild(buttonsContainer);
+            serialNumbersList.appendChild(li);
+        });
+        showState(serialNumbersList);
     };
 
     const deleteCaja = async () => {
@@ -210,6 +220,14 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     cancelDeleteBtn.addEventListener('click', closeDeleteModal);
     confirmDeleteBtn.addEventListener('click', deleteCaja);
+
+    if (serialSearchInput) {
+        serialSearchInput.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            const filteredSerials = allSerials.filter(serial => serial.toLowerCase().includes(searchTerm));
+            renderSerialNumbers(filteredSerials);
+        });
+    }
 
     cancelEntryBtn.addEventListener('click', closeConfirmEntryModal);
     confirmEntryBtn.addEventListener('click', async () => {

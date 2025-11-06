@@ -95,6 +95,17 @@
             padding: 20px;
             box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
         }
+        .search-container {
+            margin-bottom: 15px;
+        }
+        .search-input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 1em;
+            box-sizing: border-box;
+        }
         .item-list {
             list-style: none;
             padding: 0;
@@ -228,6 +239,9 @@
         </div>
 
         <div class="list-container">
+            <div class="search-container">
+                <input type="text" id="search-input" class="search-input" placeholder="Buscar por número de serie...">
+            </div>
             <div id="loading-state" class="loading-state"><div class="spinner"></div><p>Cargando números de serie...</p></div>
             <div id="error-state" class="error-state" style="display: none;"><p>Error al cargar los números de serie.</p></div>
             <ul id="serialNumbersList" class="item-list" style="display:none;"></ul>
