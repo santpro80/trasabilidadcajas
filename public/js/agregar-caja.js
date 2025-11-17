@@ -32,8 +32,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const handleKeyboardChange = (event) => {
         const input = event.target;
-        // Cambia el modo de entrada a 'numeric' si se han ingresado 2 o más caracteres,
-        // de lo contrario, lo establece en 'text'. Esto es útil para teclados móviles.
         if (input.value.length >= 2) {
             input.setAttribute('inputmode', 'numeric');
         } else {
@@ -86,7 +84,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const schemaDocRef = doc(db, "esquemas_modelos", modelName);
             const schemaDocSnap = await getDoc(schemaDocRef);
             if (schemaDocSnap.exists()) {
-                const itemNames = Object.keys(schemaDocSnap.data()).sort((a, b) => a.split(';')[0].localeCompare(b.split(';')[0], undefined, { numeric: true }));
+                const schemaData = schemaDocSnap.data();
+                if (!schemaData.items || !Array.isArray(schemaData.items)) {
+                    itemsContainer.innerHTML = "<p>Error: El esquema para este modelo no tiene el formato correcto (falta el campo 'items').</p>";
+                    return;
+                }
+                const itemNames = schemaData.items.sort((a, b) => a.split(';')[0].localeCompare(b.split(';')[0], undefined, { numeric: true }));
+
                 buildCodeToDescMap(itemNames);
                 itemsContainer.innerHTML = '';
                 itemNames.forEach(name => renderStaticItemRow(name));
