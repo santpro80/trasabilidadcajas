@@ -30,6 +30,17 @@ document.addEventListener('DOMContentLoaded', () => {
         input.setSelectionRange(originalSelectionStart, originalSelectionEnd);
     };
 
+    const handleKeyboardChange = (event) => {
+        const input = event.target;
+        // Cambia el modo de entrada a 'numeric' si se han ingresado 2 o más caracteres,
+        // de lo contrario, lo establece en 'text'. Esto es útil para teclados móviles.
+        if (input.value.length >= 2) {
+            input.setAttribute('inputmode', 'numeric');
+        } else {
+            input.setAttribute('inputmode', 'text');
+        }
+    };
+
     onAuthStateChanged(auth, async (user) => {
         if (!user) {
             localStorage.setItem('redirectAfterLogin', window.location.href);
@@ -42,13 +53,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const cajaSerialInput = document.getElementById('cajaSerialInput');
         if (cajaSerialInput) {
-            cajaSerialInput.addEventListener('input', forceUppercase);
+            cajaSerialInput.addEventListener('input', (e) => {
+                forceUppercase(e);
+                handleKeyboardChange(e);
+            });
         }
 
         if (itemsContainer) {
             itemsContainer.addEventListener('input', (event) => {
                 if (event.target.matches('.item-serial-input, .manual-code-input')) {
                     forceUppercase(event);
+                }
+                if (event.target.matches('.item-serial-input')) {
+                    handleKeyboardChange(event);
                 }
             });
         }

@@ -1,26 +1,13 @@
 import {
     db, auth, onAuthStateChanged, signOut,
     doc, getDoc, setDoc, updateDoc, deleteField, onSnapshot,
-    registrarHistorial, collection, query, where, getDocs, serverTimestamp, addDoc,
-    registrarMovimientoCaja, sanitizeFieldName, unSanitizeFieldName, registrarConsumoItem
+    registrarHistorial,
+    registrarMovimientoCaja, sanitizeFieldName, unSanitizeFieldName, registrarConsumoItem,
+    functions, httpsCallable
 } from './firebase-config.js';
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-functions.js";
-
-// --- 1. Configuración de Firebase (para funciones) ---
-const firebaseConfig = {
-    apiKey: "AIzaSyBtj9fa0St2IMZgo4jfNPsz_3EMVtioyGU",
-    authDomain: "cajas-secuela.firebaseapp.com",
-    projectId: "cajas-secuela",
-    storageBucket: "cajas-secuela.firebasestorage.app",
-    messagingSenderId: "551056516132",
-    appId: "1:551056516132:web:88b9da72dd8dd1a8e7a4b1",
-    measurementId: "G-SZDRGMZS4X"
-};
-
-const app = initializeApp(firebaseConfig);
-const functions = getFunctions(app, 'us-central1');
+// --- 1. Configuración de Firebase Functions ---
+// Se obtienen 'functions' y 'httpsCallable' desde firebase-config.js
 const uploadPdfToOneDriveCallable = httpsCallable(functions, 'uploadPdfToOneDrive');
 
 let notificationTimeout;

@@ -1,5 +1,4 @@
 
-
 import {
     db,
     auth,
@@ -139,7 +138,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     return;
                 }
 
-                const schemaToSave = {};
+                const itemsList = [];
                 let itemCount = 0;
 
                 for (const row of results.data) {
@@ -147,8 +146,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     const descripcion = row[1]?.trim();
 
                     if (codigo && descripcion) {
-                        const fieldName = `${codigo};${descripcion}`;
-                        schemaToSave[fieldName] = "";
+                        const itemName = `${codigo};${descripcion}`;
+                        itemsList.push(itemName);
                         itemCount++;
                     }
                 }
@@ -161,8 +160,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 try {
                     const esquemaDocRef = doc(db, "esquemas_modelos", sanitizedModelName);
+                    const schemaToSave = {
+                        items: itemsList
+                    };
                     
-                    await setDoc(esquemaDocRef, schemaToSave);
+                    await setDoc(esquemaDocRef, schemaToSave, { merge: true });
                     showMessage(`Esquema del modelo "${modelName.toUpperCase()}" guardado con ${itemCount} ítems.`, 'success');
                 } catch (error) {
                     console.error(`Error al subir el esquema para ${modelName}:`, error);
