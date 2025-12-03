@@ -251,9 +251,10 @@
         
         // Registrar el Service Worker
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('firebase-messaging-sw.js')
+            const swPath = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/')) + '/firebase-messaging-sw.js';
+            navigator.serviceWorker.register(swPath)
             .then(registration => {
-                console.log('Service Worker registrado con éxito:', registration);
+                console.log('Service Worker registrado con éxito en la ruta:', swPath);
             }).catch(error => {
                 console.log('Error al registrar el Service Worker:', error);
             });
