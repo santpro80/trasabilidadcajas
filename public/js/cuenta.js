@@ -67,11 +67,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 const oneDriveStatusElement = document.getElementById('oneDriveStatus');
                 const connectOneDriveButton = document.getElementById('connectOneDriveButton');
 
+                if (connectOneDriveButton) {
+                    connectOneDriveButton.style.display = 'block'; // Siempre mostrar el botón
+                }
+
                 if (userData.oneDriveRefreshToken) {
-                    if (connectOneDriveButton) connectOneDriveButton.style.display = 'block';
-                    if (oneDriveStatusElement) oneDriveStatusElement.textContent = 'Conectado a OneDrive. Haz clic para cambiar de cuenta.';
+                    if (oneDriveStatusElement) oneDriveStatusElement.textContent = 'Conectado. Haz clic en el botón para refrescar la conexión o cambiar de cuenta.';
                 } else {
-                    if (connectOneDriveButton) connectOneDriveButton.style.display = 'block';
                     if (oneDriveStatusElement) oneDriveStatusElement.textContent = 'No conectado a OneDrive';
                 }
             } else {

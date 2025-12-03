@@ -126,8 +126,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const processAndUploadSchema = (modelName, file) => {
         showLoading(true);
 
-        const sanitizedModelName = modelName.replace(/\//g, '_');
-
         Papa.parse(file, {
             header: false,
             skipEmptyLines: true,
@@ -138,7 +136,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     return;
                 }
 
-                const itemsList = [];
+                const schemaToSave = {};
                 let itemCount = 0;
 
                 for (const row of results.data) {
@@ -147,7 +145,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     if (codigo && descripcion) {
                         const itemName = `${codigo};${descripcion}`;
-                        itemsList.push(itemName);
+                        schemaToSave[itemName] = ""; // Cada ítem es un campo con valor ""
                         itemCount++;
                     }
                 }
@@ -159,11 +157,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 try {
-                    const esquemaDocRef = doc(db, "esquemas_modelos", sanitizedModelName);
-                    const schemaToSave = {
-                        items: itemsList
-                    };
-                    
+                    const esquemaDocRef = doc(db, "esquemas_modelos", modelName);
                     await setDoc(esquemaDocRef, schemaToSave, { merge: true });
                     showMessage(`Esquema del modelo "${modelName.toUpperCase()}" guardado con ${itemCount} ítems.`, 'success');
                 } catch (error) {

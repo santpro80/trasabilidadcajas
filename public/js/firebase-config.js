@@ -26,7 +26,7 @@ export const app = initializeApp(firebaseConfig);
 self.FIREBASE_APPCHECK_DEBUG_TOKEN = 'd29325f5-b651-4ccf-accc-620340596658';
 
 // Initialize App Check
-const appCheck = initializeAppCheck(app, {
+export const appCheck = initializeAppCheck(app, {
   provider: new ReCaptchaV3Provider('6LdcUP0rAAAAALVX9EZGz1Hw3u-ICSL3AmA_43W4'),
 
   // Optional: set to true if you want to allow clients without App Check
@@ -163,9 +163,23 @@ export const registrarConsumoItem = async (modelName, itemName) => {
     }
 };
 
+let notificationTimeout;
+export const showNotification = (message, type = 'success') => {
+    const toast = document.getElementById('notification-toast');
+    if (!toast) {
+        console.warn("Elemento de notificación #notification-toast no encontrado.");
+        return;
+    }
+    clearTimeout(notificationTimeout);
+    toast.textContent = message;
+    toast.className = 'show';
+    toast.classList.add(type);
+    notificationTimeout = setTimeout(() => { toast.classList.remove('show'); }, 3000);
+};
+
 export { 
     httpsCallable, onAuthStateChanged, signOut, signInWithEmailAndPassword,
     createUserWithEmailAndPassword, updatePassword, reauthenticateWithCredential,
     EmailAuthProvider, doc, getDoc, setDoc, updateDoc, deleteField, deleteDoc, limit,
-    collection, query, orderBy, onSnapshot, getDocs, where, serverTimestamp, addDoc, increment, arrayUnion
+    collection, query, orderBy, onSnapshot, getDocs, where, serverTimestamp, addDoc, increment, arrayUnion,
 };

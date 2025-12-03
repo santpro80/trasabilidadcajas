@@ -85,16 +85,20 @@ document.addEventListener('DOMContentLoaded', () => {
             const schemaDocSnap = await getDoc(schemaDocRef);
             if (schemaDocSnap.exists()) {
                 const schemaData = schemaDocSnap.data();
-                if (!schemaData.items || !Array.isArray(schemaData.items)) {
-                    itemsContainer.innerHTML = "<p>Error: El esquema para este modelo no tiene el formato correcto (falta el campo 'items').</p>";
+                // Se leen los nombres de los campos del documento como los ítems.
+                const itemNames = Object.keys(schemaData).sort((a, b) => a.split(';')[0].localeCompare(b.split(';')[0], undefined, { numeric: true }));
+
+                // Si no hay campos, el esquema está vacío.
+                if (itemNames.length === 0) {
+                    itemsContainer.innerHTML = "<p>Error: El esquema para este modelo no contiene ningún ítem.</p>";
+                    saveCajaBtn.disabled = true;
+                    addItemBtn.disabled = true;
                     return;
                 }
-                const itemNames = schemaData.items.sort((a, b) => a.split(';')[0].localeCompare(b.split(';')[0], undefined, { numeric: true }));
-
                 buildCodeToDescMap(itemNames);
                 itemsContainer.innerHTML = '';
                 itemNames.forEach(name => renderStaticItemRow(name));
-                applyEnterNavigation();
+                // applyEnterNavigation(); // Ya no es necesario llamarlo aquí
             } else {
                 itemsContainer.innerHTML = "<p>Error: No se encontró el esquema para este modelo de caja.</p>";
                 saveCajaBtn.disabled = true;
@@ -131,7 +135,7 @@ document.addEventListener('DOMContentLoaded', () => {
         itemsContainer.appendChild(formGroup);
         formGroup.querySelector('.btn-remove-item').addEventListener('click', () => { 
             formGroup.remove(); 
-            applyEnterNavigation(); 
+            // applyEnterNavigation(); // Ya no es necesario
         });
     };
  
@@ -164,7 +168,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         newRow.querySelector('.cancel-add-btn').addEventListener('click', () => newRow.remove());
         newRow.querySelector('.save-add-btn').addEventListener('click', () => saveDynamicItem(newRow));
-        applyEnterNavigation();
+        // applyEnterNavigation(); // Ya no es necesario
     };
 
     const saveDynamicItem = (rowElement) => {
@@ -200,22 +204,29 @@ document.addEventListener('DOMContentLoaded', () => {
             <button type="button" class="btn-remove-item" title="Quitar de la lista">X</button>
         `;
         rowElement.querySelector('.btn-remove-item').addEventListener('click', () => rowElement.remove());
-        applyEnterNavigation();
+        // applyEnterNavigation(); // Ya no es necesario
     };
 
-    const applyEnterNavigation = () => {
-        const allInputs = document.querySelectorAll('#cajaSerialInput, .item-serial-input, .manual-code-input');
-        allInputs.forEach((input, index) => {
-            input.addEventListener('keydown', (event) => {
-                if (event.key === 'Enter') {
-                    event.preventDefault();
-                    const nextInput = allInputs[index + 1];
-                    if (nextInput) { nextInput.focus(); }
-                    else { saveCajaBtn.focus(); }
-                }
-            });
-        });
-    };
+    // Usar delegación de eventos para la navegación con 'Enter'
+    document.body.addEventListener('keydown', (event) => {
+        if (event.key !== 'Enter') return;
+
+        const activeElement = document.activeElement;
+        if (!activeElement.matches('#cajaSerialInput, .item-serial-input, .manual-code-input')) {
+            return;
+        }
+
+        event.preventDefault();
+        const allInputs = Array.from(document.querySelectorAll('#cajaSerialInput, .item-serial-input, .manual-code-input'));
+        const currentIndex = allInputs.indexOf(activeElement);
+
+        const nextInput = allInputs[currentIndex + 1];
+        if (nextInput) {
+            nextInput.focus();
+        } else {
+            saveCajaBtn.focus();
+        }
+    });
 
     saveCajaBtn.addEventListener('click', async () => {
         showNotification('Guardando caja...', 'info');

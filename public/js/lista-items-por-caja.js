@@ -1,7 +1,7 @@
 import {
     db, auth, onAuthStateChanged, signOut,
     doc, getDoc, setDoc, updateDoc, deleteField, onSnapshot,
-    registrarHistorial,
+    registrarHistorial, appCheck, showNotification,
     registrarMovimientoCaja, sanitizeFieldName, unSanitizeFieldName, registrarConsumoItem,
     functions, httpsCallable
 } from './firebase-config.js';
@@ -9,17 +9,6 @@ import {
 // --- 1. Configuración de Firebase Functions ---
 // Se obtienen 'functions' y 'httpsCallable' desde firebase-config.js
 const uploadPdfToOneDriveCallable = httpsCallable(functions, 'uploadPdfToOneDrive');
-
-let notificationTimeout;
-const showNotification = (message, type = 'success') => {
-    const toast = document.getElementById('notification-toast');
-    if (!toast) return;
-    clearTimeout(notificationTimeout);
-    toast.textContent = message;
-    toast.className = 'show';
-    toast.classList.add(type);
-    notificationTimeout = setTimeout(() => { toast.classList.remove('show'); }, 3000);
-};
 
 document.addEventListener('DOMContentLoaded', () => {
     console.log("DOM completamente cargado y analizado");
@@ -422,6 +411,47 @@ document.addEventListener('DOMContentLoaded', () => {
         if (tipoReporteModal) tipoReporteModal.style.display = 'none';
         if (prestamoModal) prestamoModal.style.display = 'none';
         if (prestamoInput) prestamoInput.value = '';
+    };
+
+    // --- 2. Función para subir a OneDrive ---
+    const uploadFileToOneDrive = async (fileBlob, fileName, folderPath) => {
+        console.log(`Iniciando subida para: ${fileName} en la carpeta: ${folderPath}`);
+        showNotification('Subiendo reporte a OneDrive...', 'info');
+    
+        // Convertir el Blob a una cadena Base64
+        const reader = new FileReader();
+        reader.readAsDataURL(fileBlob);
+        
+        return new Promise((resolve, reject) => {
+            reader.onloadend = async () => {
+                const base64data = reader.result.split(',')[1]; // Quita el prefijo 'data:application/pdf;base64,'
+                try {
+                    // Forzar la obtención de un token de App Check para asegurar que la librería está lista
+                    const { getToken } = await import('https://www.gstatic.com/firebasejs/11.6.1/firebase-app-check.js');
+                    console.log("Esperando token de App Check...");
+                    await getToken(appCheck, /* forceRefresh= */ false);
+                    console.log("Token de App Check obtenido. Procediendo con la llamada a la función.");
+
+                    console.log("Llamando a la función de Firebase 'uploadPdfToOneDriveCallable'...");
+                    const result = await uploadPdfToOneDriveCallable({
+                        fileName: fileName,
+                        pdfBase64: base64data,
+                        folderPath: folderPath
+                    });
+                    console.log('Respuesta de la función de Firebase:', result.data);
+                    showNotification('¡Reporte guardado en OneDrive con éxito!', 'success');
+                    resolve(result);
+                } catch (error) {
+                    console.error('Error al llamar a la función de Firebase para subir a OneDrive:', error);
+                    showNotification(`Error al subir a OneDrive: ${error.message}`, 'error');
+                    reject(error);
+                }
+            };
+            reader.onerror = (error) => {
+                console.error("Error al leer el archivo Blob:", error);
+                reject(error);
+            };
+        });
     };
 
     if (searchInput) searchInput.addEventListener('input', () => renderFilteredItems(allLoadedItemsData, searchInput.value));
