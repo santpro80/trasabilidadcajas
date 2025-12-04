@@ -307,7 +307,7 @@
                     // --- Register SW and then ask for notification permission ---
                     if ('serviceWorker' in navigator) {
                         try {
-                            const registration = await navigator.serviceWorker.register('./firebase-messaging-sw.js');
+                            const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
                             console.log('Firebase Messaging Service Worker registered with scope:', registration.scope);
                             await requestNotificationPermission(registration);
                         } catch (error) {
