@@ -11,3 +11,22 @@ const firebaseConfig = {
 };
 
 export const app = initializeApp(firebaseConfig);
+
+// Function to register the service worker
+export async function registerServiceWorker() {
+    if ('serviceWorker' in navigator) {
+        try {
+            // Path to the service worker file
+            // Using '/trasabilidadcajas/firebase-messaging-sw.js' to match the GitHub Pages subdirectory
+            const registration = await navigator.serviceWorker.register('./firebase-messaging-sw.js', {
+                scope: './'
+            });
+            console.log('Firebase Messaging Service Worker registered with scope:', registration.scope);
+            return registration;
+        } catch (error) {
+            console.error('Service Worker registration failed:', error);
+            return null;
+        }
+    }
+    return null;
+}

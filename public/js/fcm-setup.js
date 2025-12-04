@@ -2,7 +2,7 @@
 import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging.js";
 import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getAuth } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { app } from './app.js'; // Assuming app is exported from app.js
+import { app } from './firebase-config.js';
 
 const messaging = getMessaging(app);
 const db = getFirestore(app);
