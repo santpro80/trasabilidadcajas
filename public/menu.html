@@ -228,9 +228,9 @@
     </main>
 
     <script type="module">
-        // Register Firebase Messaging Service Worker
+        // Register Firebase Messaging Service Worker with a relative path
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/firebase-messaging-sw.js')
+            navigator.serviceWorker.register('firebase-messaging-sw.js')
                 .then((registration) => {
                     console.log('Firebase Messaging Service Worker registered with scope:', registration.scope);
                 }).catch((error) => {
@@ -263,10 +263,43 @@
         let currentUserId = null;
 
         const sendTestNotification = httpsCallable(functions, 'sendTestNotification');
-        // ... (the manageMenuVisibility function is here) ...
+
+        const manageMenuVisibility = (role) => {
+            const liCajas = document.getElementById('li-cajas');
+            const liHistorial = document.getElementById('li-historial');
+            const liInformeDiario = document.getElementById('li-informe-diario');
+            const liImportarDatos = document.getElementById('li-importar-datos');
+            const liRegistrarUsuario = document.getElementById('li-registrar-usuario');
+            const liTickets = document.getElementById('li-tickets');
+            const liEstadisticas = document.getElementById('li-estadisticas');
+            const liEstadosCajas = document.getElementById('li-estados-cajas');
+            const liReportarProblema = document.getElementById('li-reportar-problema');
+            const liVerProblemas = document.getElementById('li-ver-problemas');
+            const liGestionUsuarios = document.getElementById('li-gestion-usuarios');
+            const liBuscarPrestamo = document.getElementById('li-buscar-prestamo');
+
+            const isSupervisor = role === 'supervisor';
+            const isMantenimiento = role === 'mantenimiento';
+
+            if (liCajas) liCajas.style.display = isMantenimiento ? 'none' : 'list-item';
+            if (liHistorial) liHistorial.style.display = isSupervisor ? 'list-item' : 'none';
+            if (liInformeDiario) liInformeDiario.style.display = isSupervisor ? 'list-item' : 'none';
+            if (liImportarDatos) liImportarDatos.style.display = isSupervisor ? 'list-item' : 'none';
+            if (liRegistrarUsuario) liRegistrarUsuario.style.display = isSupervisor ? 'list-item' : 'none';
+            if (liGestionUsuarios) liGestionUsuarios.style.display = isSupervisor ? 'list-item' : 'none';
+            if (liEstadisticas) liEstadisticas.style.display = isSupervisor ? 'list-item' : 'none';
+            if (liEstadosCajas) liEstadosCajas.style.display = isSupervisor ? 'list-item' : 'none';
+            if (liReportarProblema) liReportarProblema.style.display = isSupervisor ? 'list-item' : 'none';
+            if (liBuscarPrestamo) liBuscarPrestamo.style.display = isSupervisor ? 'list-item' : 'none';
+
+            if (liVerProblemas) liVerProblemas.style.display = (isSupervisor || isMantenimiento) ? 'list-item' : 'none';
+
+            if (liTickets) liTickets.style.display = 'list-item';
+        };
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
+                currentUserId = user.uid; // Store user ID
                 try {
                     const userDocRef = doc(db, "users", user.uid);
                     const userDocSnap = await getDoc(userDocRef);
@@ -290,10 +323,60 @@
                     manageMenuVisibility('operario');
                 }
             } else {
+                currentUserId = null;
                 window.location.href = 'login.html';
             }
         });
-        // ... (the rest of your script is here) ...
+
+        logoutBtn?.addEventListener('click', async () => {
+            try {
+                await signOut(auth);
+                window.location.href = 'login.html';
+            } catch (error) {
+                console.error('Error al cerrar sesión: ', error);
+            }
+        });
+
+        btnTestNotification?.addEventListener('click', () => {
+            if (!currentUserId) {
+                console.error("No hay un usuario logueado para enviar la notificación.");
+                alert("Error: No estás logueado.");
+                return;
+            }
+            console.log(`Enviando notificación de prueba al usuario: ${currentUserId}`);
+            alert('Enviando notificación...');
+            
+            sendTestNotification({ userId: currentUserId })
+                .then((result) => {
+                    console.log('Respuesta de la Cloud Function:', result);
+                    alert('¡Notificación enviada con éxito! Revisa tus notificaciones.');
+                })
+                .catch((error) => {
+                    console.error('Error al llamar a la Cloud Function:', error);
+                    alert(`Error al enviar la notificación: ${error.message}`);
+                });
+        });
+
+        btnCajas?.addEventListener('click', () => { window.location.href = 'modelos-de-cajas.html'; });
+        btnHistorial?.addEventListener('click', () => { window.location.href = 'lista-historial.html'; });
+        btnInformeDiario?.addEventListener('click', () => { window.location.href = 'informe-diario.html'; });
+        btnCuenta?.addEventListener('click', () => { window.location.href = 'cuenta.html'; });
+        btnImportarDatos?.addEventListener('click', () => { window.location.href = 'redir-import.html'; });
+        btnRegistrarUsuario?.addEventListener('click', () => { window.location.href = 'register.html'; });
+        btnGestionUsuarios?.addEventListener('click', () => { window.location.href = 'gestion-usuarios.html'; });
+        btnEstadisticas?.addEventListener('click', () => { window.location.href = 'estadisticas.html'; });
+        btnEstadosCajas?.addEventListener('click', () => { window.location.href = 'estados-cajas.html'; });
+        btnReportarProblema?.addEventListener('click', () => { window.location.href = 'reportar-problema.html'; });
+        btnVerProblemas?.addEventListener('click', () => { window.location.href = 'ver-problemas.html'; });
+        btnBuscarPrestamo?.addEventListener('click', () => { window.location.href = 'buscar-por-prestamo.html'; });
+
+        btnTickets?.addEventListener('click', () => {
+            if (currentUserRole === 'supervisor') {
+                window.location.href = 'tickets-supervisor.html';
+            } else {
+                window.location.href = 'tickets-operador.html';
+            }
+        });
     </script>
 </body>
 </html>
