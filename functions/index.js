@@ -128,7 +128,13 @@ const db = admin.firestore();
 // Forzando un cambio para el despliegue.
 
 exports.sendTestNotification = functions.https.onCall(async (data, context) => {
+    // --- START DEBUG LOGGING ---
+    console.log('Function triggered. Full context:', JSON.stringify(context, null, 2));
+    console.log('Inspecting context.auth:', context.auth);
+    // --- END DEBUG LOGGING ---
+
     if (!context.auth) {
+        console.error('Authentication check failed. context.auth is falsy.');
         throw new functions.https.HttpsError('unauthenticated', 'The function must be called by an authenticated user.');
     }
 
