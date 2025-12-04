@@ -228,6 +228,7 @@
     </main>
 
     <script type="module">
+        console.log('--- MENU SCRIPT VERSION 5 ---');
         import { auth, db, onAuthStateChanged, signOut, doc, getDoc, collection, query, where, onSnapshot, addDoc, serverTimestamp, functions, httpsCallable } from './js/firebase-config.js';
         import { setupTicketNotifications } from './js/global-notifications.js';
         import { requestNotificationPermission } from './js/fcm-setup.js'; // Import the new function
