@@ -238,7 +238,7 @@
                 });
         }
 
-        import { auth, db, onAuthStateChanged, signOut, doc, getDoc, collection, query, where, onSnapshot, addDoc, serverTimestamp, getFunctions, httpsCallable } from './js/firebase-config.js';
+        import { auth, db, onAuthStateChanged, signOut, doc, getDoc, collection, query, where, onSnapshot, addDoc, serverTimestamp, functions, httpsCallable } from './js/firebase-config.js';
         import { setupTicketNotifications } from './js/global-notifications.js';
         import { requestNotificationPermission } from './js/fcm-setup.js'; // Import the new function
 
@@ -262,7 +262,6 @@
         let currentUserRole = 'operario';
         let currentUserId = null;
 
-        const functions = getFunctions();
         const sendTestNotification = httpsCallable(functions, 'sendTestNotification');
         // ... (the manageMenuVisibility function is here) ...
 
