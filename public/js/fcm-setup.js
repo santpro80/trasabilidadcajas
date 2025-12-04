@@ -25,7 +25,7 @@ async function saveTokenToFirestore(token) {
 }
 
 // Function to request permission and get token
-export async function requestNotificationPermission() {
+export async function requestNotificationPermission(swRegistration) {
     console.log('Requesting notification permission...');
     try {
         const permission = await Notification.requestPermission();
@@ -34,7 +34,8 @@ export async function requestNotificationPermission() {
             
             // Get the token
             const currentToken = await getToken(messaging, {
-                vapidKey: 'BF7SA1q5HqzeYubSor2J2YHOca5EIKKeXhSuKxIWq5519jAeLZCvhC6l1MlN71bUn8UVArCXpy4SN-UeS1b9xqg' // Replace with your VAPID key
+                vapidKey: 'BF7SA1q5HqzeYubSor2J2YHOca5EIKKeXhSuKxIWq5519jAeLZCvhC6l1MlN71bUn8UVArCXpy4SN-UeS1b9xqg',
+                serviceWorkerRegistration: swRegistration // Pass the registration object
             });
 
             if (currentToken) {

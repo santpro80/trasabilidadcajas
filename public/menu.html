@@ -228,16 +228,6 @@
     </main>
 
     <script type="module">
-        // Register Firebase Messaging Service Worker with a relative path
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('firebase-messaging-sw.js')
-                .then((registration) => {
-                    console.log('Firebase Messaging Service Worker registered with scope:', registration.scope);
-                }).catch((error) => {
-                    console.log('Service Worker registration failed:', error);
-                });
-        }
-
         import { auth, db, onAuthStateChanged, signOut, doc, getDoc, collection, query, where, onSnapshot, addDoc, serverTimestamp, functions, httpsCallable } from './js/firebase-config.js';
         import { setupTicketNotifications } from './js/global-notifications.js';
         import { requestNotificationPermission } from './js/fcm-setup.js'; // Import the new function
@@ -314,8 +304,16 @@
                     manageMenuVisibility(currentUserRole);
                     setupTicketNotifications(db, collection, query, where, onSnapshot, user, currentUserRole);
                     
-                    // --- Ask for notification permission ---
-                    requestNotificationPermission();
+                    // --- Register SW and then ask for notification permission ---
+                    if ('serviceWorker' in navigator) {
+                        try {
+                            const registration = await navigator.serviceWorker.register('firebase-messaging-sw.js');
+                            console.log('Firebase Messaging Service Worker registered with scope:', registration.scope);
+                            await requestNotificationPermission(registration);
+                        } catch (error) {
+                            console.error('Service Worker registration or permission request failed:', error);
+                        }
+                    }
 
                 } catch (error) {
                     console.error("Error al obtener datos del usuario:", error);
