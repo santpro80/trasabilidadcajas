@@ -127,46 +127,16 @@ const db = admin.firestore();
 // (Asegúrate de tener también las funciones 'initiateOneDriveOAuth' y 'handleOneDriveRedirect' en tu archivo)
 // Forzando un cambio para el despliegue.
 
-exports.sendTestNotification = functions.https.onCall(async (data, context) => {
-    // --- START DEBUG LOGGING ---
-    console.log('Function triggered. Full context:', JSON.stringify(context, null, 2));
-    console.log('Inspecting context.auth:', context.auth);
-    // --- END DEBUG LOGGING ---
+exports.sendTestNotification = functions.https.onCall((data, context) => {
+  console.log('--- DEBUGGING ---');
+  console.log('Function triggered. Data received:', data);
+  console.log('Full context object:', JSON.stringify(context, null, 2));
+  console.log('Auth object alone:', context.auth);
+  console.log('--- END DEBUGGING ---');
 
-    if (!context.auth) {
-        console.error('Authentication check failed. context.auth is falsy.');
-        throw new functions.https.HttpsError('unauthenticated', 'The function must be called by an authenticated user.');
-    }
-
-    const userId = data.userId;
-    if (!userId) {
-        throw new functions.https.HttpsError('invalid-argument', 'The function must be called with a "userId" parameter.');
-    }
-
-    try {
-        const userDocRef = db.collection('users').doc(userId);
-        const userDoc = await userDocRef.get();
-
-        if (!userDoc.exists() || !userDoc.data().fcmToken) {
-            throw new functions.https.HttpsError('not-found', 'No FCM token found for this user.');
-        }
-
-        const fcmToken = userDoc.data().fcmToken;
-
-        const payload = {
-            notification: {
-                title: '¡Notificación de prueba!',
-                body: 'Esta es una notificación de prueba desde la app.',
-                icon: 'https://cajas-secuela.firebaseapp.com/assets/logo.png'
-            }
-        };
-
-        const response = await admin.messaging().sendToDevice(fcmToken, payload);
-        console.log('Successfully sent message:', response);
-        return { success: true, response };
-
-    } catch (error) {
-        console.error('Error sending message:', error);
-        throw new functions.https.HttpsError('internal', 'Error sending message', error);
-    }
+  // Directly return the auth object (or null) to the client for inspection.
+  return {
+    auth: context.auth || null,
+    message: "Debug function executed. Check browser console for the returned object."
+  };
 });
