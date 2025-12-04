@@ -228,7 +228,6 @@
     </main>
 
     <script type="module">
-        console.log('--- MENU SCRIPT VERSION 5 ---');
         import { auth, db, onAuthStateChanged, signOut, doc, getDoc, collection, query, where, onSnapshot, addDoc, serverTimestamp, functions, httpsCallable } from './js/firebase-config.js';
         import { setupTicketNotifications } from './js/global-notifications.js';
         import { requestNotificationPermission } from './js/fcm-setup.js'; // Import the new function
@@ -308,7 +307,7 @@
                     // --- Register SW and then ask for notification permission ---
                     if ('serviceWorker' in navigator) {
                         try {
-                            const registration = await navigator.serviceWorker.register('./firebase-messaging-sw.js', { type: 'module' });
+                            const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
                             console.log('Firebase Messaging Service Worker registered with scope:', registration.scope);
                             await requestNotificationPermission(registration);
                         } catch (error) {
