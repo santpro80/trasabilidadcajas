@@ -148,6 +148,15 @@
                             <span>Cuenta</span>
                         </button>
                     </li>
+                    <li>
+                        <button id="btn-notifications">
+                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                            </svg>
+                            <span>Activar Notificaciones</span>
+                        </button>
+                    </li>
                     <li id="li-registrar-usuario" style="display: none;">
                         <button id="btn-registrar-usuario">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -213,12 +222,14 @@
                     </li>
                 </ul>
             </nav>
+            <button id="btn-test-notify" style="margin-top: 20px; width: 100%; padding: 15px; background-color: #34a853; color: white; border: none; border-radius: 10px; font-size: 1.1em; cursor: pointer;">🔔 Probar Notificación (5s)</button>
         </div>
     </main>
 
     <script type="module">
         import { auth, db, onAuthStateChanged, signOut, doc, getDoc, collection, query, where, onSnapshot, addDoc, serverTimestamp } from './js/firebase-config.js';
         import { setupTicketNotifications } from './js/global-notifications.js';
+        import { requestNotificationPermission } from './js/fcm-setup.js';
 
         const userDisplayElement = document.getElementById('user-display-name');
         const logoutBtn = document.getElementById('logout-btn');
@@ -235,8 +246,25 @@
         const btnVerProblemas = document.getElementById('btn-ver-problemas');
         const btnBuscarPrestamo = document.getElementById('btn-buscar-prestamo');
         const btnGestionUsuarios = document.getElementById('btn-gestion-usuarios');
+        const btnNotifications = document.getElementById('btn-notifications');
 
         let currentUserRole = 'operario';
+        let swRegistration = null; // To store the service worker registration
+
+        // Register Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/firebase-messaging-sw.js')
+                    .then(registration => {
+                        console.log('Service Worker registered successfully:', registration);
+                        swRegistration = registration;
+                    })
+                    .catch(error => {
+                        console.error('Service Worker registration failed:', error);
+                    });
+            });
+        }
+
 
         const manageMenuVisibility = (role) => {
             const liCajas = document.getElementById('li-cajas');
@@ -317,6 +345,15 @@
         btnReportarProblema?.addEventListener('click', () => { window.location.href = 'reportar-problema.html'; });
         btnVerProblemas?.addEventListener('click', () => { window.location.href = 'ver-problemas.html'; });
         btnBuscarPrestamo?.addEventListener('click', () => { window.location.href = 'buscar-por-prestamo.html'; });
+        
+        btnNotifications?.addEventListener('click', () => {
+            if (swRegistration) {
+                requestNotificationPermission(swRegistration);
+            } else {
+                console.error('Service worker not registered yet.');
+                alert('El servicio de notificaciones no está listo. Por favor, recarga la página.');
+            }
+        });
 
         btnTickets?.addEventListener('click', () => {
             if (currentUserRole === 'supervisor') {
@@ -325,6 +362,52 @@
                 window.location.href = 'tickets-operador.html';
             }
         });
+    </script>
+    <script>
+        // Lógica del Botón de Prueba de Notificaciones (Migrado desde index.html)
+        const btnTest = document.getElementById('btn-test-notify');
+        if (btnTest) {
+            btnTest.addEventListener('click', () => {
+                // Pedimos permiso al usuario
+                Notification.requestPermission().then((permission) => {
+                    if (permission === 'granted') {
+                        console.log('Permiso concedido. Esperando 5 segundos...');
+                        alert('Permiso concedido. Minimiza el navegador AHORA para ver la notificación en 5 segundos.');
+
+                        setTimeout(async () => {
+                            // Esperamos a que el Service Worker esté listo ('ready')
+                            // Usamos el SW que ya registra tu página menu.html
+                            const reg = await navigator.serviceWorker.ready;
+
+                            if (reg) {
+                                try {
+                                    // Mostramos la notificación desde el Service Worker
+                                    await reg.showNotification('Prueba Exitosa', {
+                                        body: '¡El sistema de notificaciones está activo en el Menú!',
+                                        icon: '/assets/logo.png',
+                                        badge: '/assets/logo.png',
+                                        vibrate: [200, 100, 200],
+                                        tag: 'test-notification',
+                                        data: { url: window.location.href }
+                                    });
+                                    console.log('Notificación enviada.');
+                                } catch (e) {
+                                    console.error('Error al mostrar la notificación:', e);
+                                    alert('Error: ' + e.message);
+                                }
+                            } else {
+                                console.error('No se encontró un Service Worker activo.');
+                                alert('El Service Worker no está listo. Recarga la página.');
+                            }
+                        }, 5000);
+
+                    } else {
+                        console.warn('Permiso denegado.');
+                        alert('Debes permitir las notificaciones para ver la prueba.');
+                    }
+                });
+            });
+        }
     </script>
 </body>
 </html>

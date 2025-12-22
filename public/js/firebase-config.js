@@ -9,6 +9,7 @@ import {
     deleteDoc, collection, query, orderBy, onSnapshot, getDocs, addDoc, serverTimestamp, where, increment, arrayUnion, limit
 } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-functions.js';
+import { getMessaging } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-messaging.js';
 
 const firebaseConfig = {
     apiKey: "AIzaSyBtj9fa0St2IMZgo4jfNPsz_3EMVtioyGU",
