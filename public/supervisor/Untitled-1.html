@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Práctica de Posicionamiento CSS</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding-top: 60px; 
+            margin-bottom: 2000px; 
+        }
+        .caja, .caja-flex, .caja-grid {
+            border: 2px solid #333;
+            padding: 15px;
+            margin: 10px;
+            border-radius: 5px;
+            background-color: #f0f0f0;
+            text-align: center;
+        }
+        h3 {
+            border-bottom: 2px solid #a777e3;
+            padding-bottom: 5px;
+        }
+
+        /* --- 1. POSITION --- */
+
+        /* position: static (Default) */
+        .static {
+            background-color: #e7f5ff;
+            border-color: #90c5ff;
+        }
+
+        /* position: relative */
+        .relative {
+            position: relative;
+            top: 20px; /* Se desplaza 20px hacia abajo desde su lugar original */
+            left: 30px; /* Se desplaza 30px a la derecha desde su lugar original */
+            background-color: #e7ffe7;
+            border-color: #90ff90;
+        }
+
+        /* position: absolute (dentro de un contenedor relative) */
+        .contenedor-absoluto {
+            position: relative; /* Este es el ancestro posicionado */
+            height: 150px;
+            background-color: #fff0f0;
+            border: 2px dashed #ff9090;
+        }
+        .absolute {
+            position: absolute;
+            bottom: 10px; /* 10px desde el borde inferior del contenedor */
+            right: 10px;  /* 10px desde el borde derecho del contenedor */
+            width: 150px;
+            background-color: #ffdddd;
+            border-color: #ff9090;
+        }
+
+        /* position: fixed */
+        .fixed {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            background-color: #6e8efb;
+            color: white;
+            z-index: 100; /* Para que se ponga por encima de otros elementos */
+        }
+
+        /* position: sticky */
+        .sticky {
+            position: sticky;
+            top: 0; /* Se pegará en la parte superior cuando el scroll llegue a él */
+            background-color: #4285F4;
+            color: white;
+            padding: 15px;
+            margin: 0;
+            z-index: 99;
+        }
+
+        /* --- 2. FLEXBOX --- */
+        .contenedor-flex {
+            display: flex;
+            justify-content: center; /* Centra horizontalmente */
+            align-items: center;     /* Centra verticalmente */
+            height: 200px;
+            background-color: #f0f4f8;
+        }
+        .caja-flex {
+            width: 200px;
+            background-color: #d1e7ff;
+        }
+
+        /* --- 3. GRID --- */
+        .contenedor-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr; /* Dos columnas de igual tamaño */
+            gap: 15px; /* Espacio entre los elementos */
+            background-color: #f8f0f4;
+        }
+        .caja-grid {
+            background-color: #f1d1ff;
+        }
+
+    </style>
+</head>
+<body>
+
+    <header class="sticky">
+        <h2>Soy un Header STICKY. Me quedo pegado arriba cuando haces scroll.</h2>
+    </header>
+
+    <h1>Prácticas de Posicionamiento en CSS</h1>
+
+    <h3>1. Position</h3>
+    <div class="caja static">Soy <strong>Static</strong>. Mi posición es la normal, sigo el flujo del HTML.</div>
+    <div class="caja relative">Soy <strong>Relative</strong>. Me he movido 20px hacia abajo y 30px a la derecha de mi posición original. El espacio que dejé sigue ahí.</div>
+    <div class="caja static">Soy otro elemento <strong>Static</strong>. Aparezco debajo del espacio original del elemento relativo.</div>
+
+    <div class="contenedor-absoluto caja">
+        Soy un contenedor con <strong>position: relative</strong>.
+        <div class="caja absolute">Y yo soy <strong>Absolute</strong>. Me posiciono relativo a mi contenedor, no a la página.</div>
+    </div>
+
+    <div class="caja fixed">Soy <strong>Fixed</strong>. Estoy pegado a la ventana del navegador y no me muevo con el scroll.</div>
+
+    <h3>2. Flexbox (para centrar)</h3>
+    <div class="contenedor-flex caja">
+        <div class="caja-flex">¡Estoy centrado con Flexbox!</div>
+    </div>
+
+    <h3>3. Grid (para maquetas)</h3>
+    <div class="contenedor-grid caja">
+        <div class="caja-grid">Columna 1</div>
+        <div class="caja-grid">Columna 2</div>
+        <div class="caja-grid">Columna 1</div>
+        <div class="caja-grid">Columna 2</div>
+    </div>
+
+</body>
+</html>

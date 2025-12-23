@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestión de Tickets</title>
+    <title>Detalle del Ticket</title>
     <style>
     body {
         font-family: 'Inter', Arial, sans-serif;
@@ -70,25 +70,6 @@
         cursor: pointer;
         transition: transform 0.2s ease, box-shadow 0.2s ease;
         border-left: 5px solid #4285F4;
-        position: relative; 
-    }
-
-    .notification-badge {
-        position: absolute;
-        top: 15px;
-        right: 15px;
-        background-color: #dc3545; 
-        color: white;
-        border-radius: 50%;
-        width: 24px;
-        height: 24px;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        font-size: 0.9em;
-        font-weight: bold;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        z-index: 1;
     }
 
     .ticket-card:hover {
@@ -115,7 +96,7 @@
 
     .status-abierto {
         background-color: #e8f5e9; 
-        color: #2e7d32;
+        color: #2e7d32; 
     }
 
     .status-cerrado {
@@ -295,40 +276,19 @@
 </head>
 <body>
     <header>
-        <h1>Gestión de Tickets</h1>
-        <button id="menu-btn">Menú</button>
+        <h1 id="ticket-asunto"></h1>
+        <button id="volver-btn">Volver</button>
     </header>
     <main>
-        <button id="crear-ticket-btn">Crear Nuevo Ticket</button>
-        <div class="filtros">
-            <label for="filtro-estado">Filtrar por estado:</label>
-            <select id="filtro-estado">
-                <option value="todos">Todos</option>
-                <option value="abierto">Abiertos</option>
-                <option value="cerrado">Cerrados</option>
-            </select>
+        <div id="mensajes-container">
         </div>
-        <div id="tickets-container">
+        <div id="respuesta-container">
+            <textarea id="mensaje-respuesta" placeholder="Escribe tu respuesta..."></textarea>
+            <button id="enviar-respuesta-btn">Enviar</button>
         </div>
+        <button id="cerrar-ticket-btn" style="display: none;">Cerrar Ticket</button>
+        <button id="eliminar-ticket-btn" style="display: none;">Eliminar Ticket Permanentemente</button>
     </main>
-    <script type="module">
-        import { auth, db, onAuthStateChanged, doc, getDoc } from '/supervisor/js/firebase-config.js';
-
-        onAuthStateChanged(auth, async (user) => {
-            if (!user) {
-                window.location.href = '/login.html';
-                return;
-            }
-
-            const userRef = doc(db, 'users', user.uid);
-            const userSnap = await getDoc(userRef);
-            
-            if (!userSnap.exists() || userSnap.data().role !== 'supervisor') {
-                alert('Acceso denegado: Esta página es exclusiva para supervisores.');
-                window.location.href = '/supervisor/menu.html';
-            }
-        });
-    </script>
-    <script type="module" src="/supervisor/js/tickets-supervisor.js"></script>
+    <script type="module" src="js/ticket-detalle.js"></script>
 </body>
 </html>

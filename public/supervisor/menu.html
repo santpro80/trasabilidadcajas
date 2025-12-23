@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Menú Principal - Sistema de Cajas</title>
+    <link rel="icon" href="/supervisor/assets/logo.png" type="image/png">
+    <style>
+        body { font-family: 'Inter', Arial, sans-serif; margin: 0; min-height: 100vh; display: flex; flex-direction: column; background: linear-gradient(135deg, #6e8efb, #a777e3); color: #2c3e50; }
+        .app-header {
+            position: fixed; top: 0; left: 0; right: 0;
+            background-color: rgba(255, 255, 255, 0.815); backdrop-filter: blur(5px);
+            padding: 10px 25px; display: flex; justify-content: space-between;
+            align-items: center; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); z-index: 1000;
+        }
+        .header-left { display: flex; align-items: center; gap: 10px; }
+        .user-info { display: flex; align-items: center; gap: 10px; }
+        .small-logo img { width: 35px; height: auto; }
+        .user-display-name { font-weight: 500; font-size: 0.9em; }
+        .logout-btn {
+            background-color: #dc3545; color: white; padding: 6px 15px;
+            border: none; border-radius: 5px; cursor: pointer; font-size: 0.9em;
+            display: inline-flex; align-items: center; gap: 5px;
+        }
+        .logout-btn svg { stroke: white; width: 16px; height: 16px; }
+        .main-content { flex-grow: 1; display: flex; align-items: center; justify-content: center; padding: 80px 20px; }
+        .menu-card {
+            background-color: #ffffff; border-radius: 15px; padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2); width: 100%; max-width: 500px;
+        }
+        .menu-card h1 { color: #4285F4; margin-top: 0; margin-bottom: 25px; }
+        .menu-nav ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 15px; }
+        .menu-nav button {
+            background-color: #f0f4f8; color: #2c3e50; padding: 15px 20px;
+            border: none; border-radius: 10px; cursor: pointer; font-size: 1.1em;
+            font-weight: 500; display: flex; align-items: center; gap: 15px; width: 100%;
+            text-align: left; transition: all 0.2s ease;
+        }
+        .menu-nav button:hover { background-color: #e2eaf2; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); color: #4285F4; }
+        .menu-nav button svg { width: 24px; height: 24px; stroke: #4285F4; flex-shrink: 0; }
+        #li-historial, #li-importar-datos {
+            display: none;
+        }
+    .modal-overlay {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background-color: rgba(0, 0, 0, 0.6); display: none; justify-content: center;
+        align-items: center; z-index: 2000;
+    }
+    .modal-content {
+        background-color: white; border-radius: 15px; padding: 30px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2); width: 90%; max-width: 500px;
+    }
+    .modal-content h2 { margin-top: 0; color: #4285F4; }
+    .modal-content textarea {
+        width: 100%; min-height: 120px; margin-top: 15px; padding: 10px;
+        border: 1px solid #ccc; border-radius: 8px; font-family: inherit; font-size: 1em;
+    }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 15px; margin-top: 20px; }
+    .btn-modal { padding: 10px 25px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; }
+    .btn-modal.primary { background-color: #4285F4; color: white; }
+    .btn-modal.secondary { background-color: #6c757d; color: white; }
+    </style>
+</head>
+<body>
+    <header class="app-header">
+        <div class="header-left">
+            <div class="small-logo">
+                <img src="/supervisor/assets/logo.png" alt="Logo">
+            </div>
+            <div class="user-display-name" id="user-display-name">Cargando...</div>
+        </div>
+        <button id="logout-btn" class="logout-btn">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M9 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <polyline points="16 17 21 12 16 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></polyline>
+                <line x1="21" y1="12" x2="9" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></line>
+            </svg>
+            Cerrar sesión
+        </button>
+    </header>
+
+    <main class="main-content">
+        <div class="menu-card">
+            <h1>Menú Principal</h1>
+            <nav class="menu-nav">
+                <ul>
+                    <li id="li-cajas">
+                        <button id="btn-cajas">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="2" y="7" width="20" height="15" rx="2" ry="2"></rect>
+                                <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                            </svg>
+                            <span>Modelos de Cajas</span>
+                        </button>
+                    </li>
+                    <li id="li-estadisticas" style="display: none;">
+                        <button id="btn-estadisticas">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 20V10"></path>
+                                <path d="M18 20V4"></path>
+                                <path d="M6 20V16"></path>
+                            </svg>
+                            <span>Estadística</span>
+                        </button>
+                    </li>
+                    <li id="li-estados-cajas" style="display: none;">
+                        <button id="btn-estados-cajas">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line>
+                            </svg>
+                            <span>Estados Cajas</span>
+                        </button>
+                    </li>
+                    <li id="li-historial">
+                        <button id="btn-historial">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14"></polyline>
+                            </svg>
+                            <span>Historial</span>
+                        </button>
+                    </li>
+                    <li id="li-informe-diario" style="display: none;">
+                        <button id="btn-informe-diario">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                <line x1="12" y1="8" x2="12" y2="16"></line>
+                                <line x1="8" y1="12" x2="16" y2="12"></line>
+                            </svg>
+                            <span>Informe Diario</span>
+                        </button>
+                    </li>
+                    <li id="li-buscar-prestamo" style="display: none;">
+                        <button id="btn-buscar-prestamo">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                            </svg>
+                            <span>Buscar por Préstamo</span>
+                        </button>
+                    </li>
+                    <li>
+                        <button id="btn-cuenta">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                            </svg>
+                            <span>Cuenta</span>
+                        </button>
+                    </li>
+                    <li>
+                        <button id="btn-notifications">
+                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                            </svg>
+                            <span>Activar Notificaciones</span>
+                        </button>
+                    </li>
+                    <li id="li-registrar-usuario" style="display: none;">
+                        <button id="btn-registrar-usuario">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="8.5" cy="7" r="4"></circle>
+                                <line x1="20" y1="8" x2="20" y2="14"></line>
+                                <line x1="17" y1="11" x2="23" y2="11"></line>
+                            </svg>
+                            <span>Registrar Usuario</span>
+                        </button>
+                    </li>
+                    <li id="li-gestion-usuarios" style="display: none;">
+                        <button id="btn-gestion-usuarios">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="9" cy="7" r="4"></circle>
+                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                            </svg>
+                            <span>Gestión de Usuarios</span>
+                        </button>
+                    </li>
+                    <li id="li-tickets">
+                        <button id="btn-tickets">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                                <polyline points="10 9 9 9 8 9"></polyline>
+                            </svg>
+                            <span>Tickets</span>
+                        </button>
+                    </li>
+                    <li id="li-importar-datos">
+                        <button id="btn-importar-datos">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                            <span>Importar Datos</span>
+                        </button>
+                    </li>
+                    <li id="li-reportar-problema" style="display: none;">
+                        <button id="btn-reportar-problema">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                                <line x1="12" y1="9" x2="12" y2="13"></line>
+                                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                            </svg>
+                            <span>Reportar Problema</span>
+                        </button>
+                    </li>
+                    <li id="li-ver-problemas" style="display: none;">
+                        <button id="btn-ver-problemas">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                                <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+                            </svg>
+                            <span>Ver Problemas</span>
+                        </button>
+                    </li>
+                </ul>
+            </nav>
+            <button id="btn-test-notify" style="margin-top: 20px; width: 100%; padding: 15px; background-color: #34a853; color: white; border: none; border-radius: 10px; font-size: 1.1em; cursor: pointer;">🔔 Probar Notificación (5s)</button>
+        </div>
+    </main>
+
+    <script type="module">
+        import { auth, db, onAuthStateChanged, signOut, doc, getDoc, collection, query, where, onSnapshot, addDoc, serverTimestamp } from '/supervisor/js/firebase-config.js';
+        import { setupTicketNotifications } from '/supervisor/js/global-notifications.js';
+        import { requestNotificationPermission } from '/supervisor/js/fcm-setup.js';
+
+        const userDisplayElement = document.getElementById('user-display-name');
+        const logoutBtn = document.getElementById('logout-btn');
+        const btnCajas = document.getElementById('btn-cajas');
+        const btnHistorial = document.getElementById('btn-historial');
+        const btnInformeDiario = document.getElementById('btn-informe-diario');
+        const btnCuenta = document.getElementById('btn-cuenta');
+        const btnImportarDatos = document.getElementById('btn-importar-datos');
+        const btnRegistrarUsuario = document.getElementById('btn-registrar-usuario');
+        const btnTickets = document.getElementById('btn-tickets');
+        const btnEstadisticas = document.getElementById('btn-estadisticas');
+        const btnEstadosCajas = document.getElementById('btn-estados-cajas');
+        const btnReportarProblema = document.getElementById('btn-reportar-problema');
+        const btnVerProblemas = document.getElementById('btn-ver-problemas');
+        const btnBuscarPrestamo = document.getElementById('btn-buscar-prestamo');
+        const btnGestionUsuarios = document.getElementById('btn-gestion-usuarios');
+        const btnNotifications = document.getElementById('btn-notifications');
+
+        let currentUserRole = 'operario';
+        let swRegistration = null; // To store the service worker registration
+
+        // Register Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/supervisor/firebase-messaging-sw.js')
+                    .then(registration => {
+                        console.log('Service Worker registered successfully:', registration);
+                        swRegistration = registration;
+                    })
+                    .catch(error => {
+                        console.error('Service Worker registration failed:', error);
+                    });
+            });
+        }
+
+
+        const manageMenuVisibility = (role) => {
+            const liVerProblemas = document.getElementById('li-ver-problemas');
+            const isSupervisor = role === 'supervisor';
+            const isMantenimiento = role === 'mantenimiento';
+
+            // 1. Elementos exclusivos de Supervisor (ocultos para todos los demás)
+            const supervisorOnlyIds = [
+                'li-historial', 'li-informe-diario', 'li-importar-datos',
+                'li-registrar-usuario', 'li-gestion-usuarios', 'li-estadisticas',
+                'li-estados-cajas', 'li-reportar-problema', 'li-buscar-prestamo'
+            ];
+            supervisorOnlyIds.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.style.display = isSupervisor ? 'list-item' : 'none';
+            });
+
+            // 2. Elementos para Supervisor O Mantenimiento
+            if (liVerProblemas) liVerProblemas.style.display = (isSupervisor || isMantenimiento) ? 'list-item' : 'none';
+
+            // 3. Lógica de exclusión específica
+            const liCajas = document.getElementById('li-cajas');
+            if (liCajas) liCajas.style.display = isMantenimiento ? 'none' : 'list-item';
+
+            // 4. Elementos siempre visibles para todos los roles logueados
+            const liTickets = document.getElementById('li-tickets');
+            if (liTickets) liTickets.style.display = 'list-item';
+        };
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                try {
+                    const userDocRef = doc(db, "users", user.uid);
+                    const userDocSnap = await getDoc(userDocRef);
+                    if (userDocSnap.exists()) {
+                        const userData = userDocSnap.data();
+                        if (userDisplayElement) userDisplayElement.textContent = userData.name || user.email;
+                        currentUserRole = userData.role || 'operario';
+                    } else {
+                        if (userDisplayElement) userDisplayElement.textContent = user.email;
+                        currentUserRole = 'operario';
+                    }
+                    manageMenuVisibility(currentUserRole);
+                    setupTicketNotifications(db, collection, query, where, onSnapshot, user, currentUserRole);
+                } catch (error) {
+                    console.error("Error al obtener datos del usuario:", error);
+                    if (userDisplayElement) userDisplayElement.textContent = user.email;
+                    manageMenuVisibility('operario');
+                }
+            } else {
+                window.location.href = '/login.html';
+            }
+        });
+
+        logoutBtn?.addEventListener('click', async () => {
+            try {
+                await signOut(auth);
+                window.location.href = '/login.html';
+            } catch (error) {
+                console.error('Error al cerrar sesión: ', error);
+            }
+        });
+
+        btnCajas?.addEventListener('click', () => { window.location.href = 'modelos-de-cajas.html'; });
+        btnHistorial?.addEventListener('click', () => { window.location.href = 'lista-historial.html'; });
+        btnInformeDiario?.addEventListener('click', () => { window.location.href = 'informe-diario.html'; });
+        btnCuenta?.addEventListener('click', () => { window.location.href = 'cuenta.html'; });
+        btnImportarDatos?.addEventListener('click', () => { window.location.href = 'redir-import.html'; });
+        btnRegistrarUsuario?.addEventListener('click', () => { window.location.href = 'register.html'; });
+        btnGestionUsuarios?.addEventListener('click', () => { window.location.href = 'gestion-usuarios.html'; });
+        btnEstadisticas?.addEventListener('click', () => { window.location.href = 'estadisticas.html'; });
+        btnEstadosCajas?.addEventListener('click', () => { window.location.href = 'estados-cajas.html'; });
+        btnReportarProblema?.addEventListener('click', () => { window.location.href = 'reportar-problema.html'; });
+        btnVerProblemas?.addEventListener('click', () => { window.location.href = 'ver-problemas.html'; });
+        btnBuscarPrestamo?.addEventListener('click', () => { window.location.href = 'buscar-por-prestamo.html'; });
+        
+        btnNotifications?.addEventListener('click', () => {
+            if (swRegistration) {
+                requestNotificationPermission(swRegistration);
+            } else {
+                console.error('Service worker not registered yet.');
+                alert('El servicio de notificaciones no está listo. Por favor, recarga la página.');
+            }
+        });
+
+        btnTickets?.addEventListener('click', () => {
+            if (currentUserRole === 'supervisor') {
+                window.location.href = 'tickets-supervisor.html';
+            } else {
+                window.location.href = 'tickets-operador.html';
+            }
+        });
+    </script>
+    <script>
+        // Lógica del Botón de Prueba de Notificaciones (Migrado desde index.html)
+        const btnTest = document.getElementById('btn-test-notify');
+        if (btnTest) {
+            btnTest.addEventListener('click', () => {
+                // Pedimos permiso al usuario
+                Notification.requestPermission().then((permission) => {
+                    if (permission === 'granted') {
+                        console.log('Permiso concedido. Esperando 5 segundos...');
+                        alert('Permiso concedido. Minimiza el navegador AHORA para ver la notificación en 5 segundos.');
+
+                        setTimeout(async () => {
+                            // Esperamos a que el Service Worker esté listo ('ready')
+                            // Usamos el SW que ya registra tu página menu.html
+                            const reg = await navigator.serviceWorker.ready;
+
+                            if (reg) {
+                                try {
+                                    // Mostramos la notificación desde el Service Worker
+                                    await reg.showNotification('Prueba Exitosa', {
+                                        body: '¡El sistema de notificaciones está activo en el Menú!',
+                                        icon: '/supervisor/assets/logo.png',
+                                        badge: '/supervisor/assets/logo.png',
+                                        vibrate: [200, 100, 200],
+                                        tag: 'test-notification',
+                                        data: { url: window.location.href }
+                                    });
+                                    console.log('Notificación enviada.');
+                                } catch (e) {
+                                    console.error('Error al mostrar la notificación:', e);
+                                    alert('Error: ' + e.message);
+                                }
+                            } else {
+                                console.error('No se encontró un Service Worker activo.');
+                                alert('El Service Worker no está listo. Recarga la página.');
+                            }
+                        }, 5000);
+
+                    } else {
+                        console.warn('Permiso denegado.');
+                        alert('Debes permitir las notificaciones para ver la prueba.');
+                    }
+                });
+            });
+        }
+    </script>
+</body>
+</html>

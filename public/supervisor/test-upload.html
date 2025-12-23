@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prueba de Carga a OneDrive</title>
+    <style>
+        body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #f4f4f9; margin: 0; }
+        .container { background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); text-align: center; max-width: 500px; }
+        h1 { color: #333; }
+        button { background-color: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 1rem; margin: 0.5rem; }
+        button:hover { background-color: #0056b3; }
+        button:disabled { background-color: #ccc; }
+        #status { margin-top: 1rem; font-weight: bold; min-height: 20px; }
+        #token-display { margin-top: 1rem; padding: 1rem; background-color: #eee; border-radius: 4px; text-align: left; max-height: 150px; overflow-y: auto; word-break: break-all; }
+        .file-input-container { margin: 1rem 0; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Conectar con OneDrivee</h1>
+        <p>Para subir archivos, primero necesitas dar permiso a la aplicación.</p>
+        
+        <button id="login-btn">1. Iniciar Sesión con Microsoft</button>
+        
+        <div class="file-input-container">
+            <input type="file" id="file-input" disabled>
+        </div>
+
+        <button id="upload-btn" disabled>2. Subir Archivo a OneDrive</button>
+
+        <div id="status"></div>
+        <pre id="token-display"></pre>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-functions.js";
+
+        // --- 1. Configuración de Firebase ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyBtj9fa0St2IMZgo4jfNPsz_3EMVtioyGU",
+            authDomain: "cajas-secuela.firebaseapp.com",
+            projectId: "cajas-secuela",
+            storageBucket: "cajas-secuela.firebasestorage.app",
+            messagingSenderId: "551056516132",
+            appId: "1:551056516132:web:88b9da72dd8dd1a8e7a4b1",
+            measurementId: "G-SZDRGMZS4X"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const functions = getFunctions(app, 'us-central1');
+        const exchangeAuthCode = httpsCallable(functions, 'exchangeAuthCode');
+
+        // --- 2. Configuración de Microsoft/OneDrive ---
+        const microsoftConfig = {
+            clientId: "706bf438-e836-49dc-a418-ae8aecb200cd",
+            redirectUri: "https://santpro80.github.io/trasabilidadcajas/test-upload.html",
+            scope: "files.readwrite offline_access",
+            authUrl: "https://login.microsoftonline.com/common/oauth2/v2.0/authorize"
+        };
+
+        const loginBtn = document.getElementById('login-btn');
+        const uploadBtn = document.getElementById('upload-btn');
+        const fileInput = document.getElementById('file-input');
+        const statusDiv = document.getElementById('status');
+        const tokenDisplay = document.getElementById('token-display');
+
+        // --- 3. Lógica de Autenticación y Carfga ---
+
+        loginBtn.addEventListener('click', () => {
+            const authUrl = `${microsoftConfig.authUrl}?client_id=${microsoftConfig.clientId}&response_type=code&redirect_uri=${encodeURIComponent(microsoftConfig.redirectUri)}&scope=${encodeURIComponent(microsoftConfig.scope)}&response_mode=query`;
+            window.location.href = authUrl;
+        });
+
+        async function ensureOneDrivePathExists(path, accessToken) {
+            const folders = path.split('/').filter(f => f.length > 0);
+            let parentId = 'root';
+            console.log('DEBUG: Iniciando verificación de carpetas. ID padre inicial:', parentId);
+
+            for (const folder of folders) {
+                console.log(`DEBUG: Procesando carpeta '${folder}'. Buscando dentro de ID padre: ${parentId}`);
+                const encodedFolderName = encodeURIComponent(folder);
+                const endpoint = `https://graph.microsoft.com/v1.0/me/drive/items/${parentId}/children?$filter=name eq '${encodedFolderName}'`;
+
+                const response = await fetch(endpoint, {
+                    headers: { 'Authorization': `Bearer ${accessToken}` }
+                });
+
+                if (!response.ok) throw new Error(`Error al buscar la carpeta ${folder}`);
+
+                const data = await response.json();
+                if (data.value.length > 0) {
+                    parentId = data.value[0].id;
+                    console.log(`DEBUG: Carpeta '${folder}' encontrada. Nuevo ID padre: ${parentId}`);
+                } else {
+                    console.log(`DEBUG: Carpeta '${folder}' no encontrada. Intentando crearla...`);
+                    const createEndpoint = `https://graph.microsoft.com/v1.0/me/drive/items/${parentId}/children`;
+                    const createResponse = await fetch(createEndpoint, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${accessToken}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            name: folder,
+                            folder: {},
+                            '@microsoft.graph.conflictBehavior': 'rename'
+                        })
+                    });
+
+                    if (!createResponse.ok) {
+                        const errorDetail = await createResponse.text();
+                        console.error('DEBUG: Fallo en la API de creación de carpeta. Respuesta:', errorDetail);
+                        throw new Error(`Error al crear la carpeta ${folder}: ${errorDetail}`);
+                    }
+                    
+                    const newFolder = await createResponse.json();
+                    parentId = newFolder.id;
+                    console.log(`DEBUG: Carpeta '${folder}' creada. Nuevo ID padre: ${parentId}`);
+                }
+            }
+            console.log('DEBUG: Verificación de carpetas terminada. ID final:', parentId);
+            return parentId;
+        }
+
+        uploadBtn.addEventListener('click', async () => {
+            const file = fileInput.files[0];
+            if (!file) {
+                statusDiv.textContent = "Por favor, selecciona un archivo primero.";
+                statusDiv.style.color = "red";
+                return;
+            }
+
+            statusDiv.textContent = `Subiendo archivo: ${file.name}...`;
+            statusDiv.style.color = "blue";
+            uploadBtn.disabled = true;
+
+            try {
+                const tokenData = JSON.parse(localStorage.getItem("oneDriveTokens"));
+                if (!tokenData || !tokenData.access_token) {
+                    throw new Error("No se encontró el token de acceso. Por favor, inicia sesión de nuevo.");
+                }
+
+                const oneDriveFolderPath = "01-CAJAS-SEGUIMINETO/04-registro-de-salida-de-cajas";
+                
+                statusDiv.textContent = `Verificando ruta de carpetas: ${oneDriveFolderPath}...`;
+                const finalFolderId = await ensureOneDrivePathExists(oneDriveFolderPath, tokenData.access_token);
+
+                statusDiv.textContent = `Subiendo a la carpeta final...`;
+                const uploadUrl = `https://graph.microsoft.com/v1.0/me/drive/items/${finalFolderId}:/${file.name}:/content`;
+
+                const response = await fetch(uploadUrl, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${tokenData.access_token}`,
+                        'Content-Type': file.type
+                    },
+                    body: file
+                });
+
+                if (!response.ok) {
+                    const errorResponse = await response.json();
+                    throw new Error(`Error al subir: ${errorResponse.error.message}`);
+                }
+
+                const responseData = await response.json();
+                statusDiv.textContent = `¡Éxito! Archivo "${responseData.name}" subido a ${oneDriveFolderPath}.`;
+                statusDiv.style.color = "green";
+                console.log("Respuesta de Graph API:", responseData);
+
+            } catch (error) {
+                statusDiv.textContent = `Error: ${error.message}`;
+                statusDiv.style.color = "red";
+                console.error("Error al subir archivo:", error);
+            } finally {
+                uploadBtn.disabled = false;
+            }
+        });
+
+        // Al cargar la página, gestionamos el flujo de autenticación o habilitamos la carga
+        window.addEventListener('load', async () => {
+            const params = new URLSearchParams(window.location.search);
+            const code = params.get('code');
+
+            if (code) {
+                // Si hay un código, lo intercambiamos por tokens
+                statusDiv.textContent = "Código recibido. Intercambiando por tokens...";
+                loginBtn.disabled = true;
+                try {
+                    const result = await exchangeAuthCode({ code: code });
+                    const tokenData = result.data;
+                    statusDiv.textContent = "¡Tokens recibidos con éxito! Puedes subir un archivo.";
+                    tokenDisplay.textContent = JSON.stringify(tokenData, null, 2);
+                    localStorage.setItem("oneDriveTokens", JSON.stringify(tokenData));
+                    uploadBtn.disabled = false;
+                    fileInput.disabled = false;
+                    window.history.replaceState({}, document.title, window.location.pathname);
+
+                    // --- MEJORA DE EXPERIENCIA DE USUARIO ---
+                    // Después de autenticar, revisamos si hay una URL de redirección guardada.
+                    const redirectUrl = localStorage.getItem('redirectAfterOneDriveAuth');
+                    if (redirectUrl) {
+                        localStorage.removeItem('redirectAfterOneDriveAuth'); // Limpiamos para la próxima vez
+                        window.location.href = redirectUrl; // Volvemos a la página original
+                    }
+                } catch (error) {
+                    statusDiv.textContent = "Error al intercambiar el código.";
+                    tokenDisplay.textContent = error;
+                } finally {
+                    loginBtn.disabled = false;
+                }
+            } else if (localStorage.getItem("oneDriveTokens")) {
+                // Si no hay código pero ya tenemos tokens, habilitamos la subida
+                statusDiv.textContent = "Ya has iniciado sesión. Listo para subir archivos.";
+                statusDiv.style.color = "green";
+                tokenDisplay.textContent = JSON.stringify(JSON.parse(localStorage.getItem("oneDriveTokens")), null, 2);
+                uploadBtn.disabled = false;
+                fileInput.disabled = false;
+                loginBtn.textContent = "Iniciar Sesión de Nuevo";
+            }
+        });
+
+    </script>
+
+</body>
+</html>

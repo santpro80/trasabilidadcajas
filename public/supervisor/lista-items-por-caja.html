@@ -1,0 +1,171 @@
+  <!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Items de Caja | Sistema de Trazabilidad</title>
+    <link rel="icon" href="assets/logo.png" type="image/png">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        body { font-family: 'Inter', Arial, sans-serif; margin: 0; min-height: 100vh; display: flex; flex-direction: column; background: linear-gradient(135deg, #6e8efb, #a777e3); color: #2c3e50; }
+        .app-header { position: fixed; top: 0; left: 0; right: 0; background-color: rgba(255, 255, 255, 0.9); backdrop-filter: blur(5px); padding: 10px 25px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); width: 100%; box-sizing: border-box; z-index: 1000; }
+        .header-left, .user-info { display: flex; align-items: center; gap: 10px; }
+        .btn-back { background-color: #f0f4f8; color: #4285F4; padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer; }
+        .user-display-name { font-weight: 500; }
+        .logout-btn { background-color: #dc3545 !important; color: white !important; padding: 6px 15px; border: none; border-radius: 5px; cursor: pointer; }
+        .main-content { flex-grow: 1; display: flex; flex-direction: column; align-items: center; padding: 80px 20px 20px; width: 100%; box-sizing: border-box; max-width: 800px; margin: 0 auto; }
+        .title-card { background-color: #ffffff; border-radius: 12px; padding: 20px 30px; margin-bottom: 15px; box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1); text-align: center; width: 100%; box-sizing: border-box; }
+        .title-card h1 { color: #4285F4; margin: 0; }
+        .controls-container { display: flex; gap: 10px; width: 100%; margin-bottom: 15px; }
+        .search-bar-container { flex-grow: 1; }
+        .search-bar-container input { width: 100%; padding: 10px 15px; border: 1px solid #ddd; border-radius: 8px; font-size: 1em; box-sizing: border-box; }
+        .btn-action { padding: 10px 20px; border: none; border-radius: 8px; color: white; cursor: pointer; font-weight: 600; white-space: nowrap; transition: transform 0.2s, background-color 0.2s; }
+        .btn-action:hover { transform: translateY(-2px); }
+        #download-pdf-btn { background-color: #17a2b8; }
+        #add-item-btn { background-color: #28a745; }
+        .list-container { background-color: #ffffff; border-radius: 12px; padding: 20px; box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1); width: 100%; box-sizing: border-box; min-height: 300px; }
+        .item-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; }
+        .list-item { background-color: #f9f9f9; border: 1px solid #e0e0e0; border-radius: 10px; padding: 15px 20px; display: flex; align-items: center; gap: 15px; transition: all 0.2s ease; cursor: pointer; }
+        .list-item:hover { border: 2px solid #4285F4; background-color: #e8f0fe; transform: translateY(-2px); box-shadow: 0 0 8px rgba(66, 133, 244, 0.5); } 
+        .item-main-details-container { flex-grow: 1; text-align: left; cursor: pointer; min-width: 0; }
+        .item-detail-group { display: flex; flex-direction: column; gap: 2px; }
+        .item-label { font-weight: 600; color: #555; font-size: 0.9em; }
+        .item-value-text { color: #2c3e50; word-break: break-word; font-size: 1em; }
+        .item-details-wrapper { display: flex; flex-grow: 1; gap: 15px; align-items: center; }
+        .item-cell.desc { flex-grow: 1; } 
+        .list-item.selected { background-color: #e8f0fe; } 
+        .btn-delete-item { background-color: #e74c3c; color: white; border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.3s ease; }
+        .btn-delete-item svg { width: 20px; height: 20px; }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); display: none; justify-content: center; align-items: center; z-index: 2000; }
+        .modal-content { background-color: white; padding: 30px 40px; border-radius: 15px; box-shadow: 0 8px 30px rgba(0,0,0,0.1); text-align: center; width: 90%; max-width: 450px; }
+        .modal-actions { display: flex; justify-content: center; gap: 15px; margin-top: 25px; }
+        .btn-modal { padding: 10px 25px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; }
+        .btn-primary { background-color: #4285F4; color: white; }
+        .btn-secondary { background-color: #6c757d; color: white; }
+        .btn-danger { background-color: #dc3545; color: white; }
+        #notification-toast { position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%); padding: 15px 25px; border-radius: 8px; color: white; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.2); z-index: 3000; transition: bottom 0.5s ease-in-out; }
+        #notification-toast.show { bottom: 30px; }
+        #notification-toast.success { background-color: #28a745; }
+        #notification-toast.error { background-color: #dc3545; }
+        #notification-toast.info { background-color: #17a2b8; }
+    </style>
+</head>
+<body>
+    <header class="app-header">
+        <div class="header-left">
+            <button id="back-btn" class="btn-back">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-left"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                Volver
+            </button>
+            <button id="menu-btn" class="btn-back">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-menu"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+                Menú
+            </button>
+        </div>
+        <div class="user-info">
+            <span id="user-display-name"></span>
+            <button id="logout-btn" class="logout-btn">Cerrar sesión</button>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div class="title-card">
+            <h1 id="box-serial-number-display">Cargando...</h1>
+        </div>
+
+
+
+        <div class="controls-container">
+            <div class="search-bar-container">
+                <input type="text" id="searchInput" placeholder="Buscar por código, descripción o N° de serie...">
+            </div>
+            <button id="add-item-btn" class="btn-action">(+) Agregar Ítem</button>
+            <button id="download-pdf-btn" class="btn-action">Reporte</button>
+        </div>
+        <div id="list-container" class="list-container">
+            <div id="loading-state">Cargando ítems...</div>
+            <div id="empty-state" style="display: none;">No hay ítems registrados en esta caja.</div>
+            <div id="error-state" style="display: none;">Error al cargar los ítems.</div>
+            <ul id="itemsList" class="item-list"></ul>
+        </div>
+    </main>
+
+    <div id="editSerialModal" class="modal-overlay">
+        <div class="modal-content">
+            <h2>Editar Número de Serie</h2>
+            <p id="modalItemCodeDescription" style="margin-bottom: 20px; font-style: italic;"></p>
+            <input type="text" id="newSerialNumberInput" placeholder="Nuevo N° de Serie">
+            <div class="modal-actions">
+                <button id="cancelEditBtn" class="btn-modal btn-secondary">Cancelar</button>
+                <button id="confirmEditBtn" class="btn-modal btn-primary">Confirmar</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="deleteConfirmModal" class="modal-overlay">
+        <div class="modal-content">
+            <h2>Confirmar Eliminación</h2>
+            <p id="delete-modal-text" style="font-size: 1.1em; margin: 20px 0;"></p>
+            <div class="modal-actions">
+                <button id="cancel-delete-btn" class="btn-modal btn-secondary">Cancelar</button>
+                <button id="confirm-delete-btn" class="btn-modal btn-danger">Eliminar</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="tipoReporteModal" class="modal-overlay">
+        <div class="modal-content">
+            <h2>Tipo de Reporte</h2>
+            <p>¿El reporte es para una Entrada o una Salida de material?</p>
+            <div class="modal-actions">
+                <button id="btn-entrada" class="btn-modal btn-primary">Entrada</button>
+                <button id="btn-salida" class="btn-modal btn-secondary">Salida</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="prestamoModal" class="modal-overlay">
+        <div class="modal-content">
+            <h2>Número de Préstamo</h2>
+            <p>Por favor, ingresa el número de préstamo para este reporte de Salida.</p>
+            <input type="text" id="prestamo-input" placeholder="Ej: 12345">
+            <div class="modal-actions">
+                <button id="cancel-prestamo-btn" class="btn-modal btn-secondary">Cancelar</button>
+                <button id="confirm-prestamo-btn" class="btn-modal btn-primary">Generar PDF</button>
+            </div>
+        </div>
+    </div>
+    <div id="observationModal" class="modal-overlay">
+        <div class="modal-content">
+            <h2>Observaciones de la Caja</h2>
+            <p>¿La caja tiene alguna observación para declarar?</p>
+            <div class="modal-actions">
+                <button id="no-observation-btn" class="btn-modal btn-secondary">No</button>
+                <button id="yes-observation-btn" class="btn-modal btn-primary">Sí</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="notification-toast"></div>
+
+    <div id="pdf-template" style="position: absolute; left: -9999px; width: 800px; padding: 20px; background-color: white; color: black;">
+        <h2 id="pdf-report-title" style="font-size: 18px; text-align: center;">REPORTE</h2>
+        <h3 id="pdf-box-serial" style="font-size: 16px;">Caja: </h3>
+        <h4 id="pdf-tipo" style="font-size: 14px;">Tipo: </h4>
+        <h4 id="pdf-prestamo-num" style="display: none; font-size: 14px;"></h4>
+        <table style="width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px;">
+            <thead>
+                <tr>
+                    <th style="border: 1px solid black; padding: 6px; text-align: left; white-space: nowrap;">Código</th>
+                    <th style="border: 1px solid black; padding: 6px; text-align: left;">Descripción</th>
+                    <th style="border: 1px solid black; padding: 6px; text-align: left; white-space: nowrap;">N° de Serie</th>
+                </tr>
+            </thead>
+            <tbody id="pdf-table-body"></tbody>
+        </table>
+    </div>
+    
+    <script type="module" src="js/lista-items-por-caja.js"></script>
+</body>
+</html>

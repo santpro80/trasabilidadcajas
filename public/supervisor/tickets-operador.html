@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestión de Tickets</title>
+    <title>Mis Tickets</title>
     <style>
     body {
         font-family: 'Inter', Arial, sans-serif;
@@ -115,7 +115,7 @@
 
     .status-abierto {
         background-color: #e8f5e9; 
-        color: #2e7d32;
+        color: #2e7d32; 
     }
 
     .status-cerrado {
@@ -295,40 +295,14 @@
 </head>
 <body>
     <header>
-        <h1>Gestión de Tickets</h1>
+        <h1>Mis Tickets</h1>
         <button id="menu-btn">Menú</button>
     </header>
     <main>
         <button id="crear-ticket-btn">Crear Nuevo Ticket</button>
-        <div class="filtros">
-            <label for="filtro-estado">Filtrar por estado:</label>
-            <select id="filtro-estado">
-                <option value="todos">Todos</option>
-                <option value="abierto">Abiertos</option>
-                <option value="cerrado">Cerrados</option>
-            </select>
-        </div>
         <div id="tickets-container">
         </div>
     </main>
-    <script type="module">
-        import { auth, db, onAuthStateChanged, doc, getDoc } from '/supervisor/js/firebase-config.js';
-
-        onAuthStateChanged(auth, async (user) => {
-            if (!user) {
-                window.location.href = '/login.html';
-                return;
-            }
-
-            const userRef = doc(db, 'users', user.uid);
-            const userSnap = await getDoc(userRef);
-            
-            if (!userSnap.exists() || userSnap.data().role !== 'supervisor') {
-                alert('Acceso denegado: Esta página es exclusiva para supervisores.');
-                window.location.href = '/supervisor/menu.html';
-            }
-        });
-    </script>
-    <script type="module" src="/supervisor/js/tickets-supervisor.js"></script>
+    <script type="module" src="js/tickets-operador.js"></script>
 </body>
 </html>
