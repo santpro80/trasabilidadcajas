@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Menú Principal - Sistema de Cajas</title>
-    <link rel="icon" href="/supervisor/assets/logo.png" type="image/png">
+    <link rel="icon" href="assets/logo.png" type="image/png">
     <style>
         body { font-family: 'Inter', Arial, sans-serif; margin: 0; min-height: 100vh; display: flex; flex-direction: column; background: linear-gradient(135deg, #6e8efb, #a777e3); color: #2c3e50; }
         .app-header {
@@ -65,7 +65,7 @@
     <header class="app-header">
         <div class="header-left">
             <div class="small-logo">
-                <img src="/supervisor/assets/logo.png" alt="Logo">
+                <img src="assets/logo.png" alt="Logo">
             </div>
             <div class="user-display-name" id="user-display-name">Cargando...</div>
         </div>
@@ -227,9 +227,9 @@
     </main>
 
     <script type="module">
-        import { auth, db, onAuthStateChanged, signOut, doc, getDoc, collection, query, where, onSnapshot, addDoc, serverTimestamp } from '/supervisor/js/firebase-config.js';
-        import { setupTicketNotifications } from '/supervisor/js/global-notifications.js';
-        import { requestNotificationPermission } from '/supervisor/js/fcm-setup.js';
+        import { auth, db, onAuthStateChanged, signOut, doc, getDoc, collection, query, where, onSnapshot, addDoc, serverTimestamp } from './js/firebase-config.js';
+        import { setupTicketNotifications } from './js/global-notifications.js';
+        import { requestNotificationPermission } from './js/fcm-setup.js';
 
         const userDisplayElement = document.getElementById('user-display-name');
         const logoutBtn = document.getElementById('logout-btn');
@@ -254,7 +254,7 @@
         // Register Service Worker
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/supervisor/firebase-messaging-sw.js')
+                navigator.serviceWorker.register('firebase-messaging-sw.js')
                     .then(registration => {
                         console.log('Service Worker registered successfully:', registration);
                         swRegistration = registration;
@@ -315,14 +315,14 @@
                     manageMenuVisibility('operario');
                 }
             } else {
-                window.location.href = '/login.html';
+                window.location.href = '../login.html';
             }
         });
 
         logoutBtn?.addEventListener('click', async () => {
             try {
                 await signOut(auth);
-                window.location.href = '/login.html';
+                window.location.href = '../login.html';
             } catch (error) {
                 console.error('Error al cerrar sesión: ', error);
             }
@@ -379,8 +379,8 @@
                                     // Mostramos la notificación desde el Service Worker
                                     await reg.showNotification('Prueba Exitosa', {
                                         body: '¡El sistema de notificaciones está activo en el Menú!',
-                                        icon: '/supervisor/assets/logo.png',
-                                        badge: '/supervisor/assets/logo.png',
+                                        icon: 'assets/logo.png',
+                                        badge: 'assets/logo.png',
                                         vibrate: [200, 100, 200],
                                         tag: 'test-notification',
                                         data: { url: window.location.href }

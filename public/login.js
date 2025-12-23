@@ -1,4 +1,4 @@
-import { auth, db, signInWithEmailAndPassword, collection, query, where, getDocs } from '/supervisor/js/firebase-config.js';
+import { auth, db, signInWithEmailAndPassword, collection, query, where, getDocs } from './supervisor/js/firebase-config.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     const loginForm = document.getElementById("loginForm");
@@ -45,12 +45,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.log(`¡Inicio de sesión exitoso! Rol de usuario: "${userRole}". Redirigiendo...`);
 
                 if (userRole === 'supervisor') {
-                    window.location.href = '/supervisor/menu.html';
+                    window.location.href = 'supervisor/menu.html';
                 } else if (userRole === 'mantenimiento') {
-                    window.location.href = '/mantenimiento/menu.html';
+                    window.location.href = 'mantenimiento/menu.html';
                 } else {
                     // Redirección por defecto para 'operario' y otros roles
-                    window.location.href = '/operario/menu.html';
+                    window.location.href = 'operario/menu.html';
                 }
 
             } catch (error) {
