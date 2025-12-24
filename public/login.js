@@ -31,12 +31,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 let userEmail = '';
-                let userRole = ''; // Variable para almacenar el rol
+                let userRole = ''; 
                 querySnapshot.forEach((doc) => {
                     console.log("Documento encontrado:", doc.id, "=>", doc.data());
                     const userData = doc.data();
                     userEmail = userData.email;
-                    userRole = userData.role; // Capturamos el rol
+                    userRole = userData.role; 
                 });
 
                 console.log(`Email encontrado: "${userEmail}". Intentando iniciar sesión...`);
