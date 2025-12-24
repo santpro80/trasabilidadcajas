@@ -2,6 +2,7 @@
 const functions = require('firebase-functions');
 const functionsV1 = require('firebase-functions/v1');
 const admin = require('firebase-admin');
+const { onDocumentCreated } = require("firebase-functions/v2/firestore");
 // const { AuthorizationCode } = require('simple-oauth2');
 // const axios = require('axios');
 
