@@ -162,20 +162,17 @@
         const btnNotifications = document.getElementById('btn-notifications');
 
         let currentUserRole = 'operario';
-        let swRegistration = null; // To store the service worker registration
 
         // Register Service Worker
         if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/firebase-messaging-sw.js')
-                    .then(registration => {
-                        console.log('Service Worker registered successfully:', registration);
-                        swRegistration = registration;
-                    })
-                    .catch(error => {
-                        console.error('Service Worker registration failed:', error);
-                    });
-            });
+            // Usamos ./ para buscar el archivo en la carpeta actual (mantenimiento)
+            navigator.serviceWorker.register('./firebase-messaging-sw.js')
+                .then(registration => {
+                    console.log('Service Worker registered successfully:', registration);
+                })
+                .catch(error => {
+                    console.error('Service Worker registration failed:', error);
+                });
         }
 
 
@@ -259,12 +256,13 @@
         btnVerProblemas?.addEventListener('click', () => { window.location.href = 'ver-problemas.html'; });
         btnBuscarPrestamo?.addEventListener('click', () => { window.location.href = 'buscar-por-prestamo.html'; });
         
-        btnNotifications?.addEventListener('click', () => {
-            if (swRegistration) {
-                requestNotificationPermission(swRegistration);
+        btnNotifications?.addEventListener('click', async () => {
+            if ('serviceWorker' in navigator) {
+                // Esperamos a que el Service Worker esté listo de forma segura
+                const registration = await navigator.serviceWorker.ready;
+                requestNotificationPermission(registration);
             } else {
-                console.error('Service worker not registered yet.');
-                alert('El servicio de notificaciones no está listo. Por favor, recarga la página.');
+                alert('Tu navegador no soporta notificaciones.');
             }
         });
 
