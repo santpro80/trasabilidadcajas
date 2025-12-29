@@ -31,7 +31,7 @@ export async function requestNotificationPermission(swRegistration) {
             
             // Get the token
             const currentToken = await getToken(messaging, {
-                vapidKey: 'BPQIroB0ifnE-s0a2aNXt5wMQnkB6iEGx-XvEjrNdfaXHKbqX_P129nJpiRlCHQTixNQMNzxtm-jyL07Vf4Bba4',
+                vapidKey: 'BG4QdDY4hAMlOvqumgnAEHS-7L7RIzYYrJAyHmYlnnHHQ7QDkW3rq8cIgiE4esI3i7zEpAhUWoLK8KN6aaRkcOk',
                 serviceWorkerRegistration: swRegistration // Pass the registration object
             });
 

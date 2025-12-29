@@ -20,9 +20,11 @@ getTokenBtn.addEventListener('click', async () => {
     try {
         // 1. Registrar el Service Worker desde la raíz de la carpeta 'mantenimiento'
         statusDiv.textContent = 'Estado: Registrando Service Worker...';
-        const registration = await navigator.serviceWorker.register('../firebase-messaging-sw.js');
-        statusDiv.textContent = `Estado: Service Worker registrado con éxito.`;
-        console.log('Service Worker Registration:', registration);
+        await navigator.serviceWorker.register('../firebase-messaging-sw.js');
+        statusDiv.textContent = `Estado: Service Worker registrado. Esperando activación...`;
+        const readyRegistration = await navigator.serviceWorker.ready;
+        statusDiv.textContent = `Estado: Service Worker activo.`;
+        console.log('Service Worker Registration (ready):', readyRegistration);
 
         // 2. Pedir permiso de notificación
         statusDiv.textContent = 'Estado: Pidiendo permiso para notificaciones...';
@@ -39,8 +41,8 @@ getTokenBtn.addEventListener('click', async () => {
 
         // 3. Obtener el token
         const currentToken = await getToken(messaging, {
-            vapidKey: 'BPQIroB0ifnE-s0a2aNXt5wMQnkB6iEGx-XvEjrNdfaXHKbqX_P129nJpiRlCHQTixNQMNzxtm-jyL07Vf4Bba4',
-            serviceWorkerRegistration: registration
+            vapidKey: 'BG4QdDY4hAMlOvqumgnAEHS-7L7RIzYYrJAyHmYlnnHHQ7QDkW3rq8cIgiE4esI3i7zEpAhUWoLK8KN6aaRkcOk',
+            serviceWorkerRegistration: readyRegistration
         });
 
         statusDiv.textContent = '¡Proceso finalizado!';
