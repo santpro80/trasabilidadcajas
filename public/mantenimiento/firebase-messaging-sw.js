@@ -30,10 +30,10 @@ messaging.onBackgroundMessage((payload) => {
     icon: '/assets/logo.png',
     badge: '/assets/logo.png', // Icono pequeño para la barra de estado
     vibrate: [200, 100, 200],  // Patrón de vibración: vibra, pausa, vibra
-    tag: 'renotify',           // Etiqueta para agrupar
-    renotify: true,            // Vuelve a sonar si llega otra
+    tag: 'renotify',          
+    renotify: true,           
     data: {
-      url: payload.data?.url || '/' // Guardamos la URL para usarla al hacer clic
+      url: payload.data?.url || '/' 
     }
   };
 

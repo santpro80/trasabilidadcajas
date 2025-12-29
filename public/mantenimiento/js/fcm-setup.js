@@ -1,9 +1,12 @@
 // public/js/fcm-setup.js
-import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-messaging.js";
-import { doc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-import { app, db, auth } from './firebase-config.js';
+import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging.js";
+import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getAuth } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { app } from './firebase-config.js';
 
 const messaging = getMessaging(app);
+const db = getFirestore(app);
+const auth = getAuth(app);
 
 // Function to save the FCM token to Firestore
 async function saveTokenToFirestore(token) {
@@ -31,7 +34,7 @@ export async function requestNotificationPermission(swRegistration) {
             
             // Get the token
             const currentToken = await getToken(messaging, {
-                vapidKey: 'BF7SA1q5HqzeYubSor2J2YHOca5EIKKeXhSuKxIWq5519jAeLZCvhC6l1MlN71bUn8UVArCXpy4SN-UeS1b9xqg',
+                vapidKey: 'BEh2_5vq3Q866vh4TsrE9kTQaUdYlN1CIT_YL8Vz-A01KJ1MV6iTa7T6ZAeUKZcs8K3rBS6Vmoy8dV08ZCeZ1j4',
                 serviceWorkerRegistration: swRegistration // Pass the registration object
             });
 
