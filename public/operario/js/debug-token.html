@@ -23,7 +23,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getMessaging, getToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-messaging.js";
+        import { getMessaging, getToken, deleteToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-messaging.js";
 
         const statusDiv = document.getElementById('status');
         const resultDiv = document.getElementById('result');
@@ -67,6 +67,15 @@
 
                 const app = initializeApp(firebaseConfig);
                 const messaging = getMessaging(app);
+
+                // INTENTO DE LIMPIEZA PROFUNDA: Borrar token anterior
+                try {
+                    statusDiv.textContent = 'Estado: Intentando limpiar token anterior...';
+                    await deleteToken(messaging);
+                    console.log("Token anterior eliminado.");
+                } catch (e) {
+                    console.log("No se pudo eliminar token anterior (esto es normal si no había).");
+                }
 
                 const currentToken = await getToken(messaging, { vapidKey, serviceWorkerRegistration: readyRegistration });
 
