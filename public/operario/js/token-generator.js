@@ -18,6 +18,13 @@ getTokenBtn.addEventListener('click', async () => {
     }
 
     try {
+        // LIMPIEZA: Desregistrar cualquier Service Worker previo para evitar conflictos
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        for(let registration of registrations) {
+            await registration.unregister();
+            console.log("Service Worker antiguo desregistrado.");
+        }
+
         // 1. Registrar el Service Worker desde la raíz de la carpeta 'mantenimiento'
         statusDiv.textContent = 'Estado: Registrando Service Worker...';
         await navigator.serviceWorker.register('../firebase-messaging-sw.js');

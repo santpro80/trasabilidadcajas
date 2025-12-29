@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Prueba de Fuego - Token FCM</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; padding: 20px; line-height: 1.6; }
+        #status { font-weight: bold; }
+        #result { padding: 15px; border-radius: 8px; margin-top: 10px; word-break: break-all; border: 1px solid #ccc; background-color: #f8f9fa; min-height: 50px; }
+        .error { color: #721c24; background-color: #f8d7da; border-color: #f5c6cb; }
+        .success { color: #155724; background-color: #d4edda; border-color: #c3e6cb; }
+        button { font-size: 1.2em; padding: 10px 20px; cursor: pointer; background-color: #007bff; color: white; border: none; border-radius: 5px;}
+    </style>
+</head>
+<body>
+    <h1>Prueba de Fuego para Token de Notificaciones</h1>
+    <p>Esta página es para aislar el problema. Limpiará cualquier configuración vieja y intentará obtener el token con las credenciales más recientes.</p>
+    <p><b>Instrucción:</b> Abre esta página, abre la consola (F12) y luego haz clic en el botón.</p>
+
+    <button id="get-token-btn">Obtener Token Ahora</button>
+    <h3 id="status">Estado: Esperando...</h3>
+    <div id="result"></div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getMessaging, getToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-messaging.js";
+
+        const statusDiv = document.getElementById('status');
+        const resultDiv = document.getElementById('result');
+        const getTokenBtn = document.getElementById('get-token-btn');
+
+        // --- VERIFICA QUE ESTOS DATOS SEAN IDÉNTICOS A LOS DE TU CONSOLA DE FIREBASE ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyBtj9fa0St2IMZgo4jfNPsz_3EMVtioyGU",
+            authDomain: "cajas-secuela.firebaseapp.com",
+            projectId: "cajas-secuela",
+            storageBucket: "cajas-secuela.firebasestorage.app",
+            messagingSenderId: "551056516132", // <-- ¡DOBLE CHEQUEA ESTE NÚMERO!
+            appId: "1:551056516132:web:88b9da72dd8dd1a8e7a4b1"
+        };
+
+        const vapidKey = "BG4QdDY4hAMlOvqumgnAEHS-7L7RIzYYrJAyHmYlnnHHQ7QDkW3rq8cIgiE4esI3i7zEpAhUWoLK8KN6aaRkcOk"; // La última que generaste
+        // --------------------------------------------------------------------------
+
+        getTokenBtn.addEventListener('click', async () => {
+            resultDiv.textContent = '';
+            resultDiv.className = '';
+            statusDiv.textContent = 'Estado: Iniciando...';
+
+            try {
+                const registrations = await navigator.serviceWorker.getRegistrations();
+                for (const registration of registrations) {
+                    await registration.unregister();
+                }
+                statusDiv.textContent = 'Estado: Service Workers viejos eliminados.';
+
+                await navigator.serviceWorker.register('../firebase-messaging-sw.js');
+                statusDiv.textContent = 'Estado: Service Worker nuevo registrado. Esperando activación...';
+                
+                const readyRegistration = await navigator.serviceWorker.ready;
+                statusDiv.textContent = 'Estado: Service Worker ACTIVO. Pidiendo permiso...';
+
+                const permission = await Notification.requestPermission();
+                if (permission !== 'granted') throw new Error('Permiso de notificación denegado por el usuario.');
+                
+                statusDiv.textContent = 'Estado: Permiso concedido. Obteniendo token de Google...';
+
+                const app = initializeApp(firebaseConfig);
+                const messaging = getMessaging(app);
+
+                const currentToken = await getToken(messaging, { vapidKey, serviceWorkerRegistration: readyRegistration });
+
+                if (!currentToken) throw new Error('Google no devolvió un token. Revisa que el Sender ID y la VAPID Key sean correctos.');
+
+                statusDiv.textContent = '¡ÉXITO TOTAL!';
+                resultDiv.textContent = currentToken;
+                resultDiv.className = 'success';
+
+            } catch (err) {
+                statusDiv.textContent = '¡ERROR!';
+                resultDiv.innerHTML = `<strong>${err.name}:</strong> ${err.message}`;
+                resultDiv.className = 'error';
+                console.error("Error en la prueba de fuego:", err);
+            }
+        });
+    </script>
+</body>
+</html>
