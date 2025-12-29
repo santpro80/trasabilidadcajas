@@ -140,9 +140,11 @@
     </main>
 
     <script type="module">
-        import { auth, db, onAuthStateChanged, signOut, doc, getDoc, collection, query, where, onSnapshot, addDoc, serverTimestamp } from './js/firebase-config.js';
+        import { auth, db, onAuthStateChanged, signOut, doc, getDoc, updateDoc, collection, query, where, onSnapshot, addDoc, serverTimestamp, getMessaging, getToken } from './js/firebase-config.js';
         import { setupTicketNotifications } from './js/global-notifications.js';
         import { requestNotificationPermission } from './js/fcm-setup.js';
+
+        const VAPID_KEY = "BG4QdDY4hAMlOvqumgnAEHS-7L7RIzYYrJAyHmYlnnHHQ7QDkW3rq8cIgiE4esI3i7zEpAhUWoLK8KN6aaRkcOk";
 
         const userDisplayElement = document.getElementById('user-display-name');
         const logoutBtn = document.getElementById('logout-btn');
@@ -209,6 +211,49 @@
             if (liTickets) liTickets.style.display = 'list-item';
         };
 
+        async function initializeAndSaveFcmToken(user, userRole, userDocSnap) {
+            if (userRole !== 'mantenimiento') {
+                console.log("Usuario no es de mantenimiento, no se registra token FCM.");
+                return;
+            }
+
+            console.log("Usuario de mantenimiento detectado. Iniciando proceso de token FCM...");
+
+            try {
+                const permission = await Notification.requestPermission();
+                if (permission === 'granted') {
+                    console.log('Permiso de notificación concedido.');
+                    
+                    const app = auth.app; // Obtener la instancia de la app inicializada
+                    const messaging = getMessaging(app);
+                    const swRegistration = await navigator.serviceWorker.ready;
+
+                    const currentToken = await getToken(messaging, {
+                        vapidKey: VAPID_KEY,
+                        serviceWorkerRegistration: swRegistration,
+                    });
+
+                    if (currentToken) {
+                        console.log('Token FCM obtenido:', currentToken);
+                        const userDocData = userDocSnap.data();
+                        
+                        if (userDocData.fcmToken !== currentToken) {
+                            console.log('El token es nuevo o ha cambiado. Actualizando en Firestore...');
+                            const userDocRef = doc(db, "users", user.uid);
+                            await updateDoc(userDocRef, { fcmToken: currentToken });
+                            console.log('Token FCM guardado en Firestore para el usuario.');
+                        } else {
+                            console.log('El token FCM ya está actualizado en Firestore.');
+                        }
+                    } else {
+                        console.warn('No se pudo obtener el token FCM. El usuario no recibirá notificaciones push.');
+                    }
+                }
+            } catch (error) {
+                console.error('Error al inicializar y guardar el token FCM:', error);
+            }
+        }
+
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 try {
@@ -218,6 +263,7 @@
                         const userData = userDocSnap.data();
                         if (userDisplayElement) userDisplayElement.textContent = userData.name || user.email;
                         currentUserRole = userData.role || 'operario';
+                        await initializeAndSaveFcmToken(user, currentUserRole, userDocSnap);
                     } else {
                         if (userDisplayElement) userDisplayElement.textContent = user.email;
                         currentUserRole = 'operario';
