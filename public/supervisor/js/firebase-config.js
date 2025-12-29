@@ -183,6 +183,6 @@ export const showNotification = (message, type = 'success') => {
 export { 
     httpsCallable, onAuthStateChanged, signOut, signInWithEmailAndPassword,
     createUserWithEmailAndPassword, updatePassword, reauthenticateWithCredential,
-    EmailAuthProvider, doc, getDoc, setDoc, updateDoc, deleteField, deleteDoc, limit, getToken,
-    collection, query, orderBy, onSnapshot, getDocs, where, serverTimestamp, addDoc, increment, arrayUnion,
+    EmailAuthProvider, doc, getDoc, setDoc, updateDoc, deleteField, deleteDoc, limit, getMessaging, getToken,
+    collection, query, orderBy, onSnapshot, getDocs, where, serverTimestamp, addDoc, increment, arrayUnion
 };
