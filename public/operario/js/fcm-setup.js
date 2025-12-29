@@ -69,7 +69,7 @@ onMessage(messaging, (payload) => {
     notification.onclick = (event) => {
         event.preventDefault(); // prevent the browser from focusing the Notification's tab
         // Implement custom logic, e.g., open a specific URL
-        // window.open(payload.data.url, '_blank');
+        // window.open(payload.data.url, '_blank'); ....
         console.log('Notification clicked.');
     };
 });
