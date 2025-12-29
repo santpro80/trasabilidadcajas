@@ -46,6 +46,7 @@ export async function requestNotificationPermission(swRegistration) {
         }
     } catch (error) {
         console.error('An error occurred while requesting permission or getting token:', error);
+        alert("Error de conexión al activar notificaciones. \n\nSi estás en una red corporativa (Wi-Fi del trabajo), intenta usar los datos de tu celular (4G). \n\nDetalle: " + error.message);
     }
 }
 
