@@ -46,7 +46,6 @@ self.addEventListener('notificationclick', (event) => {
   
   event.notification.close(); // Cerramos la notificación visualmente
 
-  // Intentamos enfocar la ventana si ya está abierta, o abrir una nueva
   const urlToOpen = event.notification.data?.url || '/';
 
   event.waitUntil(

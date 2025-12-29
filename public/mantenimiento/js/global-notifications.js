@@ -34,7 +34,11 @@ export function setupTicketNotifications(db, collection, query, where, onSnapsho
 
         updateNotificationBadge(totalUnread);
     }, (error) => {
-        console.error("Error listening for ticket notifications:", error);
+        if (error.code === 'permission-denied') {
+            console.warn("⚠️ Permisos insuficientes para ver notificaciones de tickets. (Posible bloqueo de App Check o Reglas de Firestore)");
+        } else {
+            console.error("Error listening for ticket notifications:", error);
+        }
     });
 }
 

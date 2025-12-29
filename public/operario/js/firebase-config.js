@@ -24,7 +24,9 @@ const firebaseConfig = {
 export const app = initializeApp(firebaseConfig);
 
 // Enable App Check debug mode
-self.FIREBASE_APPCHECK_DEBUG_TOKEN = 'd29325f5-b651-4ccf-accc-620340596658';
+if (location.hostname === "localhost" || location.hostname === "127.0.0.1") {
+    self.FIREBASE_APPCHECK_DEBUG_TOKEN = 'd29325f5-b651-4ccf-accc-620340596658';
+}
 
 // Initialize App Check
 export const appCheck = initializeAppCheck(app, {
