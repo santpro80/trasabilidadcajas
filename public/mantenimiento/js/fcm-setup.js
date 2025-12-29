@@ -1,12 +1,9 @@
 // public/js/fcm-setup.js
-import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging.js";
-import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { getAuth } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { app } from './firebase-config.js';
+import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-messaging.js";
+import { doc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { app, db, auth } from './firebase-config.js';
 
 const messaging = getMessaging(app);
-const db = getFirestore(app);
-const auth = getAuth(app);
 
 // Function to save the FCM token to Firestore
 async function saveTokenToFirestore(token) {

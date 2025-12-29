@@ -16,6 +16,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const backBtn = document.getElementById('back-btn');
 
     let currentUser = null;
+
+    // Forzar mayúsculas al escribir el serial
+    if (cajaSerialInput) {
+        cajaSerialInput.addEventListener('input', (e) => {
+            e.target.value = e.target.value.toUpperCase();
+        });
+    }
+
     onAuthStateChanged(auth, (user) => {
         if (user) {
             currentUser = user;
