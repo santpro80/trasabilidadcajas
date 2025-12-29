@@ -20,7 +20,7 @@ getTokenBtn.addEventListener('click', async () => {
     try {
         // 1. Registrar el Service Worker desde la raíz de la carpeta 'mantenimiento'
         statusDiv.textContent = 'Estado: Registrando Service Worker...';
-        const registration = await navigator.serviceWorker.register('./firebase-messaging-sw.js');
+        const registration = await navigator.serviceWorker.register('../firebase-messaging-sw.js');
         statusDiv.textContent = `Estado: Service Worker registrado con éxito.`;
         console.log('Service Worker Registration:', registration);
 
