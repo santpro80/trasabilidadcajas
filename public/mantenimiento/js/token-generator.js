@@ -39,7 +39,7 @@ getTokenBtn.addEventListener('click', async () => {
 
         // 3. Obtener el token
         const currentToken = await getToken(messaging, {
-            vapidKey: 'BEh2_5vq3Q866vh4TsrE9kTQaUdYlN1CIT_YL8Vz-A01KJ1MV6iTa7T6ZAeUKZcs8K3rBS6Vmoy8dV08ZCeZ1j4',
+            vapidKey: 'BPQIroB0ifnE-s0a2aNXt5wMQnkB6iEGx-XvEjrNdfaXHKbqX_P129nJpiRlCHQTixNQMNzxtm-jyL07Vf4Bba4',
             serviceWorkerRegistration: registration
         });
 
