@@ -138,14 +138,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const schemaToSave = {};
                 let itemCount = 0;
+                const occurrences = {};
 
                 for (const row of results.data) {
                     const codigo = row[0]?.trim();
                     const descripcion = row[1]?.trim();
 
                     if (codigo && descripcion) {
-                        const itemName = `${codigo};${descripcion}`;
-                        schemaToSave[itemName] = ""; // Cada ítem es un campo con valor ""
+                        const baseItemName = `${codigo};${descripcion}`;
+                        let uniqueItemName = baseItemName;
+
+                        if (occurrences[baseItemName]) {
+                            occurrences[baseItemName]++;
+                            uniqueItemName = `${baseItemName} (${occurrences[baseItemName]})`;
+                        } else {
+                            occurrences[baseItemName] = 1;
+                        }
+
+                        while (schemaToSave.hasOwnProperty(uniqueItemName)) {
+                            occurrences[baseItemName]++;
+                            uniqueItemName = `${baseItemName} (${occurrences[baseItemName]})`;
+                        }
+
+                        schemaToSave[uniqueItemName] = ""; 
                         itemCount++;
                     }
                 }
