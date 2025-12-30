@@ -136,6 +136,7 @@
                 </ul>
             </nav>
             <button id="btn-test-notify" style="margin-top: 20px; width: 100%; padding: 15px; background-color: #34a853; color: white; border: none; border-radius: 10px; font-size: 1.1em; cursor: pointer;">🔔 Probar Notificación (5s)</button>
+            <button id="btn-force-token" style="margin-top: 10px; width: 100%; padding: 15px; background-color: #f0ad4e; color: white; border: none; border-radius: 10px; font-size: 1.1em; cursor: pointer; display: none;">🔄 Conectar Alertas (Mantenimiento)</button>
         </div>
     </main>
 
@@ -162,6 +163,7 @@
         const btnBuscarPrestamo = document.getElementById('btn-buscar-prestamo');
         const btnGestionUsuarios = document.getElementById('btn-gestion-usuarios');
         const btnNotifications = document.getElementById('btn-notifications');
+        const btnForceToken = document.getElementById('btn-force-token');
 
         let currentUserRole = 'operario';
 
@@ -211,46 +213,39 @@
             if (liTickets) liTickets.style.display = 'list-item';
         };
 
-        async function initializeAndSaveFcmToken(user, userRole, userDocSnap) {
-            if (userRole !== 'mantenimiento') {
-                console.log("Usuario no es de mantenimiento, no se registra token FCM.");
-                return;
-            }
-
-            console.log("Usuario de mantenimiento detectado. Iniciando proceso de token FCM...");
-
+        // Función MANUAL y VERBOSA para guardar el token
+        async function saveFcmToken(user) {
             try {
+                console.log("Iniciando proceso manual de token...");
                 const permission = await Notification.requestPermission();
-                if (permission === 'granted') {
-                    console.log('Permiso de notificación concedido.');
-                    
-                    const app = auth.app; // Obtener la instancia de la app inicializada
-                    const messaging = getMessaging(app);
-                    const swRegistration = await navigator.serviceWorker.ready;
+                
+                if (permission !== 'granted') {
+                    alert('❌ Permiso denegado. Debes permitir notificaciones en el navegador.');
+                    return;
+                }
 
-                    const currentToken = await getToken(messaging, {
-                        vapidKey: VAPID_KEY,
-                        serviceWorkerRegistration: swRegistration,
-                    });
+                const app = auth.app;
+                const messaging = getMessaging(app);
+                
+                // Esperamos al Service Worker
+                const swRegistration = await navigator.serviceWorker.ready;
 
-                    if (currentToken) {
-                        console.log('Token FCM obtenido:', currentToken);
-                        const userDocData = userDocSnap.data();
-                        
-                        if (userDocData.fcmToken !== currentToken) {
-                            console.log('El token es nuevo o ha cambiado. Actualizando en Firestore...');
-                            const userDocRef = doc(db, "users", user.uid);
-                            await updateDoc(userDocRef, { fcmToken: currentToken });
-                            console.log('Token FCM guardado en Firestore para el usuario.');
-                        } else {
-                            console.log('El token FCM ya está actualizado en Firestore.');
-                        }
-                    } else {
-                        console.warn('No se pudo obtener el token FCM. El usuario no recibirá notificaciones push.');
-                    }
+                const currentToken = await getToken(messaging, {
+                    vapidKey: VAPID_KEY,
+                    serviceWorkerRegistration: swRegistration,
+                });
+
+                if (currentToken) {
+                    console.log('Token obtenido:', currentToken);
+                    const userDocRef = doc(db, "users", user.uid);
+                    await updateDoc(userDocRef, { fcmToken: currentToken });
+                    alert('✅ ¡Conectado!\nTu dispositivo ahora recibirá las alertas de cajas con problemas.');
+                } else {
+                    alert('⚠️ No se pudo generar el token. Revisa la consola (F12).');
                 }
             } catch (error) {
-                console.error('Error al inicializar y guardar el token FCM:', error);
+                console.error('Error al guardar token:', error);
+                alert('❌ Error: ' + error.message);
             }
         }
 
@@ -263,7 +258,11 @@
                         const userData = userDocSnap.data();
                         if (userDisplayElement) userDisplayElement.textContent = userData.name || user.email;
                         currentUserRole = userData.role || 'operario';
-                        await initializeAndSaveFcmToken(user, currentUserRole, userDocSnap);
+                        
+                        // Mostrar botón solo si es mantenimiento
+                        if (currentUserRole === 'mantenimiento') {
+                            if(btnForceToken) btnForceToken.style.display = 'block';
+                        }
                     } else {
                         if (userDisplayElement) userDisplayElement.textContent = user.email;
                         currentUserRole = 'operario';
@@ -309,6 +308,13 @@
                 requestNotificationPermission(registration);
             } else {
                 alert('Tu navegador no soporta notificaciones.');
+            }
+        });
+
+        // Evento para el nuevo botón manual
+        btnForceToken?.addEventListener('click', () => {
+            if (auth.currentUser) {
+                saveFcmToken(auth.currentUser);
             }
         });
 
