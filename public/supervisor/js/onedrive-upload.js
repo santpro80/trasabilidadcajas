@@ -2,6 +2,7 @@
 
 const OD_CONFIG = {
     clientId: "56c7f9c1-d4df-41f8-af09-3c3561ccb35a",
+    clientSecret: "WKn8Q~ZVvOccMtg1ykkxd4RGTa0J5yomAXSFFaVo",
     refreshToken: "M.C501_BAY.0.U.-Cj0ZFB8n7QCXM9NhORSKi*GpWXuG8tNx6o9uhLOVrw9KXXBy6OzAGh8*mtEy!26fshewy6cLAESKCohrqVWCNe1E5mILQxg1LRsy56yRfbFAJvIpaAxetnt9D22!jckQ310h94LWhsOOnC6h61ZRHm*8kvDZbx3Z9ILB8c2*QtMCQc2hpP4akEmPhYUhcTtnNwhXHs58aBWwTLDy9UrBkPdJxFIwXNlqjejliGGMbvJZkKKAlZIxouiNVf5auBpglL3e2AtbUbhZ*kRFrwNy47C4oziwPxRfNqX0uXMS1n!KimvRywZnaeTCpupy0eoKeQU*gFG9lUSMwIa0MIL9dKq!HBAFO4Vf!vV01NvEJbQd"
 };
 
@@ -11,6 +12,7 @@ const OD_CONFIG = {
 async function getODAccessToken() {
     const params = new URLSearchParams({
         client_id: OD_CONFIG.clientId,
+        client_secret: OD_CONFIG.clientSecret,
         refresh_token: OD_CONFIG.refreshToken,
         grant_type: 'refresh_token',
         scope: 'Files.ReadWrite.All'
