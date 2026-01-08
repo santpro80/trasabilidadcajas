@@ -382,17 +382,22 @@ document.addEventListener('DOMContentLoaded', () => {
             const fileName = `Reporte_Caja_${currentSelectedSerialNumber}_${formattedDate}.pdf`;
             const pdfBlob = pdf.output('blob');
 
-            const oneDriveFolderPath = `01-CAJAS-SEGUIMINETO/04-registro-de-${tipo.toLowerCase()}-de-cajas`;
-            
-            // 1. Intentar subir a OneDrive (operación no crítica)
+            // --- CAMBIO PARA ONEDRIVE DIRECTO ---
+            const oneDriveFolderPath = `01-CAJAS-SEGUIMIENTO/04-registro-de-${tipo.toLowerCase()}-de-cajas`;
+            // Nota: Corregí "SEGUIMINETO" a "SEGUIMIENTO" en la ruta, revisa si tu carpeta en OneDrive tiene el error ortográfico o no.
+
             try {
-                console.log("Intentando subir PDF a OneDrive...");
-                await uploadFileToOneDrive(pdfBlob, fileName, oneDriveFolderPath);
-                console.log("PDF subido a OneDrive con éxito.");
+                console.log("🚀 Intentando subir PDF a OneDrive (Modo Directo)...");
+                
+                // Llamamos a la función global que creamos en el paso 1
+                await window.uploadToOneDrive(fileName, pdfBlob, oneDriveFolderPath);
+                
+                showNotification("¡Reporte subido a OneDrive correctamente!", "success");
             } catch (oneDriveError) {
-                console.error("Falló la subida a OneDrive, pero el proceso continuará.", oneDriveError);
-                showNotification("Falló la subida a OneDrive, pero el reporte se guardará localmente.", "error");
+                console.error("⚠️ Falló la subida a OneDrive:", oneDriveError);
+                showNotification("No se pudo subir a OneDrive (se guardará localmente).", "error");
             }
+            // -------------------------------------
 
             // 2. Ejecutar operaciones críticas (guardado local y registro en DB)
             try {
