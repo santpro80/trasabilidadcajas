@@ -4,7 +4,7 @@ const OD_CONFIG = {
     clientId: "56c7f9c1-d4df-41f8-af09-3c3561ccb35a",
     refreshToken: "M.C501_BAY.0.U.-Cj0ZFB8n7QCXM9NhORSKi*GpWXuG8tNx6o9uhLOVrw9KXXBy6OzAGh8*mtEy!26fshewy6cLAESKCohrqVWCNe1E5mILQxg1LRsy56yRfbFAJvIpaAxetnt9D22!jckQ310h94LWhsOOnC6h61ZRHm*8kvDZbx3Z9ILB8c2*QtMCQc2hpP4akEmPhYUhcTtnNwhXHs58aBWwTLDy9UrBkPdJxFIwXNlqjejliGGMbvJZkKKAlZIxouiNVf5auBpglL3e2AtbUbhZ*kRFrwNy47C4oziwPxRfNqX0uXMS1n!KimvRywZnaeTCpupy0eoKeQU*gFG9lUSMwIa0MIL9dKq!HBAFO4Vf!vV01NvEJbQd"
 };
-
+console.log("hernan 5");
 /**
  * 1. Obtiene un Token Temporal usando tu llave maestra (Refresh Token)
  */
