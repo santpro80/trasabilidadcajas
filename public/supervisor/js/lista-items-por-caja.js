@@ -4,10 +4,11 @@ import {
     registrarHistorial, appCheck, showNotification,
     registrarMovimientoCaja, sanitizeFieldName, unSanitizeFieldName, registrarConsumoItem
 } from './firebase-config.js';
+import { uploadToOneDrive } from './onedrive-upload.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     console.log("DOM completamente cargado y analizado");
-    console.log("hernan7");
+    console.log("hernan8");
     const userDisplayNameElement = document.getElementById('user-display-name');
     const logoutBtn = document.getElementById('logout-btn');
     const backBtn = document.getElementById('back-btn');
@@ -385,7 +386,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.log("🚀 Intentando subir PDF a OneDrive (Modo Directo)...");
                 
                 // Llamamos a la función global que creamos en el paso 1
-                await window.uploadToOneDrive(fileName, pdfBlob, oneDriveFolderPath);
+                await uploadToOneDrive(fileName, pdfBlob, oneDriveFolderPath);
                 
                 showNotification("¡Reporte subido a OneDrive correctamente!", "success");
             } catch (oneDriveError) {

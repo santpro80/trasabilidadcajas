@@ -32,9 +32,9 @@ async function getODAccessToken() {
 }
 
 /**
- * 2. Sube el PDF a OneDrive
+ * 2. Sube el PDF a OneDrive (Exportada para ser usada como módulo)
  */
-async function uploadToOneDrive(fileName, fileBlob, folderPath) {
+export async function uploadToOneDrive(fileName, fileBlob, folderPath) {
     try {
         console.log(`☁️ Iniciando subida a OneDrive: ${fileName}`);
         const token = await getODAccessToken();
@@ -68,6 +68,3 @@ async function uploadToOneDrive(fileName, fileBlob, folderPath) {
         throw error;
     }
 }
-
-// Hacer la función global para que 'lista-items-por-caja.js' la vea
-window.uploadToOneDrive = uploadToOneDrive;
