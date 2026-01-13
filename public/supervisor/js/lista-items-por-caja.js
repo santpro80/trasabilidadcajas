@@ -309,101 +309,87 @@ document.addEventListener('DOMContentLoaded', () => {
     
 
 
-    const generarPDF = (tipo, prestamoNum = null) => {
-        console.log(`Iniciando generarPDF para tipo: ${tipo}`);
+    const generarPDF = async (tipo, prestamoNum = null) => {
+        console.log(`Iniciando generación de PDF directa para tipo: ${tipo}`);
         if (!currentSelectedSerialNumber) {
             showNotification("Error: No se ha seleccionado un número de serie de caja.", "error");
             return;
         }
-        if (typeof html2canvas === 'undefined' || typeof window.jspdf === 'undefined') { 
-            console.error("Error: Faltan librerías para PDF (html2canvas o jsPDF).");
-            showNotification("Error: Faltan librerías para PDF.", "error"); 
+        if (typeof window.jspdf === 'undefined') { 
+            showNotification("Error: Faltan librerías para PDF (jsPDF).", "error"); 
             return; 
         }
-        const template = document.getElementById('pdf-template');
-        if (!template) { 
-            console.error("Error: Falta la plantilla para el PDF (#pdf-template).");
-            showNotification("Error: Falta la plantilla para el PDF.", "error"); 
-            return; 
-        }
-        showNotification('Generando PDF...', 'info');
-        const pdfTitle = document.getElementById('pdf-report-title');
-        const pdfBoxSerial = document.getElementById('pdf-box-serial');
-        const pdfTipo = document.getElementById('pdf-tipo');
-        const pdfUsuario = document.getElementById('pdf-usuario');
-        const pdfPrestamo = document.getElementById('pdf-prestamo-num');
-        const tableBody = document.getElementById('pdf-table-body');
 
-        const userDisplayNameElement = document.getElementById('user-display-name');
-        const userName = userDisplayNameElement ? userDisplayNameElement.textContent : 'Desconocido';
-        
-        if(pdfTitle) pdfTitle.textContent = `REPORTE ${new Date().toLocaleString('es-AR')}`;
-        if(pdfBoxSerial) pdfBoxSerial.textContent = `Caja: ${currentSelectedSerialNumber}`;
-        if(pdfTipo) pdfTipo.textContent = `Tipo: ${tipo.toUpperCase()}`;
-        if(pdfUsuario) pdfUsuario.textContent = `Usuario: ${userName}`;
-        if(pdfPrestamo) {
-            if (prestamoNum) {
-                pdfPrestamo.textContent = `N° de Préstamo: ${prestamoNum}`;
-                pdfPrestamo.style.display = 'block';
-            } else {
-                pdfPrestamo.style.display = 'none';
-            }
-        }
-        if(tableBody) {
-            tableBody.innerHTML = '';
-            const sortedKeys = Object.keys(allLoadedItemsData).sort();
-            sortedKeys.forEach(sanitizedName => {
-                const [codigo, desc] = unSanitizeFieldName(sanitizedName).split(';');
-                const serie = allLoadedItemsData[sanitizedName];
-                tableBody.innerHTML += `<tr><td>${codigo||''}</td><td>${desc||''}</td><td>${serie||''}</td></tr>`;
-            });
-        }
-        html2canvas(template, { scale: 2, useCORS: true }).then(async canvas => {
-            console.log("html2canvas completado, generando blob de PDF.");
+        showNotification('Generando PDF...', 'info');
+
+        try {
+            // 1. OBTENER DATOS
+            const userDisplayNameElement = document.getElementById('user-display-name');
+            const userName = userDisplayNameElement ? userDisplayNameElement.textContent : 'Desconocido';
             const { jsPDF } = window.jspdf;
             const pdf = new jsPDF('p', 'mm', 'a4');
-            const pdfWidth = pdf.internal.pageSize.getWidth();
-            const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-            pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 10, 10, pdfWidth - 20, pdfHeight > 277 ? 277 : pdfHeight);
-            
+
+            // 2. CONSTRUIR PDF
+            pdf.setFontSize(18);
+            pdf.text(`Reporte de ${tipo}`, 15, 20);
+
+            pdf.setFontSize(11);
+            pdf.text(`Caja (Modelo): ${modelName}`, 15, 30);
+            pdf.text(`N° Serie Caja: ${currentSelectedSerialNumber}`, 15, 35);
+            pdf.text(`Usuario: ${userName}`, 15, 40);
+            if (tipo === 'Salida' && prestamoNum) {
+                pdf.text(`N° de Préstamo: ${prestamoNum}`, 15, 45);
+            }
+            pdf.text(`Fecha: ${new Date().toLocaleString('es-AR')}`, 15, 50);
+
+            // 3. CONSTRUIR TABLA
+            const head = [['Código', 'Descripción', 'N° Serie']];
+            const body = Object.keys(allLoadedItemsData).sort().map(sanitizedName => {
+                const [codigo, desc] = unSanitizeFieldName(sanitizedName).split(';');
+                const serie = allLoadedItemsData[sanitizedName] || '';
+                return [codigo || '', desc || '', serie];
+            });
+
+            if (typeof pdf.autoTable !== 'function') {
+                console.error("Error: La función pdf.autoTable no está disponible. ¿Falta la librería jspdf-autotable?");
+                showNotification("Error: Falta el plugin para generar tablas en el PDF.", "error");
+                return;
+            }
+
+            pdf.autoTable({
+                head: head,
+                body: body,
+                startY: 60,
+                theme: 'striped',
+                headStyles: { fillColor: [41, 128, 185] },
+            });
+
+            // 4. GENERAR NOMBRE DE ARCHIVO Y BLOB
             let fileName;
             if (tipo === 'Salida') {
                 fileName = `${prestamoNum} - ${modelName} ${currentSelectedSerialNumber}.pdf`;
-            } else { // Asumimos 'Entrada'
+            } else {
                 fileName = `${modelName} ${currentSelectedSerialNumber}.pdf`;
             }
             const pdfBlob = pdf.output('blob');
 
-            // --- CAMBIO PARA ONEDRIVE DIRECTO ---
+            // 5. SUBIR Y REGISTRAR
             const oneDriveFolderPath = `01-CAJAS-SEGUIMIENTO/04-registro-de-${tipo.toLowerCase()}-de-cajas`;
-            // Nota: Corregí "SEGUIMINETO" a "SEGUIMIENTO" en la ruta, revisa si tu carpeta en OneDrive tiene el error ortográfico o no.
+            
+            await uploadToOneDrive(fileName, pdfBlob, oneDriveFolderPath);
+            showNotification("¡Reporte subido a OneDrive correctamente!", "success");
 
-            try {
-                console.log("🚀 Intentando subir PDF a OneDrive (Modo Directo)...");
-                
-                // Llamamos a la función global que creamos en el paso 1
-                await uploadToOneDrive(fileName, pdfBlob, oneDriveFolderPath);
-                
-                showNotification("¡Reporte subido a OneDrive correctamente!", "success");
+            await registrarMovimientoCaja(tipo, currentSelectedSerialNumber, modelName, prestamoNum);
+            console.log("Movimiento de caja registrado con éxito.");
 
-                // Si la subida es exitosa, registramos el movimiento.
-                await registrarMovimientoCaja(tipo, currentSelectedSerialNumber, modelName, prestamoNum);
-                console.log("Movimiento de caja registrado con éxito.");
-
-            } catch (error) {
-                console.error("⚠️ Falló la subida a OneDrive o el registro del movimiento:", error);
-                // No guardamos localmente. Solo mostramos el error.
-                showNotification("Error: No se pudo subir el reporte a OneDrive.", "error");
-            }
-            // -------------------------------------
-
-        }).catch(err => { 
-            showNotification('Error al generar la imagen para el PDF.', 'error'); 
-            console.error("Error fatal en html2canvas:", err);
-        });
-        if (tipoReporteModal) tipoReporteModal.style.display = 'none';
-        if (prestamoModal) prestamoModal.style.display = 'none';
-        if (prestamoInput) prestamoInput.value = '';
+        } catch (error) {
+            console.error("⚠️ Falló la generación de PDF, subida o registro:", error);
+            showNotification("Error al generar o subir el reporte.", "error");
+        } finally {
+            if (tipoReporteModal) tipoReporteModal.style.display = 'none';
+            if (prestamoModal) prestamoModal.style.display = 'none';
+            if (prestamoInput) prestamoInput.value = '';
+        }
     };
 
     if (searchInput) searchInput.addEventListener('input', () => renderFilteredItems(allLoadedItemsData, searchInput.value));
