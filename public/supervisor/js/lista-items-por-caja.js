@@ -366,15 +366,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
             pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 10, 10, pdfWidth - 20, pdfHeight > 277 ? 277 : pdfHeight);
             
-            const now = new Date();
-            const year = now.getFullYear();
-            const month = (now.getMonth() + 1).toString().padStart(2, '0');
-            const day = now.getDate().toString().padStart(2, '0');
-            const hours = now.getHours().toString().padStart(2, '0');
-            const minutes = now.getMinutes().toString().padStart(2, '0');
-            const seconds = now.getSeconds().toString().padStart(2, '0');
-            const formattedDate = `${year}${month}${day}_${hours}${minutes}${seconds}`;
-            const fileName = `Reporte_Caja_${currentSelectedSerialNumber}_${formattedDate}.pdf`;
+            let fileName;
+            if (tipo === 'Salida') {
+                fileName = `${prestamoNum} - ${modelName} ${currentSelectedSerialNumber}.pdf`;
+            } else { // Asumimos 'Entrada'
+                fileName = `${modelName} ${currentSelectedSerialNumber}.pdf`;
+            }
             const pdfBlob = pdf.output('blob');
 
             // --- CAMBIO PARA ONEDRIVE DIRECTO ---
@@ -388,21 +385,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 await uploadToOneDrive(fileName, pdfBlob, oneDriveFolderPath);
                 
                 showNotification("¡Reporte subido a OneDrive correctamente!", "success");
-            } catch (oneDriveError) {
-                console.error("⚠️ Falló la subida a OneDrive:", oneDriveError);
-                showNotification("No se pudo subir a OneDrive (se guardará localmente).", "error");
+
+                // Si la subida es exitosa, registramos el movimiento.
+                await registrarMovimientoCaja(tipo, currentSelectedSerialNumber, modelName, prestamoNum);
+                console.log("Movimiento de caja registrado con éxito.");
+
+            } catch (error) {
+                console.error("⚠️ Falló la subida a OneDrive o el registro del movimiento:", error);
+                // No guardamos localmente. Solo mostramos el error.
+                showNotification("Error: No se pudo subir el reporte a OneDrive.", "error");
             }
             // -------------------------------------
-
-            // 2. Ejecutar operaciones críticas (guardado local y registro en DB)
-            try {
-                pdf.save(`Reporte_Caja_${currentSelectedSerialNumber}.pdf`);
-                console.log("PDF guardado localmente. Registrando movimiento de caja...");
-                await registrarMovimientoCaja(tipo, currentSelectedSerialNumber, modelName, prestamoNum);
-            } catch (criticalError) {
-                console.error("Error crítico al guardar el PDF localmente o registrar el movimiento.", criticalError);
-                showNotification("Error crítico al guardar el reporte. Operación cancelada.", "error");
-            }
 
         }).catch(err => { 
             showNotification('Error al generar la imagen para el PDF.', 'error'); 
