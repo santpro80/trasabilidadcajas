@@ -8,7 +8,7 @@ import { uploadToOneDrive } from './onedrive-upload.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     console.log("DOM completamente cargado y analizado");
-    console.log("hernan11");
+    console.log("her11");
     const userDisplayNameElement = document.getElementById('user-display-name');
     const logoutBtn = document.getElementById('logout-btn');
     const backBtn = document.getElementById('back-btn');
