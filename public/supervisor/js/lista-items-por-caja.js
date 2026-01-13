@@ -4,11 +4,10 @@ import {
     registrarHistorial, appCheck, showNotification,
     registrarMovimientoCaja, sanitizeFieldName, unSanitizeFieldName, registrarConsumoItem
 } from './firebase-config.js';
-import { uploadToOneDrive } from './onedrive-upload.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     console.log("DOM completamente cargado y analizado");
-    console.log("her11");
+    console.log("hernaan12");
     const userDisplayNameElement = document.getElementById('user-display-name');
     const logoutBtn = document.getElementById('logout-btn');
     const backBtn = document.getElementById('back-btn');
