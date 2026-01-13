@@ -1,15 +1,21 @@
+// Archivo: public/supervisor/js/onedrive-upload.js
 
 const OD_CONFIG = {
     clientId: "56c7f9c1-d4df-41f8-af09-3c3561ccb35a",
-    refreshToken: "M.C501_BAY.0.U.-Cj0ZFB8n7QCXM9NhORSKi*GpWXuG8tNx6o9uhLOVrw9KXXBy6OzAGh8*mtEy!26fshewy6cLAESKCohrqVWCNe1E5mILQxg1LRsy56yRfbFAJvIpaAxetnt9D22!jckQ310h94LWhsOOnC6h61ZRHm*8kvDZbx3Z9ILB8c2*QtMCQc2hpP4akEmPhYUhcTtnNwhXHs58aBWwTLDy9UrBkPdJxFIwXNlqjejliGGMbvJZkKKAlZIxouiNVf5auBpglL3e2AtbUbhZ*kRFrwNy47C4oziwPxRfNqX0uXMS1n!KimvRywZnaeTCpupy0eoKeQU*gFG9lUSMwIa0MIL9dKq!HBAFO4Vf!vV01NvEJbQd"
+    // ✅ TU TOKEN NUEVO (Generado para SPA/Hotmail):
+    refreshToken: "M.C501_BL2.0.U.-CqIWO4wju1nsFXKN9oem4zJjGwOl70VnmwqTr7aM1KYcSCpeN7oOi5OiYJ15EBg*TZSea3aQyFrY0o0he98aB1iu72P6LO0!UJPGh4B8WMQbeNMDQYQ9!l1rZX8jOzdmR*uBaPvRuAhmSZu3nc277CARVsTKWsGlC0dn0gMqoT4oAoH9tRHT!CenDz51hXNpNIXu1TVsXjvwDsuliM*2o**68mAdh28jQrXlqns9Itl9ZWpOPTFGkLHFwiuKOiuCSaBxNZopjWoREtcAX*b8zqnEXtBs7kGX0V*e6oTnShDxjezs1UNytDF7UzOp2UdPynoZGcRGCrJicspb7LxWMSTtdHzXVuVqmF1lXp*Vb23r"
 };
 
+/**
+ * 1. Obtiene el Token de Acceso (Sin secreto, modo SPA)
+ */
 async function getODAccessToken() {
     const params = new URLSearchParams({
         client_id: OD_CONFIG.clientId,
         refresh_token: OD_CONFIG.refreshToken,
         grant_type: 'refresh_token',
         scope: 'Files.ReadWrite.All'
+        // ⛔ IMPORTANTE: Aquí NO va client_secret. Si lo pones, falla.
     });
 
     try {
@@ -18,23 +24,30 @@ async function getODAccessToken() {
             headers: { "Content-Type": "application/x-www-form-urlencoded" },
             body: params
         });
+        
         const data = await response.json();
-        if(data.error) throw new Error(data.error_description);
+        
+        if (data.error) {
+            console.error("❌ Error Microsoft:", data);
+            throw new Error(data.error_description || JSON.stringify(data));
+        }
         return data.access_token;
     } catch (error) {
-        console.error("❌ Error renovando token OneDrive:", error);
+        console.error("❌ Error de red al renovar token:", error);
         throw error;
     }
 }
-export async function uploadToOneDrive(fileName, fileBlob, folderPath) {
+
+/**
+ * 2. Función Global de Subida
+ */
+window.uploadToOneDrive = async function(fileName, fileBlob, folderPath) {
     try {
-        console.log(`☁️ Iniciando subida a OneDrive: ${fileName}`);
+        console.log(`☁️ Subiendo a OneDrive: ${fileName}...`);
         const token = await getODAccessToken();
         
-        const encodedPath = folderPath.split('/')
-            .map(part => encodeURIComponent(part))
-            .join('/') + '/' + encodeURIComponent(fileName);
-
+        const encodedPath = encodeURIComponent(folderPath + '/' + fileName);
+        // Usamos la API de Graph estándar
         const url = `https://graph.microsoft.com/v1.0/me/drive/root:/${encodedPath}:/content`;
 
         const response = await fetch(url, {
@@ -47,15 +60,16 @@ export async function uploadToOneDrive(fileName, fileBlob, folderPath) {
         });
 
         if (response.ok) {
-            console.log("✅ ¡Subido a OneDrive con éxito!");
-            return await response.json();
+            const json = await response.json();
+            console.log("✅ ¡Subida EXITOSA!", json);
+            return json;
         } else {
-            const err = await response.text();
-            console.error("❌ Error OneDrive:", err);
-            throw new Error(err);
+            const errText = await response.text();
+            console.error("❌ Error al subir archivo:", errText);
+            throw new Error(errText);
         }
     } catch (error) {
-        console.error("❌ Fallo crítico subida:", error);
+        console.error("❌ Fallo crítico OneDrive:", error);
         throw error;
     }
-}
+};
