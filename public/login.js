@@ -47,7 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (userRole === 'supervisor') {
                     window.location.href = 'supervisor/menu.html';
                 } else if (userRole === 'mantenimiento') {
-                    window.location.href = 'mantenimiento/menu.html';
+                    window.location.href = 'mantenimiento/menu.html?prompt_notifications=true';
                 } else {
                     // Redirección por defecto para 'operario' y otros roles
                     window.location.href = 'operario/menu.html';

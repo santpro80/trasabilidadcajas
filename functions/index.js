@@ -143,94 +143,98 @@ exports.sendTestNotification = functions.https.onCall((data, context) => {
   };
 });
 
+
 /**
  * Trigger: Se ejecuta cada vez que se crea un documento en 'movimientos_cajas'.
- * Objetivo: Si es una 'Entrada' y la caja tiene problemas pendientes, notificar a Mantenimiento.
+ * Objetivo: Si es una 'Entrada' y la caja tiene problemas pendientes ('estado'='nuevo'), notificar a Mantenimiento.
+ * Usa Firebase Functions v2.
  */
-exports.notifyMaintenanceOnEntry = functionsV1.firestore.document("movimientos_cajas/{docId}").onCreate(async (snap, context) => {
-        console.log(">>> INICIO TRIGGER notifyMaintenanceOnEntry (v1) <<<");
-        const movimiento = snap.data();
-        console.log("Movimiento detectado:", JSON.stringify(movimiento));
+exports.verificarCajaConProblemas = onDocumentCreated("movimientos_cajas/{movimientoId}", async (event) => {
+    const movimiento = event.data.data();
 
-        // 1. Solo nos interesa si es una "Entrada"
-        if (movimiento.tipo !== 'Entrada') {
-            console.log("El movimiento NO es 'Entrada'. Ignorando.");
-            return null;
+    // 1. FILTRO: Solo nos interesa si es una "Entrada"
+    if (!movimiento || movimiento.tipo !== 'Entrada') {
+        console.log("El movimiento no es de tipo 'Entrada', se ignora.");
+        return;
+    }
+
+    const serialCaja = movimiento.cajaSerie;
+    if (!serialCaja) {
+        console.log("El movimiento no tiene 'cajaSerie', se ignora.");
+        return;
+    }
+
+    console.log(`Analizando entrada de caja: ${serialCaja}`);
+
+    try {
+        // 2. BUSCAR PROBLEMAS ACTIVOS
+        const problemasSnapshot = await admin.firestore()
+            .collection('problemas_cajas')
+            .where('cajaSerial', '==', serialCaja)
+            .where('estado', '==', 'nuevo') // Solo reportes no resueltos
+            .get();
+
+        if (problemasSnapshot.empty) {
+            console.log(`Caja ${serialCaja} limpia, sin reportes con estado 'nuevo'.`);
+            return;
         }
 
-        const cajaSerie = movimiento.cajaSerie;
-        const modelName = movimiento.modelName || 'Desconocido';
-        console.log(`Es una Entrada de la caja: ${cajaSerie}. Buscando problemas pendientes...`);
+        // Si llegamos aquí, ¡HAY PROBLEMAS! 🚨
+        const reporte = problemasSnapshot.docs[0].data();
+        
+        // Armamos la lista de fallas (ej: "Bisagras sueltas, Daño estructural")
+        const listaFallas = reporte.tareas.map(t => t.texto || t).join(', ');
 
-        try {
-            // 2. Buscar si esta caja tiene problemas activos (estado 'nuevo' o 'en proceso')
-            const problemasRef = db.collection('problemas_cajas');
-            const problemasSnapshot = await problemasRef
-                .where('cajaSerial', '==', cajaSerie)
-                .where('estado', 'in', ['nuevo', 'en proceso']) // Solo problemas no resueltos
-                .get();
+        // 3. BUSCAR A LOS DE MANTENIMIENTO
+        const mantenimientoSnapshot = await admin.firestore()
+            .collection('users')
+            .where('role', '==', 'mantenimiento')
+            .get();
 
-            console.log(`Problemas encontrados en DB: ${problemasSnapshot.size}`);
+        if (mantenimientoSnapshot.empty) {
+            console.log("No se encontraron usuarios con el rol 'mantenimiento'.");
+            return;
+        }
 
-            if (problemasSnapshot.empty) {
-                console.log(`La caja ${cajaSerie} entró, pero no tiene problemas pendientes (o el estado no es 'nuevo'/'en proceso').`);
-                return null;
+        const tokens = [];
+        mantenimientoSnapshot.forEach(doc => {
+            const data = doc.data();
+            if (data.fcmToken) {
+                tokens.push(data.fcmToken);
             }
+        });
 
-            console.log(`¡Alerta! La caja ${cajaSerie} tiene problemas. Buscando usuarios de mantenimiento...`);
+        if (tokens.length === 0) {
+            console.log("No hay operarios de mantenimiento con token para notificar.");
+            return;
+        }
 
-            // 3. Buscar los tokens de los usuarios de 'mantenimiento'
-            const usersRef = db.collection('users');
-            const maintenanceUsersSnap = await usersRef.where('role', '==', 'mantenimiento').get();
+        // 4. ENVIAR NOTIFICACIÓN MASIVA (Multicast)
+        const payload = {
+            notification: {
+                title: '⚠️ Caja con Daños Ingresada',
+                body: `Caja: ${serialCaja}\nProblemas: ${listaFallas}`,
+            },
+            data: {
+                url: `/mantenimiento/ver-problemas.html?serial=${serialCaja}`,
+                cajaSerial: serialCaja
+            },
+            tokens: tokens
+        };
 
-            console.log(`Usuarios con rol 'mantenimiento' encontrados: ${maintenanceUsersSnap.size}`);
-
-            const tokens = [];
-            maintenanceUsersSnap.forEach(doc => {
-                const userData = doc.data();
-                if (userData.fcmToken) {
-                    console.log(`Token encontrado para usuario: ${userData.email || doc.id}`);
-                    tokens.push(userData.fcmToken);
-                } else {
-                    console.log(`Usuario ${userData.email || doc.id} es mantenimiento pero NO tiene fcmToken.`);
+        const response = await admin.messaging().sendEachForMulticast(payload);
+        console.log('Notificaciones enviadas:', response.successCount);
+        
+        if (response.failureCount > 0) {
+            console.warn(`Fallaron ${response.failureCount} notificaciones.`);
+            response.responses.forEach((resp, idx) => {
+                if (!resp.success) {
+                    console.error(`Error con el token #${idx}:`, resp.error);
                 }
             });
-
-            if (tokens.length === 0) {
-                console.log('No hay usuarios de mantenimiento con tokens registrados. No se puede enviar notificación.');
-                return null;
-            }
-
-            // 4. Enviar la notificación
-            const payload = {
-                notification: {
-                    title: '⚠️ Caja con Problemas Ingresada',
-                    body: `Entró la caja ${cajaSerie} (${modelName}). Comunicarse con el sector de lavado para coordinar entrega.`,
-                },
-                data: {
-                    url: '/ver-problemas.html', // Al tocar, los lleva a la lista de problemas
-                    cajaSerie: cajaSerie
-                }
-            };
-
-            console.log(`Enviando notificación a ${tokens.length} dispositivos...`);
-            const response = await admin.messaging().sendToDevice(tokens, payload);
-            
-            console.log('Resultado del envío FCM:', JSON.stringify(response));
-            
-            if (response.failureCount > 0) {
-                console.error("Hubo fallos al enviar algunas notificaciones.");
-                response.results.forEach((result, idx) => {
-                    if (result.error) {
-                        console.error(`Error con el token ${tokens[idx]}:`, result.error);
-                    }
-                });
-            }
-
-            return { success: true, sentCount: response.successCount };
-
-        } catch (error) {
-            console.error('Error CRÍTICO en notifyMaintenanceOnEntry:', error);
-            return null;
         }
-    });
+
+    } catch (error) {
+        console.error("Error en la lógica de notificación 'verificarCajaConProblemas':", error);
+    }
+});

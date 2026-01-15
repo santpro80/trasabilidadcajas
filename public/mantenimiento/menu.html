@@ -269,6 +269,21 @@
                     }
                     manageMenuVisibility(currentUserRole);
                     setupTicketNotifications(db, collection, query, where, onSnapshot, user, currentUserRole);
+
+                    // Auto-prompt for notifications on first login
+                    const urlParams = new URLSearchParams(window.location.search);
+                    if (urlParams.get('prompt_notifications') === 'true') {
+                        console.log("Parámetro 'prompt_notifications' detectado. Activando notificaciones...");
+                        if ('serviceWorker' in navigator) {
+                            navigator.serviceWorker.ready.then(registration => {
+                                console.log("Service worker listo. Solicitando permiso...");
+                                requestNotificationPermission(registration);
+                                // Limpiar URL para no volver a preguntar en recargas
+                                const newUrl = window.location.pathname;
+                                window.history.replaceState({}, document.title, newUrl);
+                            }).catch(error => console.error("Error en auto-activación de notificaciones:", error));
+                        }
+                    }
                 } catch (error) {
                     console.error("Error al obtener datos del usuario:", error);
                     if (userDisplayElement) userDisplayElement.textContent = user.email;

@@ -1,14 +1,10 @@
-// public/supervisor/js/onedrive-upload.js
+
 
 const OD_CONFIG = {
     clientId: "56c7f9c1-d4df-41f8-af09-3c3561ccb35a",
-    // 👇 PEGA AQUÍ TU TOKEN NUEVO RECIÉN SALIDO DEL POWERSHELL 👇
     initialRefreshToken: "M.C501_BL2.0.U.-CkRjnSeZM2TJZyalt5*YUn3NQV0sJcFNy3AEHPP9f!e*wfU7sDIDmzmYcibhGRYQNxlGTJdFCNZuTJcLttSSinrGUI2Xdg2ZpaaHXswtwlNlbOTYlyNQ*!EL5BbFThx0eq7lpU0nQH1nOGxmebd*PRRFPWxnH62A3UJX1cg4HaKl*u3cTwzy!1K63YX61MQ1HyczAEzNTyvrKFXRpdjTjJMeqsSe8ZLz!ecJyuo9RcWHocc49TeAElALjgu879RSh2k!XRNLFhn!IzRuwK4CAZBSqm98wLowKf9knU88*8GNFOurFYX64D4Z3smQJbjp1M7UTJ6OCsHbGGeGf2C7OSeknQ!jlO8Jxa9MusxTVu1g"
 };
 
-/**
- * Obtiene el token, priorizando el guardado en LocalStorage (el más fresco)
- */
 async function getODAccessToken() {
     // 1. Buscamos si tenemos un token guardado de hoy (el más nuevo)
     let currentRefreshToken = localStorage.getItem("od_refresh_token");
