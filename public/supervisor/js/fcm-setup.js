@@ -54,10 +54,12 @@ onMessage(messaging, (payload) => {
     console.log('Message received in foreground.', payload);
 
     // Display a browser notification
-    const notificationTitle = payload.notification.title;
+    // ADAPTACIÓN: Buscamos en payload.data porque es una Data-Only Notification
+    const notificationTitle = payload.data?.title || payload.notification?.title;
     const notificationOptions = {
-        body: payload.notification.body,
-        icon: payload.notification.icon || '/assets/logo.png', // Use icon from payload or default
+        body: payload.data?.body || payload.notification?.body,
+        icon: '/assets/logo.png', // Icono fijo o payload.data.icon si lo enviaras
+        data: payload.data // Pasamos los datos extra (como la URL)
     };
 
     const notification = new Notification(notificationTitle, notificationOptions);
@@ -66,7 +68,8 @@ onMessage(messaging, (payload) => {
     notification.onclick = (event) => {
         event.preventDefault(); // prevent the browser from focusing the Notification's tab
         // Implement custom logic, e.g., open a specific URL
-        // window.open(payload.data.url, '_blank');
+        const url = payload.data?.url || '/';
+        window.open(url, '_self');
         console.log('Notification clicked.');
     };
 });
