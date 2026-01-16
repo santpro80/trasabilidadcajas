@@ -215,8 +215,21 @@ exports.verificarCajaConProblemas = onDocumentCreated("movimientos_cajas/{movimi
                 title: '⚠️ Caja con Daños Ingresada',
                 body: `Caja: ${serialCaja}\nProblemas: ${listaFallas}`,
             },
+            android: {
+                priority: 'high',
+                notification: {
+                    channelId: 'high_importance_channel',
+                    priority: 'max',
+                    defaultSound: true,
+                    defaultVibrateTimings: true,
+                    visibility: 'public'
+                }
+            },
             data: {
-                url: `/mantenimiento/ver-problemas.html?serial=${serialCaja}`,
+                tipo: 'alerta_mantenimiento',
+                id_caja: serialCaja,
+                mensaje: 'Caja dañada ingresada',
+                url: `/mantenimiento/ver-problemas.html?serial=${serialCaja}`, // Mantenemos la URL para compatibilidad
                 cajaSerial: serialCaja
             },
             tokens: tokens
