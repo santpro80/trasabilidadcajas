@@ -24,9 +24,9 @@ messaging.onBackgroundMessage((payload) => {
   console.log('[firebase-messaging-sw.js] Received background message ', payload);
 
   // Personalizamos la notificación que se mostrará
-  const notificationTitle = payload.notification.title;
+  const notificationTitle = payload.data.title;
   const notificationOptions = {
-    body: payload.notification.body,
+    body: payload.data.body,
     icon: './assets/logo.png', // Usamos ./ para que busque en la carpeta actual
     badge: './assets/logo.png', 
     vibrate: [200, 100, 200],  // Patrón de vibración: vibra, pausa, vibra
