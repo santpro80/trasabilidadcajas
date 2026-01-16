@@ -209,26 +209,17 @@ exports.verificarCajaConProblemas = onDocumentCreated("movimientos_cajas/{movimi
 
         // 4. ENVIAR NOTIFICACIÓN MASIVA (Multicast)
         const payload = {
-            notification: {
+            data: {
                 title: '⚠️ Caja con Daños Ingresada',
                 body: `Caja: ${serialCaja}\nProblemas: ${listaFallas}\nComunicarse con el sector de lavado para su administración`,
-            },
-            android: {
-                priority: 'high',
-                notification: {
-                    channelId: 'high_importance_channel',
-                    priority: 'max',
-                    defaultSound: true,
-                    defaultVibrateTimings: true,
-                    visibility: 'public'
-                }
-            },
-            data: {
                 tipo: 'alerta_mantenimiento',
                 id_caja: serialCaja,
                 mensaje: 'Caja dañada ingresada',
                 url: `/mantenimiento/ver-problemas.html?serial=${serialCaja}`, // Mantenemos la URL para compatibilidad
                 cajaSerial: serialCaja
+            },
+            android: {
+                priority: 'high' // Crucial para despertar al SW
             },
             tokens: tokens
         };

@@ -24,9 +24,9 @@ messaging.onBackgroundMessage((payload) => {
   console.log('[firebase-messaging-sw.js] Received background message ', payload);
 
   // Personalizamos la notificación que se mostrará
-  const notificationTitle = payload.notification.title;
+  const notificationTitle = payload.data.title;
   const notificationOptions = {
-    body: payload.notification.body,
+    body: payload.data.body,
     icon: './assets/logo.png',
     badge: './assets/logo.png', // Icono pequeño para la barra de estado
     vibrate: [200, 100, 200],  // Patrón de vibración: vibra, pausa, vibra
