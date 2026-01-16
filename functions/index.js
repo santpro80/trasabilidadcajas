@@ -215,7 +215,7 @@ exports.verificarCajaConProblemas = onDocumentCreated("movimientos_cajas/{movimi
                 tipo: 'alerta_mantenimiento',
                 id_caja: serialCaja,
                 mensaje: 'Caja dañada ingresada',
-                url: `/mantenimiento/ver-problemas.html?serial=${serialCaja}`, // Mantenemos la URL para compatibilidad
+                url: `/supervisor/ver-problemas.html?serial=${serialCaja}`, // Corregido: La página está en la carpeta 'supervisor'
                 cajaSerial: serialCaja
             },
             android: {
