@@ -150,28 +150,22 @@ exports.sendTestNotification = functions.https.onCall((data, context) => {
  * Usa Firebase Functions v2.
  */
 exports.verificarCajaConProblemas = onDocumentCreated("movimientos_cajas/{movimientoId}", async (event) => {
-    console.log(`[DEBUG] Inicio de trigger para movimiento ID: ${event.params.movimientoId}`);
-    
     const movimiento = event.data.data();
-    console.log("[DEBUG] Datos del movimiento:", JSON.stringify(movimiento));
 
     // 1. FILTRO: Solo nos interesa si es una "Entrada"
     if (!movimiento || movimiento.tipo !== 'Entrada') {
-        console.log("[DEBUG] Cancelado: El movimiento no es 'Entrada' o es nulo.");
         return;
     }
 
     const serialCaja = movimiento.cajaSerie;
     if (!serialCaja) {
-        console.log("[DEBUG] Cancelado: Falta 'cajaSerie' en el documento.");
         return;
     }
 
-    console.log(`[DEBUG] Analizando entrada de caja: ${serialCaja}`);
+    console.log(`Analizando entrada de caja: ${serialCaja}`);
 
     try {
         // 2. BUSCAR PROBLEMAS ACTIVOS
-        console.log(`[DEBUG] Consultando 'problemas_cajas' para serial: ${serialCaja} con estado 'nuevo'...`);
         const problemasSnapshot = await admin.firestore()
             .collection('problemas_cajas')
             .where('cajaSerial', '==', serialCaja)
@@ -179,27 +173,24 @@ exports.verificarCajaConProblemas = onDocumentCreated("movimientos_cajas/{movimi
             .get();
 
         if (problemasSnapshot.empty) {
-            console.log(`[DEBUG] Cancelado: Caja ${serialCaja} limpia, sin reportes 'nuevo'.`);
+            console.log(`Caja ${serialCaja} limpia, sin reportes con estado 'nuevo'.`);
             return;
         }
 
         // Si llegamos aquí, ¡HAY PROBLEMAS! 🚨
-        console.log(`[DEBUG] ¡Problema encontrado! Cantidad de reportes: ${problemasSnapshot.size}`);
         const reporte = problemasSnapshot.docs[0].data();
         
         // Armamos la lista de fallas (ej: "Bisagras sueltas, Daño estructural")
         const listaFallas = reporte.tareas.map(t => t.texto || t).join(', ');
-        console.log(`[DEBUG] Fallas: ${listaFallas}`);
 
         // 3. BUSCAR A LOS DE MANTENIMIENTO
-        console.log("[DEBUG] Buscando usuarios con rol 'mantenimiento'...");
         const mantenimientoSnapshot = await admin.firestore()
             .collection('users')
             .where('role', '==', 'mantenimiento')
             .get();
 
         if (mantenimientoSnapshot.empty) {
-            console.log("[DEBUG] Cancelado: No hay usuarios con rol 'mantenimiento' en la BD.");
+            console.log("No se encontraron usuarios con el rol 'mantenimiento'.");
             return;
         }
 
@@ -208,23 +199,19 @@ exports.verificarCajaConProblemas = onDocumentCreated("movimientos_cajas/{movimi
             const data = doc.data();
             if (data.fcmToken) {
                 tokens.push(data.fcmToken);
-            } else {
-                console.log(`[DEBUG] Usuario ${data.email} (Rol: Mantenimiento) NO tiene fcmToken.`);
             }
         });
 
         if (tokens.length === 0) {
-            console.log("[DEBUG] Cancelado: Se encontraron usuarios de mantenimiento pero NINGUNO tiene token FCM.");
+            console.log("No hay operarios de mantenimiento con token para notificar.");
             return;
         }
-
-        console.log(`[DEBUG] Enviando notificación a ${tokens.length} tokens.`);
 
         // 4. ENVIAR NOTIFICACIÓN MASIVA (Multicast)
         const payload = {
             notification: {
                 title: '⚠️ Caja con Daños Ingresada',
-                body: `Caja: ${serialCaja}\nProblemas: ${listaFallas}`,
+                body: `Caja: ${serialCaja}\nProblemas: ${listaFallas}\nComunicarse con el sector de lavado para su administración`,
             },
             android: {
                 priority: 'high',
@@ -246,21 +233,19 @@ exports.verificarCajaConProblemas = onDocumentCreated("movimientos_cajas/{movimi
             tokens: tokens
         };
 
-        console.log("[DEBUG] Payload a enviar:", JSON.stringify(payload));
-
         const response = await admin.messaging().sendEachForMulticast(payload);
-        console.log('[DEBUG] Resultado FCM - Éxitos:', response.successCount, 'Fallos:', response.failureCount);
+        console.log('Notificaciones enviadas:', response.successCount);
         
         if (response.failureCount > 0) {
-            console.warn(`[DEBUG] Detalles de fallos:`);
+            console.warn(`Fallaron ${response.failureCount} notificaciones.`);
             response.responses.forEach((resp, idx) => {
                 if (!resp.success) {
-                    console.error(`[DEBUG] Token #${idx} error:`, resp.error);
+                    console.error(`Error con el token #${idx}:`, resp.error);
                 }
             });
         }
 
     } catch (error) {
-        console.error("[DEBUG] Error CRÍTICO en 'verificarCajaConProblemas':", error);
+        console.error("Error en la lógica de notificación 'verificarCajaConProblemas':", error);
     }
 });
