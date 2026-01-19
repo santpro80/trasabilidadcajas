@@ -2,7 +2,8 @@ import {
     db, auth, onAuthStateChanged, signOut,
     doc, getDoc, setDoc, updateDoc, deleteField, onSnapshot,
     registrarHistorial, appCheck, showNotification,
-    registrarMovimientoCaja, sanitizeFieldName, unSanitizeFieldName, registrarConsumoItem
+    registrarMovimientoCaja, sanitizeFieldName, unSanitizeFieldName, registrarConsumoItem,
+    collection, query, where, getDocs
 } from './firebase-config.js';
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -340,7 +341,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (tipo === 'Salida' && prestamoNum) {
                 pdf.text(`N° de Préstamo: ${prestamoNum}`, 15, 45);
             }
-            pdf.text(`Fecha: ${new Date().toLocaleString('es-AR')}`, 15, 50);
+            pdf.text(`Fecha: ${new Date().toLocaleString('es-AR', { hour12: false })}`, 15, 50);
 
             // 3. CONSTRUIR TABLA
             const head = [['Código', 'Descripción', 'N° Serie']];
@@ -369,7 +370,24 @@ document.addEventListener('DOMContentLoaded', () => {
             if (tipo === 'Salida') {
                 fileName = `${prestamoNum} - ${modelName} ${currentSelectedSerialNumber}.pdf`;
             } else {
-                fileName = `${modelName} ${currentSelectedSerialNumber}.pdf`;
+                try {
+                    // Consultamos el historial para ver cuántas veces entró esta caja
+                    const q = query(
+                        collection(db, "movimientos_cajas"),
+                        where("cajaSerie", "==", currentSelectedSerialNumber),
+                        where("tipo", "==", "Entrada")
+                    );
+                    const snapshot = await getDocs(q);
+                    const count = snapshot.size + 1; // Sumamos 1 para la entrada actual
+                    
+                    // Si ya entró antes, agregamos el contador (2), (3), etc.
+                    fileName = count > 1 
+                        ? `${modelName} ${currentSelectedSerialNumber} (${count}).pdf`
+                        : `${modelName} ${currentSelectedSerialNumber}.pdf`;
+                } catch (error) {
+                    console.error("Error al calcular contador de entradas:", error);
+                    fileName = `${modelName} ${currentSelectedSerialNumber}.pdf`;
+                }
             }
             const pdfBlob = pdf.output('blob');
 
