@@ -226,7 +226,7 @@ exports.verificarCajaConProblemas = onDocumentCreated("movimientos_cajas/{movimi
                 tipo: 'alerta_mantenimiento',
                 id_caja: serialCaja,
                 mensaje: 'Caja dañada ingresada',
-                url: `/supervisor/ver-problemas.html?serial=${serialCaja}`, // CORREGIDO: Apunta a la carpeta correcta
+                url: `https://santpro80.github.io/trasabilidadcajas/mantenimiento/ver-problemas.html?serial=${serialCaja}`,
                 cajaSerial: serialCaja
             },
             android: {
