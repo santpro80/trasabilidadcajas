@@ -211,7 +211,7 @@ exports.verificarCajaConProblemas = onDocumentCreated("movimientos_cajas/{movimi
         const payload = {
             data: {
                 title: '⚠️ Caja con Daños Ingresada',
-                body: `Caja: ${serialCaja}\nProblemas: ${listaFallas}\nComunicarse con el sector de lavado para su administración`,
+                body: `El modelo de la caja es ${reporte.cajaModelo} y su número de serie es ${serialCaja}\nProblemas: ${listaFallas}\nComunicarse con el sector de lavado para su administración`,
                 tipo: 'alerta_mantenimiento',
                 id_caja: serialCaja,
                 mensaje: 'Caja dañada ingresada',
