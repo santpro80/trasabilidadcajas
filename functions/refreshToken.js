@@ -1,118 +1,117 @@
-
 const functions = require('firebase-functions/v1');
 const admin = require('firebase-admin');
-const { AuthorizationCode } = require('simple-oauth2');
-const axios = require('axios');
 
-// Admin SDK's initialization is likely in index.js, but good practice to ensure it.
+// Inicializamos admin si no se ha hecho
 if (admin.apps.length === 0) {
     admin.initializeApp();
 }
 const db = admin.firestore();
 
-// --- Microsoft Graph OAuth2 Configuration ---
-// IMPORTANT: Store these as Firebase secrets
-// Get secrets
-
-// FIX: Acceso seguro a la configuración para evitar caídas si no está definida
-const config = functions.config().onedrive || {};
-let client_id = config.client_id;
-let client_secret = config.client_secret;
-
-// Fallback: Si no hay config de entorno, intentar usar valores hardcoded o archivo
-if (!client_id || !client_secret) {
-    // ID conocido de tu aplicación (sacado de tu index.js anterior)
-    client_id = client_id || '706bf438-e836-49dc-a418-ae8aecb200cd';
-    // Intentar cargar secreto de archivo si existe
-    try { const secrets = require('./onedrive_secret.json'); client_secret = secrets.client_secret; } catch (e) {}
-}
-
-
-const oauth2Client = new AuthorizationCode({
-  client: {
-    id: client_id || 'dummy_id_to_prevent_crash',
-    secret: client_secret || 'dummy_secret_to_prevent_crash',
-  },
-  auth: {
-    tokenHost: 'https://login.microsoftonline.com',
-    tokenPath: 'common/oauth2/v2.0/token',
-    authorizePath: 'common/oauth2/v2.0/authorize',
-  },
-  options: {
-    authorizationMethod: 'body',
-  },
-});
-
 /**
- * Refreshes the OneDrive access token for a specific user.
- * @param {string} userId The Firestore document ID for the user.
- * @returns {Promise<void>}
+ * Función programada para mantener vivos los tokens.
+ * Se ejecuta cada 45 minutos (los tokens de Microsoft duran ~1 hora).
  */
-async function refreshUserToken(userId) {
-    const userDocRef = db.collection('users').doc(userId);
-    const userDoc = await userDocRef.get();
+exports.scheduledTokenRefresh = functions.pubsub.schedule('every 45 minutes').onRun(async (context) => {
+    console.log('--- Iniciando Refresco de Tokens Programado ---');
 
-    if (!userDoc.exists || !userDoc.data().oneDriveRefreshToken) {
-        console.log(`User ${userId} does not have a refresh token. Skipping.`);
-        return;
+    // 1. Carga Perezosa: Importamos las librerías AQUÍ dentro.
+    // Si esto falla, solo fallará esta función, no tumbará todo el servidor.
+    const { AuthorizationCode } = require('simple-oauth2');
+
+    // 2. Configuración segura dentro de la ejecución
+    const config = functions.config().onedrive || {};
+    let client_id = config.client_id;
+    let client_secret = config.client_secret;
+
+    // Fallback de seguridad
+    if (!client_id || !client_secret) {
+        client_id = client_id || '706bf438-e836-49dc-a418-ae8aecb200cd';
+        try { 
+            const secrets = require('./onedrive_secret.json'); 
+            client_secret = secrets.client_secret; 
+        } catch (e) {
+            console.warn("No se encontró onedrive_secret.json ni variables de entorno.");
+        }
     }
 
-    const tokenData = userDoc.data().oneDriveTokenData || {};
-    let accessToken = oauth2Client.createToken(tokenData);
-
-     console.log(`Checking token for user ${userId}.`);
-
-    // Force refresh, since we run this on a schedule, not on-demand
-    console.log(`Attempting to refresh token for user ${userId}.`);
-    try {
-        const refreshTokenObject = { refresh_token: userDoc.data().oneDriveRefreshToken };
-        // We use the oauth2Client library instance to refresh the token
-        const newAccessToken = await new Promise((resolve, reject) => {
-            const token = oauth2Client.createToken({ refresh_token: userDoc.data().oneDriveRefreshToken });
-            token.refresh(refreshTokenObject, (error, result) => {
-                if (error) {
-                    return reject(error);
-                }
-                resolve(result);
-            });
-        });
-
-        // Save the new token (which might include a new refresh token)
-        await userDocRef.update({
-            oneDriveTokenData: newAccessToken.token,
-            oneDriveRefreshToken: newAccessToken.token.refresh_token || userDoc.data().oneDriveRefreshToken,
-        });
-        console.log(`Successfully refreshed and saved token for user ${userId}.`);
-
-    } catch (error) {
-        console.error(`Error refreshing token for user ${userId}:`, error.message);
-        // Optional: Notify the user or admin that re-authentication is needed
-        await userDocRef.update({
-            oneDriveTokenError: 'Failed to refresh token. Please reconnect your OneDrive account.'
-        });
-    }
-}
-
-
-/**
- * A Pub/Sub triggered function that iterates through all users and refreshes their tokens.
- */
-exports.scheduledTokenRefresh = functions.pubsub.schedule('every 12 hours').onRun(async (context) => {
-    console.log('Running scheduled token refresh for all users.');
-
-    const usersSnapshot = await db.collection('users').where('oneDriveRefreshToken', '!=', null).get();
-
-    if (usersSnapshot.empty) {
-        console.log('No users with OneDrive refresh tokens found.');
+    if (!client_id || !client_secret) {
+        console.error("ERROR: Faltan credenciales (client_id o client_secret). Abortando.");
         return null;
     }
 
-    const promises = [];
-    usersSnapshot.forEach(doc => {
-        promises.push(refreshUserToken(doc.id));
+    // 3. Inicializar cliente OAuth
+    const oauth2Client = new AuthorizationCode({
+        client: { id: client_id, secret: client_secret },
+        auth: {
+            tokenHost: 'https://login.microsoftonline.com',
+            tokenPath: 'common/oauth2/v2.0/token',
+            authorizePath: 'common/oauth2/v2.0/authorize',
+        },
     });
 
-    await Promise.all(promises);
-    console.log('Finished scheduled token refresh.');
+    try {
+        // 4. Buscar usuarios conectados
+        const usersSnapshot = await db.collection('users')
+            .where('oneDriveRefreshToken', '!=', null)
+            .get();
+
+        if (usersSnapshot.empty) {
+            console.log('No hay usuarios con OneDrive conectado.');
+            return null;
+        }
+
+        const promises = usersSnapshot.docs.map(async (doc) => {
+            const userId = doc.id;
+            const userData = doc.data();
+            const currentRefreshToken = userData.oneDriveRefreshToken;
+
+            if (!currentRefreshToken) return;
+
+            console.log(`Procesando usuario: ${userId}`);
+
+            try {
+                // Crear objeto de token para refrescar
+                // Forzamos expires_in: 0 para obligar el refresco
+                const tokenObject = {
+                    refresh_token: currentRefreshToken,
+                    expires_in: 0
+                };
+
+                let accessToken = oauth2Client.createToken(tokenObject);
+
+                // Refrescar
+                const newToken = await accessToken.refresh();
+
+                // Guardar nuevo token
+                const newRefreshToken = newToken.token.refresh_token;
+                const updateData = {
+                    oneDriveTokenData: newToken.token,
+                    lastTokenRefresh: admin.firestore.FieldValue.serverTimestamp()
+                };
+
+                // Rotación de Refresh Token: Si Microsoft nos da uno nuevo, lo guardamos
+                if (newRefreshToken && newRefreshToken !== currentRefreshToken) {
+                    console.log(`Usuario ${userId}: ¡Nuevo Refresh Token recibido! Guardando...`);
+                    updateData.oneDriveRefreshToken = newRefreshToken;
+                }
+
+                await db.collection('users').doc(userId).update(updateData);
+                console.log(`Usuario ${userId}: Token refrescado exitosamente.`);
+
+            } catch (refreshError) {
+                console.error(`Error al refrescar usuario ${userId}:`, refreshError.message);
+                if (refreshError.message && refreshError.message.includes('invalid_grant')) {
+                    console.error(`ALERTA: El token del usuario ${userId} ha caducado definitivamente.`);
+                }
+            }
+        });
+
+        await Promise.all(promises);
+        console.log('--- Fin del ciclo de refresco ---');
+
+    } catch (error) {
+        console.error('Error general en scheduledTokenRefresh:', error);
+    }
+
     return null;
 });
