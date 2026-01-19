@@ -150,15 +150,21 @@ exports.sendTestNotification = functions.https.onCall((data, context) => {
  * Usa Firebase Functions v2.
  */
 exports.verificarCajaConProblemas = onDocumentCreated("movimientos_cajas/{movimientoId}", async (event) => {
+    // [DEBUG] Chivato inicial para confirmar que el trigger funciona
+    console.log(">>> INICIO TRIGGER: verificarCajaConProblemas <<<");
+
     const movimiento = event.data.data();
+    console.log("Datos recibidos:", JSON.stringify(movimiento));
 
     // 1. FILTRO: Solo nos interesa si es una "Entrada"
     if (!movimiento || movimiento.tipo !== 'Entrada') {
+        console.log(`Cancelado: El tipo es '${movimiento?.tipo}', se esperaba 'Entrada'.`);
         return;
     }
 
     const serialCaja = movimiento.cajaSerie;
     if (!serialCaja) {
+        console.log("Cancelado: No hay número de serie (cajaSerie).");
         return;
     }
 
