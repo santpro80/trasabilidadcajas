@@ -126,117 +126,234 @@ const db = admin.firestore();
 //   }
 // });
 
+
+
 // (Asegúrate de tener también las funciones 'initiateOneDriveOAuth' y 'handleOneDriveRedirect' en tu archivo)
+
 // Forzando un cambio para el despliegue.
 
+
+
 exports.sendTestNotification = functions.https.onCall((data, context) => {
+
   console.log('--- DEBUGGING ---');
+
   console.log('Function triggered. Data received:', data);
+
   console.log('Full context object:', JSON.stringify(context, null, 2));
+
   console.log('Auth object alone:', context.auth);
+
   console.log('--- END DEBUGGING ---');
 
+
+
   // Directly return the auth object (or null) to the client for inspection.
+
   return {
+
     auth: context.auth || null,
+
     message: "Debug function executed. Check browser console for the returned object."
+
   };
+
 });
+
+
+
 
 
 /**
+
  * Trigger: Se ejecuta cada vez que se crea un documento en 'movimientos_cajas'.
+
  * Objetivo: Si es una 'Entrada' y la caja tiene problemas pendientes ('estado'='nuevo'), notificar a Mantenimiento.
+
  * Usa Firebase Functions v2.
+
  */
+
 exports.verificarCajaConProblemas = onDocumentCreated("movimientos_cajas/{movimientoId}", async (event) => {
+
     const movimiento = event.data.data();
 
+
+
     // 1. FILTRO: Solo nos interesa si es una "Entrada"
+
     if (!movimiento || movimiento.tipo !== 'Entrada') {
+
         return;
+
     }
 
+
+
     const serialCaja = movimiento.cajaSerie;
+
     if (!serialCaja) {
+
         return;
+
     }
+
+
 
     console.log(`Analizando entrada de caja: ${serialCaja}`);
 
+
+
     try {
+
         // 2. BUSCAR PROBLEMAS ACTIVOS
+
         const problemasSnapshot = await admin.firestore()
+
             .collection('problemas_cajas')
+
             .where('cajaSerial', '==', serialCaja)
+
             .where('estado', '==', 'nuevo') // Solo reportes no resueltos
+
             .get();
+
+
 
         if (problemasSnapshot.empty) {
+
             console.log(`Caja ${serialCaja} limpia, sin reportes con estado 'nuevo'.`);
+
             return;
+
         }
+
+
 
         // Si llegamos aquí, ¡HAY PROBLEMAS! 🚨
+
         const reporte = problemasSnapshot.docs[0].data();
+
         
+
         // Armamos la lista de fallas (ej: "Bisagras sueltas, Daño estructural")
+
         const listaFallas = reporte.tareas.map(t => t.texto || t).join(', ');
 
+
+
         // 3. BUSCAR A LOS DE MANTENIMIENTO
+
         const mantenimientoSnapshot = await admin.firestore()
+
             .collection('users')
+
             .where('role', '==', 'mantenimiento')
+
             .get();
 
+
+
         if (mantenimientoSnapshot.empty) {
+
             console.log("No se encontraron usuarios con el rol 'mantenimiento'.");
+
             return;
+
         }
+
+
 
         const tokens = [];
+
         mantenimientoSnapshot.forEach(doc => {
+
             const data = doc.data();
+
             if (data.fcmToken) {
+
                 tokens.push(data.fcmToken);
+
             }
+
         });
 
+
+
         if (tokens.length === 0) {
+
             console.log("No hay operarios de mantenimiento con token para notificar.");
+
             return;
+
         }
+
+
 
         // 4. ENVIAR NOTIFICACIÓN MASIVA (Multicast)
+
         const payload = {
+
             data: {
+
                 title: '⚠️ Caja con Daños Ingresada',
+
                 body: `El modelo de la caja es ${reporte.cajaModelo} y su número de serie es ${serialCaja}\nProblemas: ${listaFallas}\nComunicarse con el sector de lavado para su administración`,
+
                 tipo: 'alerta_mantenimiento',
+
                 id_caja: serialCaja,
+
                 mensaje: 'Caja dañada ingresada',
+
                 url: `/mantenimiento/ver-problemas.html`, // Corregido: La página está en la carpeta 'supervisor'
+
                 cajaSerial: serialCaja
+
             },
+
             android: {
+
                 priority: 'high' // Crucial para despertar al SW
+
             },
+
             tokens: tokens
+
         };
 
+
+
         const response = await admin.messaging().sendEachForMulticast(payload);
+
         console.log('Notificaciones enviadas:', response.successCount);
+
         
+
         if (response.failureCount > 0) {
+
             console.warn(`Fallaron ${response.failureCount} notificaciones.`);
+
             response.responses.forEach((resp, idx) => {
+
                 if (!resp.success) {
+
                     console.error(`Error con el token #${idx}:`, resp.error);
+
                 }
+
             });
+
         }
 
+
+
     } catch (error) {
+
         console.error("Error en la lógica de notificación 'verificarCajaConProblemas':", error);
+
     }
+
 });
+
+exports.scheduledTokenRefresh = require('./refreshToken.js').scheduledTokenRefresh;
