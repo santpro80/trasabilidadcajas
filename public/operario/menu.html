@@ -222,7 +222,6 @@
                     </li>
                 </ul>
             </nav>
-            <button id="btn-test-notify" style="margin-top: 20px; width: 100%; padding: 15px; background-color: #34a853; color: white; border: none; border-radius: 10px; font-size: 1.1em; cursor: pointer;">🔔 Probar Notificación (5s)</button>
         </div>
     </main>
 
@@ -249,7 +248,6 @@
         const btnNotifications = document.getElementById('btn-notifications');
 
         let currentUserRole = 'operario';
-        let swRegistration = null; // To store the service worker registration
 
         // Register Service Worker
         if ('serviceWorker' in navigator) {
@@ -257,7 +255,6 @@
                 navigator.serviceWorker.register('/operario/firebase-messaging-sw.js')
                     .then(registration => {
                         console.log('Service Worker registered successfully:', registration);
-                        swRegistration = registration;
                     })
                     .catch(error => {
                         console.error('Service Worker registration failed:', error);
@@ -294,6 +291,27 @@
             if (liTickets) liTickets.style.display = 'list-item';
         };
 
+        // Función para avisar visualmente si faltan las notificaciones
+        const updateNotificationButtonUI = () => {
+            if (!('Notification' in window) || !btnNotifications) return;
+
+            if (Notification.permission === 'default') {
+                // Aún no ha aceptado: Resaltar en AMARILLO para llamar la atención
+                btnNotifications.style.backgroundColor = '#fff3cd';
+                btnNotifications.style.border = '2px solid #ffc107';
+                btnNotifications.querySelector('span').textContent = '🔔 Activar Notificaciones (Requerido)';
+            } else if (Notification.permission === 'granted') {
+                // Ya aceptó: Verde sutil
+                btnNotifications.style.backgroundColor = '#d4edda';
+                btnNotifications.style.border = '1px solid #c3e6cb';
+                btnNotifications.querySelector('span').textContent = '✅ Notificaciones Activadas';
+            } else if (Notification.permission === 'denied') {
+                // Bloqueado: Rojo
+                btnNotifications.style.backgroundColor = '#f8d7da';
+                btnNotifications.querySelector('span').textContent = '❌ Notificaciones Bloqueadas';
+            }
+        };
+
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 try {
@@ -308,6 +326,7 @@
                         currentUserRole = 'operario';
                     }
                     manageMenuVisibility(currentUserRole);
+                    updateNotificationButtonUI(); // Verificamos el estado apenas carga
                     setupTicketNotifications(db, collection, query, where, onSnapshot, user, currentUserRole);
                 } catch (error) {
                     console.error("Error al obtener datos del usuario:", error);
@@ -341,12 +360,14 @@
         btnVerProblemas?.addEventListener('click', () => { window.location.href = 'ver-problemas.html'; });
         btnBuscarPrestamo?.addEventListener('click', () => { window.location.href = 'buscar-por-prestamo.html'; });
         
-        btnNotifications?.addEventListener('click', () => {
-            if (swRegistration) {
-                requestNotificationPermission(swRegistration);
+        btnNotifications?.addEventListener('click', async () => {
+            if ('serviceWorker' in navigator) {
+                // Esperamos a que el Service Worker esté listo de forma segura
+                const registration = await navigator.serviceWorker.ready;
+                await requestNotificationPermission(registration);
+                updateNotificationButtonUI(); // Actualizamos el botón después de que el usuario responda
             } else {
-                console.error('Service worker not registered yet.');
-                alert('El servicio de notificaciones no está listo. Por favor, recarga la página.');
+                alert('Tu navegador no soporta notificaciones.');
             }
         });
 
@@ -357,52 +378,6 @@
                 window.location.href = 'tickets-operador.html';
             }
         });
-    </script>
-    <script>
-        // Lógica del Botón de Prueba de Notificaciones (Migrado desde index.html)
-        const btnTest = document.getElementById('btn-test-notify');
-        if (btnTest) {
-            btnTest.addEventListener('click', () => {
-                // Pedimos permiso al usuario
-                Notification.requestPermission().then((permission) => {
-                    if (permission === 'granted') {
-                        console.log('Permiso concedido. Esperando 5 segundos...');
-                        alert('Permiso concedido. Minimiza el navegador AHORA para ver la notificación en 5 segundos.');
-
-                        setTimeout(async () => {
-                            // Esperamos a que el Service Worker esté listo ('ready')
-                            // Usamos el SW que ya registra tu página menu.html
-                            const reg = await navigator.serviceWorker.ready;
-
-                            if (reg) {
-                                try {
-                                    // Mostramos la notificación desde el Service Worker
-                                    await reg.showNotification('Prueba Exitosa', {
-                                        body: '¡El sistema de notificaciones está activo en el Menú!',
-                                        icon: '/operario/assets/logo.png',
-                                        badge: '/operario/assets/logo.png',
-                                        vibrate: [200, 100, 200],
-                                        tag: 'test-notification',
-                                        data: { url: window.location.href }
-                                    });
-                                    console.log('Notificación enviada.');
-                                } catch (e) {
-                                    console.error('Error al mostrar la notificación:', e);
-                                    alert('Error: ' + e.message);
-                                }
-                            } else {
-                                console.error('No se encontró un Service Worker activo.');
-                                alert('El Service Worker no está listo. Recarga la página.');
-                            }
-                        }, 5000);
-
-                    } else {
-                        console.warn('Permiso denegado.');
-                        alert('Debes permitir las notificaciones para ver la prueba.');
-                    }
-                });
-            });
-        }
     </script>
 </body>
 </html>
