@@ -204,20 +204,21 @@ exports.verificarCajaConProblemas = onDocumentCreated("movimientos_cajas/{movimi
             return;
         }
 
-        const tokens = [];
+        const tokensAndUsers = [];
         mantenimientoSnapshot.forEach(doc => {
             const data = doc.data();
             if (data.fcmToken) {
-                tokens.push(data.fcmToken);
+                tokensAndUsers.push({ token: data.fcmToken, userId: doc.id });
             }
         });
 
-        if (tokens.length === 0) {
+        if (tokensAndUsers.length === 0) {
             console.log("No hay operarios de mantenimiento con token para notificar.");
             return;
         }
 
         // 4. ENVIAR NOTIFICACIÓN MASIVA (Multicast)
+        const tokens = tokensAndUsers.map(item => item.token);
         const payload = {
             data: {
                 title: '⚠️ Caja con Daños Ingresada',
@@ -239,11 +240,26 @@ exports.verificarCajaConProblemas = onDocumentCreated("movimientos_cajas/{movimi
         
         if (response.failureCount > 0) {
             console.warn(`Fallaron ${response.failureCount} notificaciones.`);
+            const promises = [];
             response.responses.forEach((resp, idx) => {
                 if (!resp.success) {
                     console.error(`Error con el token #${idx}:`, resp.error);
+                    // LIMPIEZA AUTOMÁTICA: Si el token ya no es válido, lo borramos de la base de datos.
+                    const errorCode = resp.error.code;
+                    if (errorCode === 'messaging/registration-token-not-registered' || 
+                        errorCode === 'messaging/invalid-registration-token') {
+                        
+                        const userToClean = tokensAndUsers[idx];
+                        console.log(`Token inválido para el usuario ${userToClean.userId}. Eliminando de Firestore.`);
+                        const userDocRef = db.collection('users').doc(userToClean.userId);
+                        promises.push(userDocRef.update({ fcmToken: admin.firestore.FieldValue.delete() }));
+                    }
                 }
             });
+            await Promise.all(promises);
+            if (promises.length > 0) {
+                console.log(`${promises.length} tokens inválidos eliminados.`);
+            }
         }
 
     } catch (error) {
