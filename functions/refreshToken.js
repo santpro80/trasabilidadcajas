@@ -1,5 +1,5 @@
 
-const functions = require('firebase-functions');
+const functions = require('firebase-functions/v1');
 const admin = require('firebase-admin');
 const { AuthorizationCode } = require('simple-oauth2');
 const axios = require('axios');
