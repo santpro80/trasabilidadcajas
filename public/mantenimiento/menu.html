@@ -135,8 +135,6 @@
                     </li>
                 </ul>
             </nav>
-            <button id="btn-test-notify" style="margin-top: 20px; width: 100%; padding: 15px; background-color: #34a853; color: white; border: none; border-radius: 10px; font-size: 1.1em; cursor: pointer;">🔔 Probar Notificación (5s)</button>
-            <button id="btn-force-token" style="margin-top: 10px; width: 100%; padding: 15px; background-color: #f0ad4e; color: white; border: none; border-radius: 10px; font-size: 1.1em; cursor: pointer; display: none;">🔄 Conectar Alertas (Mantenimiento)</button>
         </div>
     </main>
 
@@ -163,7 +161,6 @@
         const btnBuscarPrestamo = document.getElementById('btn-buscar-prestamo');
         const btnGestionUsuarios = document.getElementById('btn-gestion-usuarios');
         const btnNotifications = document.getElementById('btn-notifications');
-        const btnForceToken = document.getElementById('btn-force-token');
 
         let currentUserRole = 'operario';
 
@@ -213,41 +210,26 @@
             if (liTickets) liTickets.style.display = 'list-item';
         };
 
-        // Función MANUAL y VERBOSA para guardar el token
-        async function saveFcmToken(user) {
-            try {
-                console.log("Iniciando proceso manual de token...");
-                const permission = await Notification.requestPermission();
-                
-                if (permission !== 'granted') {
-                    alert('❌ Permiso denegado. Debes permitir notificaciones en el navegador.');
-                    return;
-                }
+        // Función para avisar visualmente si faltan las notificaciones
+        const updateNotificationButtonUI = () => {
+            if (!('Notification' in window) || !btnNotifications) return;
 
-                const app = auth.app;
-                const messaging = getMessaging(app);
-                
-                // Esperamos al Service Worker
-                const swRegistration = await navigator.serviceWorker.ready;
-
-                const currentToken = await getToken(messaging, {
-                    vapidKey: VAPID_KEY,
-                    serviceWorkerRegistration: swRegistration,
-                });
-
-                if (currentToken) {
-                    console.log('Token obtenido:', currentToken);
-                    const userDocRef = doc(db, "users", user.uid);
-                    await updateDoc(userDocRef, { fcmToken: currentToken });
-                    alert('✅ ¡Conectado!\nTu dispositivo ahora recibirá las alertas de cajas con problemas.');
-                } else {
-                    alert('⚠️ No se pudo generar el token. Revisa la consola (F12).');
-                }
-            } catch (error) {
-                console.error('Error al guardar token:', error);
-                alert('❌ Error: ' + error.message);
+            if (Notification.permission === 'default') {
+                // Aún no ha aceptado: Resaltar en AMARILLO para llamar la atención
+                btnNotifications.style.backgroundColor = '#fff3cd';
+                btnNotifications.style.border = '2px solid #ffc107';
+                btnNotifications.querySelector('span').textContent = '🔔 Activar Notificaciones (Requerido)';
+            } else if (Notification.permission === 'granted') {
+                // Ya aceptó: Verde sutil
+                btnNotifications.style.backgroundColor = '#d4edda';
+                btnNotifications.style.border = '1px solid #c3e6cb';
+                btnNotifications.querySelector('span').textContent = '✅ Notificaciones Activadas';
+            } else if (Notification.permission === 'denied') {
+                // Bloqueado: Rojo
+                btnNotifications.style.backgroundColor = '#f8d7da';
+                btnNotifications.querySelector('span').textContent = '❌ Notificaciones Bloqueadas';
             }
-        }
+        };
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
@@ -258,16 +240,12 @@
                         const userData = userDocSnap.data();
                         if (userDisplayElement) userDisplayElement.textContent = userData.name || user.email;
                         currentUserRole = userData.role || 'operario';
-                        
-                        // Mostrar botón solo si es mantenimiento
-                        if (currentUserRole === 'mantenimiento') {
-                            if(btnForceToken) btnForceToken.style.display = 'block';
-                        }
                     } else {
                         if (userDisplayElement) userDisplayElement.textContent = user.email;
                         currentUserRole = 'operario';
                     }
                     manageMenuVisibility(currentUserRole);
+                    updateNotificationButtonUI(); // Verificamos el estado apenas carga
                     setupTicketNotifications(db, collection, query, where, onSnapshot, user, currentUserRole);
 
                     // Auto-prompt for notifications on first login
@@ -320,16 +298,10 @@
             if ('serviceWorker' in navigator) {
                 // Esperamos a que el Service Worker esté listo de forma segura
                 const registration = await navigator.serviceWorker.ready;
-                requestNotificationPermission(registration);
+                await requestNotificationPermission(registration);
+                updateNotificationButtonUI(); // Actualizamos el botón después de que el usuario responda
             } else {
                 alert('Tu navegador no soporta notificaciones.');
-            }
-        });
-
-        // Evento para el nuevo botón manual
-        btnForceToken?.addEventListener('click', () => {
-            if (auth.currentUser) {
-                saveFcmToken(auth.currentUser);
             }
         });
 
@@ -340,51 +312,6 @@
                 window.location.href = 'tickets-operador.html';
             }
         });
-    </script>
-    <script>
-        // Lógica del Botón de Prueba de Notificaciones (Migrado desde index.html)
-        const btnTest = document.getElementById('btn-test-notify');
-        if (btnTest) {
-            btnTest.addEventListener('click', () => {
-                // Pedimos permiso al usuario
-                Notification.requestPermission().then((permission) => {
-                    if (permission === 'granted') {
-                        console.log('Permiso concedido. Esperando 5 segundos...');
-                        alert('Permiso concedido. Minimiza el navegador AHORA para ver la notificación en 5 segundos.');
-
-                        setTimeout(async () => {
-                            // Esperamos a que el Service Worker esté listo ('ready')
-                            // Usamos el SW que ya registra tu página menu.html
-                            const reg = await navigator.serviceWorker.ready;
-
-                            if (reg) {
-                                try {
-                                    await reg.showNotification('Prueba Exitosa', {
-                                        body: '¡El sistema de notificaciones está activo en el Menú!',
-                                        icon: '/assets/logo.png',
-                                        badge: '/assets/logo.png',
-                                        vibrate: [200, 100, 200],
-                                        tag: 'test-notification',
-                                        data: { url: window.location.href }
-                                    });
-                                    console.log('Notificación enviada.');
-                                } catch (e) {
-                                    console.error('Error al mostrar la notificación:', e);
-                                    alert('Error: ' + e.message);
-                                }
-                            } else {
-                                console.error('No se encontró un Service Worker activo.');
-                                alert('El Service Worker no está listo. Recarga la página.');
-                            }
-                        }, 5000);
-
-                    } else {
-                        console.warn('Permiso denegado.');
-                        alert('Debes permitir las notificaciones para ver la prueba.');
-                    }
-                });
-            });
-        }
     </script>
 </body>
 </html>
