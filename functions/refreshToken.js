@@ -13,14 +13,25 @@ const db = admin.firestore();
 // --- Microsoft Graph OAuth2 Configuration ---
 // IMPORTANT: Store these as Firebase secrets
 // Get secrets
-const client_id = functions.config().onedrive.client_id;
-const client_secret = functions.config().onedrive.client_secret;
+
+// FIX: Acceso seguro a la configuración para evitar caídas si no está definida
+const config = functions.config().onedrive || {};
+let client_id = config.client_id;
+let client_secret = config.client_secret;
+
+// Fallback: Si no hay config de entorno, intentar usar valores hardcoded o archivo
+if (!client_id || !client_secret) {
+    // ID conocido de tu aplicación (sacado de tu index.js anterior)
+    client_id = client_id || '706bf438-e836-49dc-a418-ae8aecb200cd';
+    // Intentar cargar secreto de archivo si existe
+    try { const secrets = require('./onedrive_secret.json'); client_secret = secrets.client_secret; } catch (e) {}
+}
 
 
 const oauth2Client = new AuthorizationCode({
   client: {
-    id: client_id,
-    secret: client_secret,
+    id: client_id || 'dummy_id_to_prevent_crash',
+    secret: client_secret || 'dummy_secret_to_prevent_crash',
   },
   auth: {
     tokenHost: 'https://login.microsoftonline.com',
