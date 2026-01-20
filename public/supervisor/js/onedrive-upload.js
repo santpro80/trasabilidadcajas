@@ -1,15 +1,15 @@
-
-
 const OD_CONFIG = {
     clientId: "56c7f9c1-d4df-41f8-af09-3c3561ccb35a",
-    initialRefreshToken: "M.C501_BAY.0.U.-CnpgOQIitHvEJBDvhhWXY56fghMRLoBpRVSRbqL1J4tLF1UKazcz8dRU*6uK9vidk3FjrprD7L9kci9E8u4gtbHXE2V1LTuFhd2!3TosLHcW0NlpzixfJaCfMoMvPUfCIUcLiDMzA7S6hnRizCGRI4vAwLrnnCe6EPOarkgd4J9fxZFiGOmcRLLLT24XAzyYJFaTmrVyTsE2W2HRJkPKKb9qAZTRyKR3aCZ5XHaEzcMaAcvNWG2bSvg8ZEpvrEdApUmy0tyX5r13keIZS8s6Ld5dxblIb0HRCNOvwx3ov8XsMW!H6UQmvjJMzCmVPzDZnZCjvYqoYExLbzmBAHmY2cqCPixNHnYAjQ5nQo*cZug2"
+    // IMPORTANTE: Genera un token nuevo hoy manualmente y pégalo aquí abajo.
+    // Este será el "padre" de todos los futuros tokens automáticos.
+    initialRefreshToken: "M.C501_BAY.0.U.-CtTcjunlKl78vUoNxdBrXREwMNCgTwAf3iDOj7G5cKl9hKxiKJMCiA2b5ZTBFuI2fy6bktmTavBZiBNekDQPXX3M86edKOQC576*Eslf606fuS0XUnJg2Ode*3rtuDIPXyHs8YhdHJgLr6o2prF!WISCaChc6fwWgzojldDOVCg9fUW4h6iTA8!X6ovCIhxgIJJoQUIsH5yxe1xmCmNdFdPYBmfrgEuOVfJPjcZl7xnwlLQAYBHI5ruKv9M1I!hiE3SOwkj2GE7oYxAlTitZ6SoKbXCF2QKrnCCOXxL1WP4Ymx1JKZSyaWwxHl2IRJLH*tTkmJE9ZuW6AXjGwbnOpQUh8T!f9Q6uzPX*h5NFMbri"
 };
 
 async function getODAccessToken() {
-    // 1. Buscamos si tenemos un token guardado de hoy (el más nuevo)
+    // 1. Buscamos si tenemos un token guardado (el que se renovó ayer)
     let currentRefreshToken = localStorage.getItem("od_refresh_token");
 
-    // 2. Si no hay guardado, usamos el inicial (el "semilla")
+    // 2. Si no hay nada guardado en el navegador, usamos el inicial del código
     if (!currentRefreshToken) {
         currentRefreshToken = OD_CONFIG.initialRefreshToken;
     }
@@ -18,7 +18,8 @@ async function getODAccessToken() {
         client_id: OD_CONFIG.clientId,
         refresh_token: currentRefreshToken,
         grant_type: 'refresh_token',
-        scope: 'Files.ReadWrite.All'
+        // CAMBIO CLAVE: Agregamos 'offline_access' para que Microsoft nos permita renovar siempre
+        scope: 'Files.ReadWrite.All offline_access'
     });
 
     try {
@@ -31,35 +32,39 @@ async function getODAccessToken() {
         const data = await response.json();
         
         if (data.error) {
-            // Si el token guardado falló, intentamos volver al original por si acaso
+            // Si el token guardado en el navegador falló...
             if (currentRefreshToken !== OD_CONFIG.initialRefreshToken) {
-                console.warn("Token guardado falló, intentando con el inicial...");
+                console.warn("⚠️ Token guardado vencido. Intentando recuperar con el token inicial...");
+                // Lo borramos para obligar a usar el inicial en el próximo intento recursivo
                 localStorage.removeItem("od_refresh_token");
-                return getODAccessToken(); // Reintento recursivo
+                return getODAccessToken(); 
             }
-            throw new Error(data.error_description || JSON.stringify(data));
+            // Si llegamos aquí, es que ni el guardado ni el inicial funcionan.
+            throw new Error("❌ Error fatal: Ambos tokens han caducado. Actualiza initialRefreshToken en el código.");
         }
 
-        // --- LA CLAVE MÁGICA DE LA AUTO-RENOVACIÓN ---
-        // Si Microsoft nos da un token nuevo para mañana, ¡LO GUARDAMOS!
+        // --- RENOVACIÓN AUTOMÁTICA ---
+        // Si la respuesta trae un nuevo refresh token, lo guardamos para mañana.
         if (data.refresh_token) {
-            console.log("🔄 Actualizando Refresh Token para el futuro...");
+            console.log("🔄 Guardando token renovado para el futuro...");
             localStorage.setItem("od_refresh_token", data.refresh_token);
         }
-        // ---------------------------------------------
+        // -----------------------------
 
         return data.access_token;
 
     } catch (error) {
-        console.error("❌ Error token:", error);
+        console.error("❌ Error obteniendo token:", error);
         throw error;
     }
 }
 
-// Función global de subida
+// Función global de subida (Esta queda igual, pero usa la nueva lógica de token)
 window.uploadToOneDrive = async function(fileName, fileBlob, folderPath) {
     try {
-        console.log(`☁️ Subiendo ${fileName}...`);
+        console.log(`☁️ Iniciando subida de: ${fileName}...`);
+        
+        // Aquí es donde ocurre la magia de la renovación automática
         const token = await getODAccessToken();
         
         const encodedPath = encodeURIComponent(folderPath + '/' + fileName);
@@ -76,13 +81,13 @@ window.uploadToOneDrive = async function(fileName, fileBlob, folderPath) {
 
         if (response.ok) {
             const json = await response.json();
-            console.log("✅ ¡Subida OK!", json);
+            console.log("✅ Archivo subido exitosamente a OneDrive", json);
             return json;
         } else {
             throw new Error(await response.text());
         }
     } catch (error) {
-        console.error("❌ Fallo OneDrive:", error);
+        console.error("❌ Falló la subida a OneDrive:", error);
         throw error;
     }
 };
