@@ -1,8 +1,8 @@
 const OD_CONFIG = {
     clientId: "56c7f9c1-d4df-41f8-af09-3c3561ccb35a",
     // IMPORTANTE: Genera un token nuevo hoy manualmente y pégalo aquí abajo.
-    // Este será el "padre" de todos los futuros tokens automáticos.
-    initialRefreshToken: "M.C501_BAY.0.U.-CtTcjunlKl78vUoNxdBrXREwMNCgTwAf3iDOj7G5cKl9hKxiKJMCiA2b5ZTBFuI2fy6bktmTavBZiBNekDQPXX3M86edKOQC576*Eslf606fuS0XUnJg2Ode*3rtuDIPXyHs8YhdHJgLr6o2prF!WISCaChc6fwWgzojldDOVCg9fUW4h6iTA8!X6ovCIhxgIJJoQUIsH5yxe1xmCmNdFdPYBmfrgEuOVfJPjcZl7xnwlLQAYBHI5ruKv9M1I!hiE3SOwkj2GE7oYxAlTitZ6SoKbXCF2QKrnCCOXxL1WP4Ymx1JKZSyaWwxHl2IRJLH*tTkmJE9ZuW6AXjGwbnOpQUh8T!f9Q6uzPX*h5NFMbri"
+    // Este será el "padre" de todos los futuros tokens automáticos.M.C501_BAY.0.U.
+    initialRefreshToken: "M.C501_BAY.0.U.-CirHfmbQkXoZVv!16Pbsp8RCC2!IczmfFxBUP2neF5Ik2C!J*49ZFfx8uVls*Oxjw3ggzF*g4jg6EPxvpY0SNEKBZZvx9bK*ymq2m*rs*Z5jG7ZYCYxsHfbk3jJAc0zGoP2UNeGc1!Olfj1ERZI1KF32qQUjuP*hX8zVUYOkAtb417m83rbDMTXlNytGDHx03aUYV2OQz8Uh!Ge6r6!v*hhl5UsexSwMq2ujFbk!ulQMnu31P!tMX8rMgcfPrE3Ow9v!bvMzoBn5mGrGE2J2whr9mSMqVB5U8nHFBW*dD8ILHNHAAI*1U8i!7EcjCK7JwaQPjyZJrOdkbYkjO6*EPl8DKchlarPFY*4gstqTSMA8"
 };
 
 async function getODAccessToken() {
