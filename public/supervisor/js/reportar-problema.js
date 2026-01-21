@@ -1,5 +1,5 @@
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { doc, setDoc, serverTimestamp, collection, addDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { doc, setDoc, serverTimestamp, collection, addDoc, query, where, getDocs, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 import { app, db } from "./firebase-config.js";
 
 const auth = getAuth(app);
@@ -90,16 +90,38 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         try {
-            await addDoc(collection(db, 'problemas_cajas'), {
-                cajaSerial: serial,
-                cajaModelo: modelo,
-                tareas: tareas, 
-                reportadoPor: currentUser.uid,
-                fechaReporte: serverTimestamp(),
-                estado: 'nuevo'
-            });
+            // 1. Verificar si ya existe un reporte "nuevo" para este serial
+            const q = query(
+                collection(db, 'problemas_cajas'),
+                where('cajaSerial', '==', serial),
+                where('estado', '==', 'nuevo')
+            );
+            const querySnapshot = await getDocs(q);
 
-            messageDiv.textContent = '¡Reporte enviado con éxito!';
+            if (!querySnapshot.empty) {
+                // YA EXISTE: Añadimos los problemas al reporte existente
+                const existingDoc = querySnapshot.docs[0];
+                const existingData = existingDoc.data();
+                const existingTareas = existingData.tareas || [];
+                const updatedTareas = [...existingTareas, ...tareas];
+
+                await updateDoc(doc(db, 'problemas_cajas', existingDoc.id), {
+                    tareas: updatedTareas
+                });
+                messageDiv.textContent = 'Problemas añadidos al reporte existente (Estado: Nuevo).';
+            } else {
+                // NO EXISTE: Creamos uno nuevo
+                await addDoc(collection(db, 'problemas_cajas'), {
+                    cajaSerial: serial,
+                    cajaModelo: modelo,
+                    tareas: tareas, 
+                    reportadoPor: currentUser.uid,
+                    fechaReporte: serverTimestamp(),
+                    estado: 'nuevo'
+                });
+                messageDiv.textContent = '¡Reporte enviado con éxito!';
+            }
+
             messageDiv.style.color = 'green';
             cajaSerialInput.value = '';
             cajaModeloInput.value = '';
