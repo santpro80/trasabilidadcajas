@@ -6,6 +6,7 @@ const auth = getAuth(app);
 
 document.addEventListener('DOMContentLoaded', () => {
     const cajaSerialInput = document.getElementById('cajaSerialInput');
+    const cajaNumeroInput = document.getElementById('cajaNumeroInput');
     const cajaModeloInput = document.getElementById('cajaModeloInput');
     const problemaCheckboxes = document.querySelectorAll('input[name="problema"]');
     const otroCheckbox = document.getElementById('problema_otro');
@@ -20,7 +21,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // Forzar mayúsculas al escribir el serial
     if (cajaSerialInput) {
         cajaSerialInput.addEventListener('input', (e) => {
-            e.target.value = e.target.value.toUpperCase();
+            e.target.value = e.target.value.toUpperCase().slice(0, 6);
+        });
+    }
+
+    // Validación input N° (Solo números, max 2)
+    if (cajaNumeroInput) {
+        cajaNumeroInput.addEventListener('input', (e) => {
+            e.target.value = e.target.value.replace(/[^0-9]/g, '').slice(0, 2);
         });
     }
 
@@ -52,11 +60,27 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     enviarReporteBtn.addEventListener('click', async () => {
         const serial = cajaSerialInput.value.trim();
+        const numero = cajaNumeroInput ? cajaNumeroInput.value.trim() : '';
         const modelo = cajaModeloInput.value.trim();
         const selectedProblemas = document.querySelectorAll('input[name="problema"]:checked');
         const otroProblema = otroProblemaTextarea.value.trim();
 
         const tareas = [];
+
+        // Validaciones de formato
+        const serialRegex = /^[A-Z]{2}\d{4}$/; // 2 Letras + 4 Números
+        if (!serialRegex.test(serial)) {
+            messageDiv.textContent = 'El número de serie debe tener 2 letras y 4 números (Ej: AA1234).';
+            messageDiv.style.color = 'red';
+            return;
+        }
+
+        if (cajaNumeroInput && !/^\d{2}$/.test(numero)) {
+            messageDiv.textContent = 'El campo N° debe tener exactamente 2 números.';
+            messageDiv.style.color = 'red';
+            return;
+        }
+
         if (!serial || !modelo) {
             messageDiv.textContent = 'El número de serie y el modelo son obligatorios.';
             messageDiv.style.color = 'red';
@@ -106,13 +130,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 const updatedTareas = [...existingTareas, ...tareas];
 
                 await updateDoc(doc(db, 'problemas_cajas', existingDoc.id), {
-                    tareas: updatedTareas
+                    tareas: updatedTareas,
+                    cajaNumero: numero
                 });
                 messageDiv.textContent = 'Problemas añadidos al reporte existente (Estado: Nuevo).';
             } else {
                 // NO EXISTE: Creamos uno nuevo
                 await addDoc(collection(db, 'problemas_cajas'), {
                     cajaSerial: serial,
+                    cajaNumero: numero,
                     cajaModelo: modelo,
                     tareas: tareas, 
                     reportadoPor: currentUser.uid,
@@ -124,6 +150,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             messageDiv.style.color = 'green';
             cajaSerialInput.value = '';
+            if (cajaNumeroInput) cajaNumeroInput.value = '';
             cajaModeloInput.value = '';
             problemaCheckboxes.forEach(checkbox => checkbox.checked = false);
             otroProblemaTextarea.value = '';
