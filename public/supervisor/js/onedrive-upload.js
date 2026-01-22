@@ -2,7 +2,7 @@ const OD_CONFIG = {
     clientId: "56c7f9c1-d4df-41f8-af09-3c3561ccb35a",
     // IMPORTANTE: Genera un token nuevo hoy manualmente y pégalo aquí abajo.
     // Este será el "padre" de todos los futuros tokens automáticos.M.C501_BAY.0.U.
-    initialRefreshToken: "M.C501_BAY.0.U.-CirHfmbQkXoZVv!16Pbsp8RCC2!IczmfFxBUP2neF5Ik2C!J*49ZFfx8uVls*Oxjw3ggzF*g4jg6EPxvpY0SNEKBZZvx9bK*ymq2m*rs*Z5jG7ZYCYxsHfbk3jJAc0zGoP2UNeGc1!Olfj1ERZI1KF32qQUjuP*hX8zVUYOkAtb417m83rbDMTXlNytGDHx03aUYV2OQz8Uh!Ge6r6!v*hhl5UsexSwMq2ujFbk!ulQMnu31P!tMX8rMgcfPrE3Ow9v!bvMzoBn5mGrGE2J2whr9mSMqVB5U8nHFBW*dD8ILHNHAAI*1U8i!7EcjCK7JwaQPjyZJrOdkbYkjO6*EPl8DKchlarPFY*4gstqTSMA8"
+    initialRefreshToken: "M.C501_BL2.0.U.-CsBoJpwZFBXpRdG5o2sW9dsxgc2zwpA7pdZ8kYFXpp4pAEAx2UN7bc3euOeQsdDAyFBEsn797CWOKwfi7I1y86*HuesutQNCRavZKpAz61QOVK8gyUCgjWcpvgz6Mt1*dniRUk*TpvIB5cbe!CZ!J9enISW0zA5l*X7QVEat83nBmfbwwuJTNi0h0BO10oPWN9yC**HOGQsssNT3i2u6!gJPTd0qPkjt*aQRqdcsn6vCyPvWuMpT5dn5AyaFYfokEwUWg!NnfCKzh6j74w3WEVJDC0hmTdmz3oxjJNppx9z9cXxzU5CdAtbkUJlyrsllLQcL*O4TM6c2sfOUR67zqDZUSSG*NGPUY4mBQZg*s2t4"
 };
 
 async function getODAccessToken() {
