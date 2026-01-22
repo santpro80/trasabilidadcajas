@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 localStorage.setItem('redirectAfterLogin', window.location.href); // Added for consistency, though it redirects to another app page
             }
         } else {
-            window.location.href = 'login.html';
+            window.location.href = '../login.html';
         }
     });
 
