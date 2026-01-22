@@ -3,16 +3,12 @@ import {
     doc, getDoc, setDoc, updateDoc, deleteField, onSnapshot,
     registrarHistorial, appCheck, showNotification,
     registrarMovimientoCaja, sanitizeFieldName, unSanitizeFieldName, registrarConsumoItem,
-    functions, httpsCallable
+    collection, query, where, getDocs
 } from './firebase-config.js';
-
-// --- 1. Configuración de Firebase Functions ---
-// Se obtienen 'functions' y 'httpsCallable' desde firebase-config.js
-const uploadPdfToOneDriveCallable = httpsCallable(functions, 'uploadPdfToOneDrive');
 
 document.addEventListener('DOMContentLoaded', () => {
     console.log("DOM completamente cargado y analizado");
-
+    console.log("cambionamiento para onedrive directo");
     const userDisplayNameElement = document.getElementById('user-display-name');
     const logoutBtn = document.getElementById('logout-btn');
     const backBtn = document.getElementById('back-btn');
@@ -314,144 +310,104 @@ document.addEventListener('DOMContentLoaded', () => {
     
 
 
-    const generarPDF = (tipo, prestamoNum = null) => {
-        console.log(`Iniciando generarPDF para tipo: ${tipo}`);
+    const generarPDF = async (tipo, prestamoNum = null) => {
+        console.log(`Iniciando generación de PDF directa para tipo: ${tipo}`);
         if (!currentSelectedSerialNumber) {
             showNotification("Error: No se ha seleccionado un número de serie de caja.", "error");
             return;
         }
-        if (typeof html2canvas === 'undefined' || typeof window.jspdf === 'undefined') { 
-            console.error("Error: Faltan librerías para PDF (html2canvas o jsPDF).");
-            showNotification("Error: Faltan librerías para PDF.", "error"); 
+        if (typeof window.jspdf === 'undefined') { 
+            showNotification("Error: Faltan librerías para PDF (jsPDF).", "error"); 
             return; 
         }
-        const template = document.getElementById('pdf-template');
-        if (!template) { 
-            console.error("Error: Falta la plantilla para el PDF (#pdf-template).");
-            showNotification("Error: Falta la plantilla para el PDF.", "error"); 
-            return; 
-        }
-        showNotification('Generando PDF...', 'info');
-        const pdfTitle = document.getElementById('pdf-report-title');
-        const pdfBoxSerial = document.getElementById('pdf-box-serial');
-        const pdfTipo = document.getElementById('pdf-tipo');
-        const pdfUsuario = document.getElementById('pdf-usuario');
-        const pdfPrestamo = document.getElementById('pdf-prestamo-num');
-        const tableBody = document.getElementById('pdf-table-body');
 
-        const userDisplayNameElement = document.getElementById('user-display-name');
-        const userName = userDisplayNameElement ? userDisplayNameElement.textContent : 'Desconocido';
-        
-        if(pdfTitle) pdfTitle.textContent = `REPORTE ${new Date().toLocaleString('es-AR')}`;
-        if(pdfBoxSerial) pdfBoxSerial.textContent = `Caja: ${currentSelectedSerialNumber}`;
-        if(pdfTipo) pdfTipo.textContent = `Tipo: ${tipo.toUpperCase()}`;
-        if(pdfUsuario) pdfUsuario.textContent = `Usuario: ${userName}`;
-        if(pdfPrestamo) {
-            if (prestamoNum) {
-                pdfPrestamo.textContent = `N° de Préstamo: ${prestamoNum}`;
-                pdfPrestamo.style.display = 'block';
-            } else {
-                pdfPrestamo.style.display = 'none';
-            }
-        }
-        if(tableBody) {
-            tableBody.innerHTML = '';
-            const sortedKeys = Object.keys(allLoadedItemsData).sort();
-            sortedKeys.forEach(sanitizedName => {
-                const [codigo, desc] = unSanitizeFieldName(sanitizedName).split(';');
-                const serie = allLoadedItemsData[sanitizedName];
-                tableBody.innerHTML += `<tr><td>${codigo||''}</td><td>${desc||''}</td><td>${serie||''}</td></tr>`;
-            });
-        }
-        html2canvas(template, { scale: 2, useCORS: true }).then(async canvas => {
-            console.log("html2canvas completado, generando blob de PDF.");
+        showNotification('Generando PDF...', 'info');
+
+        try {
+            // 1. OBTENER DATOS
+            const userDisplayNameElement = document.getElementById('user-display-name');
+            const userName = userDisplayNameElement ? userDisplayNameElement.textContent : 'Desconocido';
             const { jsPDF } = window.jspdf;
             const pdf = new jsPDF('p', 'mm', 'a4');
-            const pdfWidth = pdf.internal.pageSize.getWidth();
-            const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-            pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 10, 10, pdfWidth - 20, pdfHeight > 277 ? 277 : pdfHeight);
-            
-            const now = new Date();
-            const year = now.getFullYear();
-            const month = (now.getMonth() + 1).toString().padStart(2, '0');
-            const day = now.getDate().toString().padStart(2, '0');
-            const hours = now.getHours().toString().padStart(2, '0');
-            const minutes = now.getMinutes().toString().padStart(2, '0');
-            const seconds = now.getSeconds().toString().padStart(2, '0');
-            const formattedDate = `${year}${month}${day}_${hours}${minutes}${seconds}`;
-            const fileName = `Reporte_Caja_${currentSelectedSerialNumber}_${formattedDate}.pdf`;
+
+            // 2. CONSTRUIR PDF
+            pdf.setFontSize(18);
+            pdf.text(`Reporte de ${tipo}`, 15, 20);
+
+            pdf.setFontSize(11);
+            pdf.text(`Caja (Modelo): ${modelName}`, 15, 30);
+            pdf.text(`N° Serie Caja: ${currentSelectedSerialNumber}`, 15, 35);
+            pdf.text(`Usuario: ${userName}`, 15, 40);
+            if (tipo === 'Salida' && prestamoNum) {
+                pdf.text(`N° de Préstamo: ${prestamoNum}`, 15, 45);
+            }
+            pdf.text(`Fecha: ${new Date().toLocaleString('es-AR', { hour12: false })}`, 15, 50);
+
+            // 3. CONSTRUIR TABLA
+            const head = [['Código', 'Descripción', 'N° Serie']];
+            const body = Object.keys(allLoadedItemsData).sort().map(sanitizedName => {
+                const [codigo, desc] = unSanitizeFieldName(sanitizedName).split(';');
+                const serie = allLoadedItemsData[sanitizedName] || '';
+                return [codigo || '', desc || '', serie];
+            });
+
+            if (typeof pdf.autoTable !== 'function') {
+                console.error("Error: La función pdf.autoTable no está disponible. ¿Falta la librería jspdf-autotable?");
+                showNotification("Error: Falta el plugin para generar tablas en el PDF.", "error");
+                return;
+            }
+
+            pdf.autoTable({
+                head: head,
+                body: body,
+                startY: 60,
+                theme: 'striped',
+                headStyles: { fillColor: [41, 128, 185] },
+            });
+
+            // 4. GENERAR NOMBRE DE ARCHIVO Y BLOB
+            let fileName;
+            if (tipo === 'Salida') {
+                fileName = `${prestamoNum} - ${modelName} ${currentSelectedSerialNumber}.pdf`;
+            } else {
+                try {
+                    // Consultamos el historial para ver cuántas veces entró esta caja
+                    const q = query(
+                        collection(db, "movimientos_cajas"),
+                        where("cajaSerie", "==", currentSelectedSerialNumber),
+                        where("tipo", "==", "Entrada")
+                    );
+                    const snapshot = await getDocs(q);
+                    const count = snapshot.size + 1; // Sumamos 1 para la entrada actual
+                    
+                    // Si ya entró antes, agregamos el contador (2), (3), etc.
+                    fileName = count > 1 
+                        ? `${modelName} ${currentSelectedSerialNumber} (${count}).pdf`
+                        : `${modelName} ${currentSelectedSerialNumber}.pdf`;
+                } catch (error) {
+                    console.error("Error al calcular contador de entradas:", error);
+                    fileName = `${modelName} ${currentSelectedSerialNumber}.pdf`;
+                }
+            }
             const pdfBlob = pdf.output('blob');
 
-            const oneDriveFolderPath = `01-CAJAS-SEGUIMINETO/04-registro-de-${tipo.toLowerCase()}-de-cajas`;
+            // 5. SUBIR Y REGISTRAR
+            const oneDriveFolderPath = `01-CAJAS-SEGUIMIENTO/04-registro-de-${tipo.toLowerCase()}-de-cajas`;
             
-            // 1. Intentar subir a OneDrive (operación no crítica)
-            try {
-                console.log("Intentando subir PDF a OneDrive...");
-                await uploadFileToOneDrive(pdfBlob, fileName, oneDriveFolderPath);
-                console.log("PDF subido a OneDrive con éxito.");
-            } catch (oneDriveError) {
-                console.error("Falló la subida a OneDrive, pero el proceso continuará.", oneDriveError);
-                showNotification("Falló la subida a OneDrive, pero el reporte se guardará localmente.", "error");
-            }
+            await uploadToOneDrive(fileName, pdfBlob, oneDriveFolderPath);
+            showNotification("¡Reporte subido a OneDrive correctamente!", "success");
 
-            // 2. Ejecutar operaciones críticas (guardado local y registro en DB)
-            try {
-                pdf.save(`Reporte_Caja_${currentSelectedSerialNumber}.pdf`);
-                console.log("PDF guardado localmente. Registrando movimiento de caja...");
-                await registrarMovimientoCaja(tipo, currentSelectedSerialNumber, modelName, prestamoNum);
-            } catch (criticalError) {
-                console.error("Error crítico al guardar el PDF localmente o registrar el movimiento.", criticalError);
-                showNotification("Error crítico al guardar el reporte. Operación cancelada.", "error");
-            }
+            await registrarMovimientoCaja(tipo, currentSelectedSerialNumber, modelName, prestamoNum);
+            console.log("Movimiento de caja registrado con éxito.");
 
-        }).catch(err => { 
-            showNotification('Error al generar la imagen para el PDF.', 'error'); 
-            console.error("Error fatal en html2canvas:", err);
-        });
-        if (tipoReporteModal) tipoReporteModal.style.display = 'none';
-        if (prestamoModal) prestamoModal.style.display = 'none';
-        if (prestamoInput) prestamoInput.value = '';
-    };
-
-    // --- 2. Función para subir a OneDrive ---
-    const uploadFileToOneDrive = async (fileBlob, fileName, folderPath) => {
-        console.log(`Iniciando subida para: ${fileName} en la carpeta: ${folderPath}`);
-        showNotification('Subiendo reporte a OneDrive...', 'info');
-    
-        // Convertir el Blob a una cadena Base64
-        const reader = new FileReader();
-        reader.readAsDataURL(fileBlob);
-        
-        return new Promise((resolve, reject) => {
-            reader.onloadend = async () => {
-                const base64data = reader.result.split(',')[1]; // Quita el prefijo 'data:application/pdf;base64,'
-                try {
-                    // Forzar la obtención de un token de App Check para asegurar que la librería está lista
-                    const { getToken } = await import('https://www.gstatic.com/firebasejs/11.6.1/firebase-app-check.js');
-                    console.log("Esperando token de App Check...");
-                    await getToken(appCheck, /* forceRefresh= */ false);
-                    console.log("Token de App Check obtenido. Procediendo con la llamada a la función.");
-
-                    console.log("Llamando a la función de Firebase 'uploadPdfToOneDriveCallable'...");
-                    const result = await uploadPdfToOneDriveCallable({
-                        fileName: fileName,
-                        pdfBase64: base64data,
-                        folderPath: folderPath
-                    });
-                    console.log('Respuesta de la función de Firebase:', result.data);
-                    showNotification('¡Reporte guardado en OneDrive con éxito!', 'success');
-                    resolve(result);
-                } catch (error) {
-                    console.error('Error al llamar a la función de Firebase para subir a OneDrive:', error);
-                    showNotification(`Error al subir a OneDrive: ${error.message}`, 'error');
-                    reject(error);
-                }
-            };
-            reader.onerror = (error) => {
-                console.error("Error al leer el archivo Blob:", error);
-                reject(error);
-            };
-        });
+        } catch (error) {
+            console.error("⚠️ Falló la generación de PDF, subida o registro:", error);
+            showNotification("Error al generar o subir el reporte.", "error");
+        } finally {
+            if (tipoReporteModal) tipoReporteModal.style.display = 'none';
+            if (prestamoModal) prestamoModal.style.display = 'none';
+            if (prestamoInput) prestamoInput.value = '';
+        }
     };
 
     if (searchInput) searchInput.addEventListener('input', () => renderFilteredItems(allLoadedItemsData, searchInput.value));
@@ -469,7 +425,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     if (btnSalida) btnSalida.addEventListener('click', () => {
-        console.log("Botón 'Entrada' clickeado.");
+        console.log("Botón 'Salida' clickeado.");
         reportType = 'Salida';
         if (tipoReporteModal) tipoReporteModal.style.display = 'none';
         if (observationModal) observationModal.style.display = 'flex';
