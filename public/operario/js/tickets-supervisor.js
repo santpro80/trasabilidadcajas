@@ -1,4 +1,4 @@
-import { auth, db, onAuthStateChanged, collection, query, where, onSnapshot, doc, getDoc, addDoc, serverTimestamp } from '/operario/js/firebase-config.js';
+import { auth, db, onAuthStateChanged, collection, query, where, onSnapshot, doc, getDoc, addDoc, serverTimestamp } from './firebase-config.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     const ticketsContainer = document.getElementById('tickets-container');
@@ -20,11 +20,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 currentUserRole = userDocSnap.data().role;
                 listenForTickets();
             } else {
-                window.location.href = '/operario/tickets-operador.html';
+                window.location.href = 'tickets-operador.html';
                 localStorage.setItem('redirectAfterLogin', window.location.href); // Added for consistency, though it redirects to another app page
             }
         } else {
-            window.location.href = '/login.html';
+            window.location.href = 'login.html';
         }
     });
 

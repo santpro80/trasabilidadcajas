@@ -27,8 +27,8 @@ messaging.onBackgroundMessage((payload) => {
   const notificationTitle = payload.data.title;
   const notificationOptions = {
     body: payload.data.body,
-    icon: './assets/logo.png',
-    badge: './assets/logo.png', // Icono pequeño para la barra de estado
+    icon: '../assets/logo.png',
+    badge: '../assets/logo.png', // Icono pequeño para la barra de estado
     vibrate: [200, 100, 200],  // Patrón de vibración: vibra, pausa, vibra
     tag: 'renotify',           // Etiqueta para agrupar
     renotify: true,            // Vuelve a sonar si llega otra
