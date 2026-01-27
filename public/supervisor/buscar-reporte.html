@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buscar Reporte | Sistema de Trazabilidad</title>
+    <link rel="icon" href="assets/logo.png" type="image/png">
+    <style>
+        body { font-family: 'Inter', Arial, sans-serif; margin: 0; min-height: 100vh; display: flex; flex-direction: column; background: linear-gradient(135deg, #6e8efb, #a777e3); color: #2c3e50; }
+        .app-header { position: fixed; top: 0; left: 0; right: 0; background-color: rgba(255, 255, 255, 0.9); backdrop-filter: blur(5px); padding: 10px 25px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); width: 100%; box-sizing: border-box; z-index: 1000; }
+        .header-left, .user-info { display: flex; align-items: center; gap: 10px; }
+        .btn-back { background-color: #f0f4f8; color: #4285F4; padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; text-decoration: none; font-size: 0.95em; }
+        .user-display-name { font-weight: 500; }
+        .logout-btn { background-color: #dc3545; color: white; padding: 6px 15px; border: none; border-radius: 5px; cursor: pointer; font-size: 0.9em; }
+        
+        .main-content { flex-grow: 1; display: flex; flex-direction: column; align-items: center; padding: 100px 20px 20px; width: 100%; box-sizing: border-box; max-width: 800px; margin: 0 auto; }
+        
+        .search-card {
+            background-color: #ffffff;
+            border-radius: 15px;
+            padding: 40px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            text-align: center;
+        }
+        
+        .search-card h1 { color: #4285F4; margin-top: 0; margin-bottom: 10px; }
+        .search-card p { color: #666; margin-bottom: 30px; }
+
+        .input-container {
+            position: relative;
+            max-width: 400px;
+            margin: 0 auto 30px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 15px 20px;
+            font-size: 1.2em;
+            border: 2px solid #ddd;
+            border-radius: 50px;
+            outline: none;
+            transition: border-color 0.3s, box-shadow 0.3s;
+            text-align: center;
+            text-transform: uppercase;
+        }
+
+        .search-input:focus {
+            border-color: #4285F4;
+            box-shadow: 0 0 0 4px rgba(66, 133, 244, 0.1);
+        }
+
+        #result-container {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 1.1em;
+            display: none;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .result-danger {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .result-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border-left-color: #4285F4;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+            display: none;
+        }
+
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+    <header class="app-header">
+        <div class="header-left">
+            <a href="menu.html" class="btn-back">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5"></path><path d="M12 19l-7-7 7-7"></path></svg>
+                Volver al Menú
+            </a>
+        </div>
+        <div class="user-info">
+            <span id="user-display-name"></span>
+            <button id="logout-btn" class="logout-btn">Cerrar sesión</button>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div class="search-card">
+            <h1>Buscar Reporte de Caja</h1>
+            <p>Escanea o ingresa el número de serie y presiona ENTER.</p>
+            <div class="input-container">
+                <input type="text" id="serialInput" class="search-input" placeholder="Ej: AA1234" autocomplete="off">
+            </div>
+            <div id="loadingSpinner" class="spinner"></div>
+            <div id="result-container"></div>
+        </div>
+    </main>
+
+    <script type="module" src="js/buscar-reporte.js"></script>
+</body>
+</html>

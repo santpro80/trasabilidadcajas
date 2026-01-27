@@ -220,6 +220,16 @@
                             <span>Ver Problemas</span>
                         </button>
                     </li>
+                    <li id="li-buscar-reporte">
+                        <button id="btn-buscar-reporte">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                <path d="M12 8v4l3 3"></path>
+                            </svg>
+                            <span>Buscar Reporte</span>
+                        </button>
+                    </li>
                 </ul>
             </nav>
             <button id="btn-test-notify" style="margin-top: 20px; width: 100%; padding: 15px; background-color: #34a853; color: white; border: none; border-radius: 10px; font-size: 1.1em; cursor: pointer;">🔔 Probar Notificación (5s)</button>
@@ -245,6 +255,7 @@
         const btnReportarProblema = document.getElementById('btn-reportar-problema');
         const btnVerProblemas = document.getElementById('btn-ver-problemas');
         const btnBuscarPrestamo = document.getElementById('btn-buscar-prestamo');
+        const btnBuscarReporte = document.getElementById('btn-buscar-reporte');
         const btnGestionUsuarios = document.getElementById('btn-gestion-usuarios');
         const btnNotifications = document.getElementById('btn-notifications');
 
@@ -340,6 +351,7 @@
         btnReportarProblema?.addEventListener('click', () => { window.location.href = 'reportar-problema.html'; });
         btnVerProblemas?.addEventListener('click', () => { window.location.href = 'ver-problemas.html'; });
         btnBuscarPrestamo?.addEventListener('click', () => { window.location.href = 'buscar-por-prestamo.html'; });
+        btnBuscarReporte?.addEventListener('click', () => { window.location.href = 'buscar-reporte.html'; });
         
         btnNotifications?.addEventListener('click', () => {
             if (swRegistration) {
