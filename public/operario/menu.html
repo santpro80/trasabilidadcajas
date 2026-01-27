@@ -26,21 +26,50 @@
         .main-content { flex-grow: 1; display: flex; align-items: center; justify-content: center; padding: 80px 20px; }
         .menu-card {
             background-color: #ffffff; border-radius: 15px; padding: 30px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2); width: 100%; max-width: 500px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2); width: 100%; max-width: 1000px;
         }
-        .menu-card h1 { color: #4285F4; margin-top: 0; margin-bottom: 25px; }
-        .menu-nav ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 15px; }
+        .menu-card h1 { color: #4285F4; margin-top: 0; margin-bottom: 25px; text-align: center; }
+        .menu-columns {
+            display: flex;
+            gap: 40px;
+            justify-content: center;
+            flex-wrap: wrap;
+            align-items: flex-start;
+        }
+        .menu-column {
+            flex: 1;
+            min-width: 300px;
+        }
+        .menu-column h2 {
+            text-align: left;
+            color: #5f6368;
+            font-size: 1.2em;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
+        .menu-nav ul { 
+            list-style: none; padding: 0; margin: 0; 
+            display: flex; 
+            flex-direction: column;
+            gap: 15px; 
+        }
         .menu-nav button {
             background-color: #f0f4f8; color: #2c3e50; padding: 15px 20px;
-            border: none; border-radius: 10px; cursor: pointer; font-size: 1.1em;
-            font-weight: 500; display: flex; align-items: center; gap: 15px; width: 100%;
+            border: none; border-radius: 12px; cursor: pointer; font-size: 1em;
+            font-weight: 600; display: flex; flex-direction: row;
+            align-items: center; justify-content: flex-start; width: 100%;
             text-align: left; transition: all 0.2s ease;
+            min-height: auto;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
-        .menu-nav button:hover { background-color: #e2eaf2; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); color: #4285F4; }
-        .menu-nav button svg { width: 24px; height: 24px; stroke: #4285F4; flex-shrink: 0; }
-        #li-historial, #li-importar-datos {
-            display: none;
+        .menu-nav button:hover { 
+            background-color: #fff; transform: translateX(5px); 
+            box-shadow: 0 4px 12px rgba(66, 133, 244, 0.15); color: #4285F4; 
+            border: 1px solid #e0e0e0;
         }
+        .menu-nav button svg { width: 28px; height: 28px; stroke: #4285F4; flex-shrink: 0; margin-bottom: 0; margin-right: 15px; }
     .modal-overlay {
         position: fixed; top: 0; left: 0; width: 100%; height: 100%;
         background-color: rgba(0, 0, 0, 0.6); display: none; justify-content: center;
@@ -82,146 +111,171 @@
     <main class="main-content">
         <div class="menu-card">
             <h1>Menú Principal</h1>
-            <nav class="menu-nav">
-                <ul>
-                    <li id="li-cajas">
-                        <button id="btn-cajas">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <rect x="2" y="7" width="20" height="15" rx="2" ry="2"></rect>
-                                <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
-                            </svg>
-                            <span>Modelos de Cajas</span>
-                        </button>
-                    </li>
-                    <li id="li-estadisticas" style="display: none;">
-                        <button id="btn-estadisticas">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M12 20V10"></path>
-                                <path d="M18 20V4"></path>
-                                <path d="M6 20V16"></path>
-                            </svg>
-                            <span>Estadística</span>
-                        </button>
-                    </li>
-                    <li id="li-estados-cajas" style="display: none;">
-                        <button id="btn-estados-cajas">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line>
-                            </svg>
-                            <span>Estados Cajas</span>
-                        </button>
-                    </li>
-                    <li id="li-historial">
-                        <button id="btn-historial">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <circle cx="12" cy="12" r="10"></circle>
-                                <polyline points="12 6 12 12 16 14"></polyline>
-                            </svg>
-                            <span>Historial</span>
-                        </button>
-                    </li>
-                    <li id="li-informe-diario" style="display: none;">
-                        <button id="btn-informe-diario">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                                <line x1="12" y1="8" x2="12" y2="16"></line>
-                                <line x1="8" y1="12" x2="16" y2="12"></line>
-                            </svg>
-                            <span>Informe Diario</span>
-                        </button>
-                    </li>
-                    <li id="li-buscar-prestamo" style="display: none;">
-                        <button id="btn-buscar-prestamo">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <circle cx="11" cy="11" r="8"></circle>
-                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                            </svg>
-                            <span>Buscar por Préstamo</span>
-                        </button>
-                    </li>
-                    <li>
-                        <button id="btn-cuenta">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                                <circle cx="12" cy="7" r="4"></circle>
-                            </svg>
-                            <span>Cuenta</span>
-                        </button>
-                    </li>
-                    <li>
-                        <button id="btn-notifications">
-                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-                                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-                            </svg>
-                            <span>Activar Notificaciones</span>
-                        </button>
-                    </li>
-                    <li id="li-registrar-usuario" style="display: none;">
-                        <button id="btn-registrar-usuario">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                                <circle cx="8.5" cy="7" r="4"></circle>
-                                <line x1="20" y1="8" x2="20" y2="14"></line>
-                                <line x1="17" y1="11" x2="23" y2="11"></line>
-                            </svg>
-                            <span>Registrar Usuario</span>
-                        </button>
-                    </li>
-                    <li id="li-gestion-usuarios" style="display: none;">
-                        <button id="btn-gestion-usuarios">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                                <circle cx="9" cy="7" r="4"></circle>
-                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                            </svg>
-                            <span>Gestión de Usuarios</span>
-                        </button>
-                    </li>
-                    <li id="li-tickets">
-                        <button id="btn-tickets">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                                <polyline points="14 2 14 8 20 8"></polyline>
-                                <line x1="16" y1="13" x2="8" y2="13"></line>
-                                <line x1="16" y1="17" x2="8" y2="17"></line>
-                                <polyline points="10 9 9 9 8 9"></polyline>
-                            </svg>
-                            <span>Tickets</span>
-                        </button>
-                    </li>
-                    <li id="li-importar-datos">
-                        <button id="btn-importar-datos">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                <polyline points="7 10 12 15 17 10"></polyline>
-                                <line x1="12" y1="15" x2="12" y2="3"></line>
-                            </svg>
-                            <span>Importar Datos</span>
-                        </button>
-                    </li>
-                    <li id="li-reportar-problema" style="display: none;">
-                        <button id="btn-reportar-problema">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-                                <line x1="12" y1="9" x2="12" y2="13"></line>
-                                <line x1="12" y1="17" x2="12.01" y2="17"></line>
-                            </svg>
-                            <span>Reportar Problema</span>
-                        </button>
-                    </li>
-                    <li id="li-ver-problemas" style="display: none;">
-                        <button id="btn-ver-problemas">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
-                                <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
-                            </svg>
-                            <span>Ver Problemas</span>
-                        </button>
-                    </li>
-                </ul>
-            </nav>
+            <div class="menu-columns">
+                <!-- Columna 1: Operaciones -->
+                <div class="menu-column">
+                    <h2>Operaciones</h2>
+                    <nav class="menu-nav">
+                        <ul>
+                            <li id="li-tickets">
+                                <button id="btn-tickets">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                        <polyline points="14 2 14 8 20 8"></polyline>
+                                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                                        <polyline points="10 9 9 9 8 9"></polyline>
+                                    </svg>
+                                    <span>Tickets</span>
+                                </button>
+                            </li>
+                            <li id="li-cajas">
+                                <button id="btn-cajas">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <rect x="2" y="7" width="20" height="15" rx="2" ry="2"></rect>
+                                        <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                                    </svg>
+                                    <span>Modelos de Cajas</span>
+                                </button>
+                            </li>
+                            <li id="li-estados-cajas" style="display: none;">
+                                <button id="btn-estados-cajas">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line>
+                                    </svg>
+                                    <span>Estados Cajas</span>
+                                </button>
+                            </li>
+                            <li id="li-buscar-reporte">
+                                <button id="btn-buscar-reporte">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <circle cx="11" cy="11" r="8"></circle>
+                                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                        <path d="M12 8v4l3 3"></path>
+                                    </svg>
+                                    <span>Buscar Reporte</span>
+                                </button>
+                            </li>
+                            <li id="li-buscar-prestamo" style="display: none;">
+                                <button id="btn-buscar-prestamo">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <circle cx="11" cy="11" r="8"></circle>
+                                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                    </svg>
+                                    <span>Buscar por Préstamo</span>
+                                </button>
+                            </li>
+                            <li id="li-reportar-problema" style="display: none;">
+                                <button id="btn-reportar-problema">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                                        <line x1="12" y1="9" x2="12" y2="13"></line>
+                                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                                    </svg>
+                                    <span>Reportar Problema</span>
+                                </button>
+                            </li>
+                            <li id="li-ver-problemas" style="display: none;">
+                                <button id="btn-ver-problemas">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                                        <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+                                    </svg>
+                                    <span>Ver Problemas</span>
+                                </button>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+
+                <!-- Columna 2: Gestión y Cuenta -->
+                <div class="menu-column">
+                    <h2>Gestión y Cuenta</h2>
+                    <nav class="menu-nav">
+                        <ul>
+                            <li id="li-historial">
+                                <button id="btn-historial">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <polyline points="12 6 12 12 16 14"></polyline>
+                                    </svg>
+                                    <span>Historial</span>
+                                </button>
+                            </li>
+                            <li id="li-informe-diario" style="display: none;">
+                                <button id="btn-informe-diario">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                        <line x1="12" y1="8" x2="12" y2="16"></line>
+                                        <line x1="8" y1="12" x2="16" y2="12"></line>
+                                    </svg>
+                                    <span>Informe Diario</span>
+                                </button>
+                            </li>
+                            <li id="li-estadisticas" style="display: none;">
+                                <button id="btn-estadisticas">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M12 20V10"></path>
+                                        <path d="M18 20V4"></path>
+                                        <path d="M6 20V16"></path>
+                                    </svg>
+                                    <span>Estadística</span>
+                                </button>
+                            </li>
+                            <li id="li-registrar-usuario" style="display: none;">
+                                <button id="btn-registrar-usuario">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                        <circle cx="8.5" cy="7" r="4"></circle>
+                                        <line x1="20" y1="8" x2="20" y2="14"></line>
+                                        <line x1="17" y1="11" x2="23" y2="11"></line>
+                                    </svg>
+                                    <span>Registrar Usuario</span>
+                                </button>
+                            </li>
+                            <li id="li-gestion-usuarios" style="display: none;">
+                                <button id="btn-gestion-usuarios">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                        <circle cx="9" cy="7" r="4"></circle>
+                                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                                    </svg>
+                                    <span>Gestión de Usuarios</span>
+                                </button>
+                            </li>
+                            <li id="li-importar-datos">
+                                <button id="btn-importar-datos">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                        <polyline points="7 10 12 15 17 10"></polyline>
+                                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                                    </svg>
+                                    <span>Importar Datos</span>
+                                </button>
+                            </li>
+                            <li id="li-cuenta">
+                                <button id="btn-cuenta">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                        <circle cx="12" cy="7" r="4"></circle>
+                                    </svg>
+                                    <span>Cuenta</span>
+                                </button>
+                            </li>
+                            <li id="li-notifications">
+                                <button id="btn-notifications">
+                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                                    </svg>
+                                    <span>Activar Notificaciones</span>
+                                </button>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            </div>
         </div>
     </main>
 
@@ -244,17 +298,20 @@
         const btnReportarProblema = document.getElementById('btn-reportar-problema');
         const btnVerProblemas = document.getElementById('btn-ver-problemas');
         const btnBuscarPrestamo = document.getElementById('btn-buscar-prestamo');
+        const btnBuscarReporte = document.getElementById('btn-buscar-reporte');
         const btnGestionUsuarios = document.getElementById('btn-gestion-usuarios');
         const btnNotifications = document.getElementById('btn-notifications');
 
         let currentUserRole = 'operario';
+        let swRegistration = null; // To store the service worker registration
 
         // Register Service Worker
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./firebase-messaging-sw.js')
+                navigator.serviceWorker.register('firebase-messaging-sw.js')
                     .then(registration => {
                         console.log('Service Worker registered successfully:', registration);
+                        swRegistration = registration;
                     })
                     .catch(error => {
                         console.error('Service Worker registration failed:', error);
@@ -276,40 +333,19 @@
             ];
             supervisorOnlyIds.forEach(id => {
                 const el = document.getElementById(id);
-                if (el) el.style.display = isSupervisor ? 'list-item' : 'none';
+                if (el) el.style.display = isSupervisor ? 'block' : 'none';
             });
 
             // 2. Elementos para Supervisor O Mantenimiento
-            if (liVerProblemas) liVerProblemas.style.display = (isSupervisor || isMantenimiento) ? 'list-item' : 'none';
+            if (liVerProblemas) liVerProblemas.style.display = (isSupervisor || isMantenimiento) ? 'block' : 'none';
 
             // 3. Lógica de exclusión específica
             const liCajas = document.getElementById('li-cajas');
-            if (liCajas) liCajas.style.display = isMantenimiento ? 'none' : 'list-item';
+            if (liCajas) liCajas.style.display = isMantenimiento ? 'none' : 'block';
 
             // 4. Elementos siempre visibles para todos los roles logueados
             const liTickets = document.getElementById('li-tickets');
-            if (liTickets) liTickets.style.display = 'list-item';
-        };
-
-        // Función para avisar visualmente si faltan las notificaciones
-        const updateNotificationButtonUI = () => {
-            if (!('Notification' in window) || !btnNotifications) return;
-
-            if (Notification.permission === 'default') {
-                // Aún no ha aceptado: Resaltar en AMARILLO para llamar la atención
-                btnNotifications.style.backgroundColor = '#fff3cd';
-                btnNotifications.style.border = '2px solid #ffc107';
-                btnNotifications.querySelector('span').textContent = '🔔 Activar Notificaciones (Requerido)';
-            } else if (Notification.permission === 'granted') {
-                // Ya aceptó: Verde sutil
-                btnNotifications.style.backgroundColor = '#d4edda';
-                btnNotifications.style.border = '1px solid #c3e6cb';
-                btnNotifications.querySelector('span').textContent = '✅ Notificaciones Activadas';
-            } else if (Notification.permission === 'denied') {
-                // Bloqueado: Rojo
-                btnNotifications.style.backgroundColor = '#f8d7da';
-                btnNotifications.querySelector('span').textContent = '❌ Notificaciones Bloqueadas';
-            }
+            if (liTickets) liTickets.style.display = 'block';
         };
 
         onAuthStateChanged(auth, async (user) => {
@@ -326,7 +362,6 @@
                         currentUserRole = 'operario';
                     }
                     manageMenuVisibility(currentUserRole);
-                    updateNotificationButtonUI(); // Verificamos el estado apenas carga
                     setupTicketNotifications(db, collection, query, where, onSnapshot, user, currentUserRole);
                 } catch (error) {
                     console.error("Error al obtener datos del usuario:", error);
@@ -359,15 +394,14 @@
         btnReportarProblema?.addEventListener('click', () => { window.location.href = 'reportar-problema.html'; });
         btnVerProblemas?.addEventListener('click', () => { window.location.href = 'ver-problemas.html'; });
         btnBuscarPrestamo?.addEventListener('click', () => { window.location.href = 'buscar-por-prestamo.html'; });
+        btnBuscarReporte?.addEventListener('click', () => { window.location.href = 'buscar-reporte.html'; });
         
-        btnNotifications?.addEventListener('click', async () => {
-            if ('serviceWorker' in navigator) {
-                // Esperamos a que el Service Worker esté listo de forma segura
-                const registration = await navigator.serviceWorker.ready;
-                await requestNotificationPermission(registration);
-                updateNotificationButtonUI(); // Actualizamos el botón después de que el usuario responda
+        btnNotifications?.addEventListener('click', () => {
+            if (swRegistration) {
+                requestNotificationPermission(swRegistration);
             } else {
-                alert('Tu navegador no soporta notificaciones.');
+                console.error('Service worker not registered yet.');
+                alert('El servicio de notificaciones no está listo. Por favor, recarga la página.');
             }
         });
 
