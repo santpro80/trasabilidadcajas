@@ -2,7 +2,7 @@ const OD_CONFIG = {
     clientId: "56c7f9c1-d4df-41f8-af09-3c3561ccb35a",
     // IMPORTANTE: Genera un token nuevo hoy manualmente y pégalo aquí abajo.
     // Este será el "padre" de todos los futuros tokens automáticos.M.C501_BAY.0.U.
-    initialRefreshToken: "M.C501_BAY.0.U.-CrCxJ713!oGVqCW1B!yenE2moCg30tdGszSbV6VMAAlvHyg3Lh9BnRVpAP!DyMuTNEsovo19jEqr5yvf778aEubyWd3Q6pa5G*t5Nl4exlD0J80!G6uP4!doIEVrYSX6X9d4bU!oiYfD*Ah6rWZxavyRYUvpc4L6afu02eE7fhjQS8xZZeYVvV71o*OKk*fLh8bzQdOPHwYYwjSyhTpbwElOYSyXYhb2DJF5Syz2gmhOBU8YMaMYRugYQY9*ePVBKCTsTyYVm5y2JnfFgmpM!j4d7!pAZN90t*vqUlMmWKhsq4BX6l0sOrwRR0e1Xn3uIXrmCd2IO2294d1JR1X!UXQSqVUhKFVdFutXjMomBDco"
+    initialRefreshToken: "M.C501_BL2.0.U.-CgbsN9JrfnFinBTCJG9cOe**jgaAOmN0feUBTo0VmdbHZy7nwvvsRa7q4mUErtPL5AwHfhKZnzQBI*p1xynXtud1gdoUGIoM57imCkW5biczj8WYTGmOOvBlhplYvwdwMEIl6VODKxYMjG2mzoLIQsF!e1NHevNjAqf*evIW!j*eoyUpWToN64SjizOxF7lI2bmLG2OONt9HTsWgGyR0FIBg3m737BVw*jf*YpzoKzuEB9rdZ*HmO8*c8JpuOK*bwdhBq74qk8bI3JSDJKSdTEeT2Ucjs2mWm!cdAQxA6UMU2!DVGndh4SvzhQV33jvSFFhTTjhmfKMcKIPg8BKJ1U!nPySHihtHSa1V1a5ESJU4"
 }
 async function getODAccessToken() {
     // 1. Buscamos si tenemos un token guardado (el que se renovó ayer)
