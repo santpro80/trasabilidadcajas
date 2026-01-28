@@ -32,6 +32,43 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Navegación con tecla Enter entre campos (Serial -> Número -> Modelo -> Checkboxes)
+    if (cajaSerialInput) {
+        cajaSerialInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault(); // Evita que se envíe el formulario o haga salto de línea
+                if (cajaNumeroInput) {
+                    cajaNumeroInput.focus();
+                } else if (cajaModeloInput) {
+                    cajaModeloInput.focus();
+                }
+            }
+        });
+    }
+
+    if (cajaNumeroInput) {
+        cajaNumeroInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                if (cajaModeloInput) cajaModeloInput.focus();
+            }
+        });
+    }
+
+    if (cajaModeloInput) {
+        cajaModeloInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                // Intenta enfocar el primer checkbox de la lista
+                if (problemaCheckboxes.length > 0) {
+                    problemaCheckboxes[0].focus();
+                } else if (otroCheckbox) {
+                    otroCheckbox.focus();
+                }
+            }
+        });
+    }
+
     onAuthStateChanged(auth, (user) => {
         if (user) {
             currentUser = user;
