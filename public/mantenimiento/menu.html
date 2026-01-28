@@ -26,21 +26,50 @@
         .main-content { flex-grow: 1; display: flex; align-items: center; justify-content: center; padding: 80px 20px; }
         .menu-card {
             background-color: #ffffff; border-radius: 15px; padding: 30px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2); width: 100%; max-width: 500px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2); width: 100%; max-width: 1000px;
         }
-        .menu-card h1 { color: #4285F4; margin-top: 0; margin-bottom: 25px; }
-        .menu-nav ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 15px; }
+        .menu-card h1 { color: #4285F4; margin-top: 0; margin-bottom: 25px; text-align: center; }
+        .menu-columns {
+            display: flex;
+            gap: 40px;
+            justify-content: center;
+            flex-wrap: wrap;
+            align-items: flex-start;
+        }
+        .menu-column {
+            flex: 1;
+            min-width: 300px;
+        }
+        .menu-column h2 {
+            text-align: left;
+            color: #5f6368;
+            font-size: 1.2em;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
+        .menu-nav ul { 
+            list-style: none; padding: 0; margin: 0; 
+            display: flex; 
+            flex-direction: column;
+            gap: 15px; 
+        }
         .menu-nav button {
             background-color: #f0f4f8; color: #2c3e50; padding: 15px 20px;
-            border: none; border-radius: 10px; cursor: pointer; font-size: 1.1em;
-            font-weight: 500; display: flex; align-items: center; gap: 15px; width: 100%;
+            border: none; border-radius: 12px; cursor: pointer; font-size: 1em;
+            font-weight: 600; display: flex; flex-direction: row;
+            align-items: center; justify-content: flex-start; width: 100%;
             text-align: left; transition: all 0.2s ease;
+            min-height: auto;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
-        .menu-nav button:hover { background-color: #e2eaf2; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); color: #4285F4; }
-        .menu-nav button svg { width: 24px; height: 24px; stroke: #4285F4; flex-shrink: 0; }
-        #li-historial, #li-importar-datos {
-            display: none;
+        .menu-nav button:hover { 
+            background-color: #fff; transform: translateX(5px); 
+            box-shadow: 0 4px 12px rgba(66, 133, 244, 0.15); color: #4285F4; 
+            border: 1px solid #e0e0e0;
         }
+        .menu-nav button svg { width: 28px; height: 28px; stroke: #4285F4; flex-shrink: 0; margin-bottom: 0; margin-right: 15px; }
     .modal-overlay {
         position: fixed; top: 0; left: 0; width: 100%; height: 100%;
         background-color: rgba(0, 0, 0, 0.6); display: none; justify-content: center;
@@ -82,59 +111,74 @@
     <main class="main-content">
         <div class="menu-card">
             <h1>Menú Principal</h1>
-            <nav class="menu-nav">
-                <ul>
-                    <li>
-                        <button id="btn-notifications">
-                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-                                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-                            </svg>
-                            <span>Activar Notificaciones</span>
-                        </button>
-                    </li>
-                    <li>
-                        <button id="btn-cuenta">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                                <circle cx="12" cy="7" r="4"></circle>
-                            </svg>
-                            <span>Cuenta</span>
-                        </button>
-                    </li>
-                    <li id="li-tickets">
-                        <button id="btn-tickets">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                                <polyline points="14 2 14 8 20 8"></polyline>
-                                <line x1="16" y1="13" x2="8" y2="13"></line>
-                                <line x1="16" y1="17" x2="8" y2="17"></line>
-                                <polyline points="10 9 9 9 8 9"></polyline>
-                            </svg>
-                            <span>Tickets</span>
-                        </button>
-                    </li>
-                    <li id="li-reportar-problema" style="display: none;">
-                        <button id="btn-reportar-problema">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-                                <line x1="12" y1="9" x2="12" y2="13"></line>
-                                <line x1="12" y1="17" x2="12.01" y2="17"></line>
-                            </svg>
-                            <span>Reportar Problema</span>
-                        </button>
-                    </li>
-                    <li id="li-ver-problemas" style="display: none;">
-                        <button id="btn-ver-problemas">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
-                                <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
-                            </svg>
-                            <span>Ver Problemas</span>
-                        </button>
-                    </li>
-                </ul>
-            </nav>
+            <div class="menu-columns">
+                <!-- Columna 1: Operaciones -->
+                <div class="menu-column">
+                    <h2>Operaciones</h2>
+                    <nav class="menu-nav">
+                        <ul>
+                            <li id="li-tickets">
+                                <button id="btn-tickets">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                        <polyline points="14 2 14 8 20 8"></polyline>
+                                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                                        <polyline points="10 9 9 9 8 9"></polyline>
+                                    </svg>
+                                    <span>Tickets</span>
+                                </button>
+                            </li>
+                            <li id="li-ver-problemas" style="display: none;">
+                                <button id="btn-ver-problemas">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                                        <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+                                    </svg>
+                                    <span>Ver Problemas</span>
+                                </button>
+                            </li>
+                            <li id="li-reportar-problema" style="display: none;">
+                                <button id="btn-reportar-problema">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                                        <line x1="12" y1="9" x2="12" y2="13"></line>
+                                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                                    </svg>
+                                    <span>Reportar Problema</span>
+                                </button>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+
+                <!-- Columna 2: Gestión y Cuenta -->
+                <div class="menu-column">
+                    <h2>Gestión y Cuenta</h2>
+                    <nav class="menu-nav">
+                        <ul>
+                            <li>
+                                <button id="btn-cuenta">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                        <circle cx="12" cy="7" r="4"></circle>
+                                    </svg>
+                                    <span>Cuenta</span>
+                                </button>
+                            </li>
+                            <li>
+                                <button id="btn-notifications">
+                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                                    </svg>
+                                    <span>Activar Notificaciones</span>
+                                </button>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            </div>
         </div>
     </main>
 
@@ -194,20 +238,20 @@
             const isSupervisor = role === 'supervisor';
             const isMantenimiento = role === 'mantenimiento';
 
-            if (liCajas) liCajas.style.display = isMantenimiento ? 'none' : 'list-item';
-            if (liHistorial) liHistorial.style.display = isSupervisor ? 'list-item' : 'none';
-            if (liInformeDiario) liInformeDiario.style.display = isSupervisor ? 'list-item' : 'none';
-            if (liImportarDatos) liImportarDatos.style.display = isSupervisor ? 'list-item' : 'none';
-            if (liRegistrarUsuario) liRegistrarUsuario.style.display = isSupervisor ? 'list-item' : 'none';
-            if (liGestionUsuarios) liGestionUsuarios.style.display = isSupervisor ? 'list-item' : 'none';
-            if (liEstadisticas) liEstadisticas.style.display = isSupervisor ? 'list-item' : 'none';
-            if (liEstadosCajas) liEstadosCajas.style.display = isSupervisor ? 'list-item' : 'none';
-            if (liReportarProblema) liReportarProblema.style.display = isSupervisor ? 'list-item' : 'none';
-            if (liBuscarPrestamo) liBuscarPrestamo.style.display = isSupervisor ? 'list-item' : 'none';
+            if (liCajas) liCajas.style.display = isMantenimiento ? 'none' : 'block';
+            if (liHistorial) liHistorial.style.display = isSupervisor ? 'block' : 'none';
+            if (liInformeDiario) liInformeDiario.style.display = isSupervisor ? 'block' : 'none';
+            if (liImportarDatos) liImportarDatos.style.display = isSupervisor ? 'block' : 'none';
+            if (liRegistrarUsuario) liRegistrarUsuario.style.display = isSupervisor ? 'block' : 'none';
+            if (liGestionUsuarios) liGestionUsuarios.style.display = isSupervisor ? 'block' : 'none';
+            if (liEstadisticas) liEstadisticas.style.display = isSupervisor ? 'block' : 'none';
+            if (liEstadosCajas) liEstadosCajas.style.display = isSupervisor ? 'block' : 'none';
+            if (liReportarProblema) liReportarProblema.style.display = isSupervisor ? 'block' : 'none';
+            if (liBuscarPrestamo) liBuscarPrestamo.style.display = isSupervisor ? 'block' : 'none';
 
-            if (liVerProblemas) liVerProblemas.style.display = (isSupervisor || isMantenimiento) ? 'list-item' : 'none';
+            if (liVerProblemas) liVerProblemas.style.display = (isSupervisor || isMantenimiento) ? 'block' : 'none';
 
-            if (liTickets) liTickets.style.display = 'list-item';
+            if (liTickets) liTickets.style.display = 'block';
         };
 
         // Función para avisar visualmente si faltan las notificaciones
