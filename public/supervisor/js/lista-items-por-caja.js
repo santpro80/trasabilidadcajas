@@ -8,7 +8,7 @@ import {
 
 document.addEventListener('DOMContentLoaded', () => {
     console.log("DOM completamente cargado y analizado");
-    console.log("ELEMENTO DE PRhh");
+    console.log("ELEMENTO DE REFRE");
     const userDisplayNameElement = document.getElementById('user-display-name');
     const logoutBtn = document.getElementById('logout-btn');
     const backBtn = document.getElementById('back-btn');
