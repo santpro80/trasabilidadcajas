@@ -1,7 +1,10 @@
+// Placeholder para la URL de la Cloud Function. Actualízalo con la URL real tras el despliegue (ej: https://refrescartokenonedrive-xyz-uc.a.run.app)
+const CLOUD_FUNCTION_URL = "https://us-central1-cajas-secuela.cloudfunctions.net/refrescarTokenOneDrive";
+
 const OD_CONFIG = {
     clientId: "56c7f9c1-d4df-41f8-af09-3c3561ccb35a",
     // Asegúrate de que este sea el TOKEN NUEVO que generaste recién con PowerShell
-    initialRefreshToken: "M.C501_BL2.0.U.-CqpbQQdOL1nvJcOEG4VXGBLocJYD4icbVkjrVM0OE8Vg4A5qEHXPWdRz9ll8sIprC5i3rMomrYOxojELT8AOC1DBIqwB84sG6XHdtcfqJSFlBj!Ia3qNNIdsjLSqb2aeTgdVxr4UPYEx6bU!RDmdCwju5e0mn9L!mbDc!i!sZ*YsqeVwnsZkpDfv!gRW5x2sMT8IoVsDNMimdV9A!5UL6OKYt2czRqNG13c!VY*2R8Pr3*5wmaZ9syYD5q*XKJvKI!Ibh9cd3OdVHDPVpO69f8KOa2syOloikKrp8tQfKHIHDuOa8Ukh!I27KqPEm6bakR7WOKc8ZHKLVR*l9YcWSAWv7sl15kayNex7DaoRxard"
+    initialRefreshToken: "M.C501_BL2.0.U.-CmSMRFc59FpOFF8r9sP02OqWn12JTX!M782fyIIpdXnuRlV7*t962FKJh!nSscDN0dJjIa3CjRz4dSoU2xRvONlKdOd8K5iThLkiHdnzrqD8Zn5!K3hDvl5FkmvyzFTr1m*sk9i5M1wmQ2dGosvC!DckQN3LOyU6Lt5PzaD6X15g0ZXt5lt4XNyGtvT!w*nvPj1rpEliMrVLdmuB3weyQrSKq0DDk8duiQ*f49cPq!aTj6au8o4fXymBa!Oy08CnExIDtxDDGygxjSLrRBBiHicaNvYmutX6s7RGC1e4RZf2hNrH6HGBLAl74SJmTB9D33R83KmLZ1j4R5Hk107KMjzi8MrbtQDXh7lFGYii1TyI"
 }
 
 async function getODAccessToken() {
@@ -13,18 +16,11 @@ async function getODAccessToken() {
         currentRefreshToken = OD_CONFIG.initialRefreshToken;
     }
 
-    const params = new URLSearchParams({
-        client_id: OD_CONFIG.clientId,
-        refresh_token: currentRefreshToken,
-        grant_type: 'refresh_token',
-        scope: 'Files.ReadWrite.All offline_access'
-    });
-
     try {
-        const response = await fetch("https://login.microsoftonline.com/common/oauth2/v2.0/token", {
+        const response = await fetch(CLOUD_FUNCTION_URL, {
             method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: params
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ refreshToken: currentRefreshToken })
         });
         
         const data = await response.json();

@@ -3,8 +3,10 @@ const functions = require('firebase-functions');
 const functionsV1 = require('firebase-functions/v1');
 const admin = require('firebase-admin');
 const { onDocumentCreated } = require("firebase-functions/v2/firestore");
+const { onRequest } = require("firebase-functions/v2/https");
 // const { AuthorizationCode } = require('simple-oauth2');
-// const axios = require('axios');
+const axios = require('axios');
+const cors = require('cors')({origin: true});
 
 admin.initializeApp();
 const db = admin.firestore();
@@ -128,6 +130,30 @@ const db = admin.firestore();
 
 // (Asegúrate de tener también las funciones 'initiateOneDriveOAuth' y 'handleOneDriveRedirect' en tu archivo)
 // Forzando un cambio para el despliegue.
+
+exports.refrescarTokenOneDrive = onRequest((req, res) => {
+    cors(req, res, async () => {
+        const CLIENT_ID = "56c7f9c1-d4df-41f8-af09-3c3561ccb35a";
+        const REFRESH_TOKEN = req.body.refreshToken;
+
+        if (!REFRESH_TOKEN) return res.status(400).json({ error: "Falta token" });
+
+        try {
+            const params = new URLSearchParams();
+            params.append('client_id', CLIENT_ID);
+            params.append('refresh_token', REFRESH_TOKEN);
+            params.append('grant_type', 'refresh_token');
+            
+            const response = await axios.post(
+                'https://login.microsoftonline.com/common/oauth2/v2.0/token',
+                params
+            );
+            res.json(response.data);
+        } catch (error) {
+            res.status(500).json({ error: error.message, details: error.response?.data });
+        }
+    });
+});
 
 exports.sendTestNotification = functions.https.onCall((data, context) => {
   console.log('--- DEBUGGING ---');
