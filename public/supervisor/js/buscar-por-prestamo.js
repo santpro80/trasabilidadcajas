@@ -267,7 +267,7 @@ function renderBoxItem(details, index) {
                     </div>
                     <div style="text-align: right; min-width: 140px;">
                         <span style="display: block; font-size: 0.75em; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Serie Anterior</span>
-                        <span style="display: inline-block; font-size: 1.4em; font-weight: 800; color: #d32f2f; background-color: #ffebee; padding: 6px 12px; border-radius: 6px; border: 1px solid #ffcdd2;">
+                        <span style="display: inline-block; font-size: 1.4em; font-weight: 800; color: #12a78e; background-color: #ffebee; padding: 6px 12px; border-radius: 6px; border: 1px solid #ffcdd2;">
                             ${c.serieAnterior}
                         </span>
                     </div>
