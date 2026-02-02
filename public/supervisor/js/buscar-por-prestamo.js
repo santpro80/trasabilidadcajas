@@ -192,7 +192,24 @@ async function getBoxDetails(caja, prestamoNum, loanTimestamp, loanUser) {
             result.entradaUser = snapEntrada.docs[0].data().usuarioNombre || snapEntrada.docs[0].data().usuarioEmail;
         }
 
-        // C. Buscar Ítems Consumidos (Historial de cambios a "REEMPLAZAR")
+        // C. Buscar la siguiente SALIDA para delimitar el ciclo (Evitar que consumos del siguiente préstamo aparezcan aquí)
+        let nextSalidaTime = null;
+        if (result.entrada) {
+            const qNextSalida = query(
+                collection(db, "movimientos_cajas"),
+                where("cajaSerie", "==", caja.cajaSerie),
+                where("tipo", "==", "Salida"),
+                where("timestamp", ">", result.entrada),
+                orderBy("timestamp", "asc"),
+                limit(1)
+            );
+            const snapNextSalida = await getDocs(qNextSalida);
+            if (!snapNextSalida.empty) {
+                nextSalidaTime = snapNextSalida.docs[0].data().timestamp;
+            }
+        }
+
+        // D. Buscar Ítems Consumidos (Historial de cambios a "REEMPLAZAR")
         // Buscamos en el historial cualquier cambio ocurrido DESPUÉS de que salió la caja.
         // NOTA: Quitamos el filtro de timestamp de la query para evitar problemas de índices en Firebase.
         // Filtramos por fecha manualmente aquí abajo.
@@ -212,18 +229,22 @@ async function getBoxDetails(caja, prestamoNum, loanTimestamp, loanUser) {
             if (hDate < sDate) return;
 
             // Filtramos: Solo nos interesan modificaciones donde el valor nuevo sea "REEMPLAZAR"
-            // Y que hayan ocurrido antes de la siguiente salida (si es que hubo otra), 
-            // pero para simplificar asumimos que son relevantes si ocurrieron después de esta salida.
             if (h.accion === 'MODIFICACIÓN DE ÍTEM' && h.detalles && h.detalles.valorNuevo === 'REEMPLAZAR') {
                 
-                // Si ya volvió la caja, verificamos que el consumo no sea de una fecha muy posterior (ej. otro préstamo futuro)
-                // Damos un margen de 1 día después de la entrada por si el chequeo se hizo al día siguiente.
-                // Si no ha vuelto (entrada es null), mostramos todo lo que haya pasado hasta hoy.
                 let isRelevant = true;
                 if (result.entrada) {
                     const entradaDate = result.entrada.toDate ? result.entrada.toDate() : new Date(result.entrada);
                     const historialDate = h.timestamp.toDate ? h.timestamp.toDate() : new Date(h.timestamp);
-                    // Si el historial es más de 2 días posterior a la entrada, probablemente sea de otro ciclo.
+                    
+                    // 1. Si existe una salida posterior (nuevo ciclo), el consumo debe ser ANTERIOR a esa salida.
+                    if (nextSalidaTime) {
+                        const nextSalidaDate = nextSalidaTime.toDate ? nextSalidaTime.toDate() : new Date(nextSalidaTime);
+                        if (historialDate >= nextSalidaDate) {
+                            isRelevant = false;
+                        }
+                    }
+
+                    // 2. Si el historial es más de 2 días posterior a la entrada, probablemente sea de otro ciclo o mantenimiento tardío.
                     const diffTime = Math.abs(historialDate - entradaDate);
                     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
                     if (historialDate > entradaDate && diffDays > 2) {
