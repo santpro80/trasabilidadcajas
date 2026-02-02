@@ -22,6 +22,12 @@ function formatDate(timestamp) {
     return new Date(timestamp).toLocaleString('es-ES');
 }
 
+function formatDateShort(timestamp) {
+    if (!timestamp) return 'Actualidad';
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    return date.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' });
+}
+
 async function buscarPrestamo() {
     const prestamoNum = searchInput.value.trim();
     
@@ -247,10 +253,15 @@ function renderBoxItem(details, index) {
     
     let consumosHtml = '';
     if (details.consumos.length > 0) {
+        const periodoTexto = `${formatDateShort(details.salida)} al ${formatDateShort(details.entrada)}`;
+        
         consumosHtml = `<div style="margin-top: 20px; padding: 15px; background: #fff5f5; border-radius: 8px; border: 1px solid #f5c6cb;">
-            <div style="font-size: 1em; color: #721c24; font-weight: bold; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #f5c6cb; padding-bottom: 8px;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
-                Ítems Consumidos / Reemplazados
+            <div style="font-size: 1em; color: #721c24; font-weight: bold; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; gap: 8px; border-bottom: 1px solid #f5c6cb; padding-bottom: 8px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                    Ítems Consumidos
+                </div>
+                <span style="font-size: 0.85em; font-weight: normal; color: #a71d2a; background: #fff; padding: 2px 8px; border-radius: 10px; border: 1px solid #f5c6cb;">Periodo: ${periodoTexto}</span>
             </div>
             <div style="display: flex; flex-direction: column; gap: 10px;">`;
         
@@ -258,12 +269,16 @@ function renderBoxItem(details, index) {
             const parts = (c.codigoDesc || '').split(';');
             const code = parts[0] || '?';
             const desc = parts[1] || '?';
+            const fechaConsumo = formatDate(c.fecha);
             
             consumosHtml += `
                 <div style="display: flex; justify-content: space-between; align-items: center; background: white; padding: 12px 15px; border-radius: 6px; border: 1px solid #eee; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
                     <div style="display: flex; flex-direction: column; gap: 4px;">
                         <span style="font-weight: 700; color: #333; font-size: 1.1em;">${code}</span>
                         <span style="font-size: 0.95em; color: #666;">${desc}</span>
+                        <span style="font-size: 0.85em; color: #555; margin-top: 3px; display: flex; align-items: center; gap: 5px;">
+                            📅 ${fechaConsumo}
+                        </span>
                     </div>
                     <div style="text-align: right; min-width: 140px;">
                         <span style="display: block; font-size: 0.75em; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Serie Anterior</span>
