@@ -2,6 +2,7 @@ import { db, doc, getDoc, collection, query, where, getDocs, orderBy, limit } fr
 
 const searchInput = document.getElementById('prestamo-search-input');
 const searchBtn = document.getElementById('search-btn');
+const menuBtn = document.getElementById('menu-btn');
 const resultsContainer = document.getElementById('results-container');
 const loadingState = document.getElementById('loading-state');
 const emptyState = document.getElementById('empty-state');
@@ -109,7 +110,7 @@ async function renderResult(prestamoNum, data) {
         
         // Procesamos cada caja para buscar sus fechas de entrada/salida y consumos
         // Usamos Promise.all para que sea rápido y paralelo
-        const boxPromises = cajas.map(caja => getBoxDetails(caja, prestamoNum, data.timestamp));
+        const boxPromises = cajas.map(caja => getBoxDetails(caja, prestamoNum, data.timestamp, data.usuarioNombre || data.usuarioEmail));
         const boxDetailsList = await Promise.all(boxPromises);
 
         boxDetailsList.forEach((details, index) => {
@@ -134,12 +135,14 @@ async function renderResult(prestamoNum, data) {
 }
 
 // Función para obtener los detalles profundos de cada caja (Salida, Entrada, Consumos)
-async function getBoxDetails(caja, prestamoNum, loanTimestamp) {
+async function getBoxDetails(caja, prestamoNum, loanTimestamp, loanUser) {
     const result = {
         cajaSerie: caja.cajaSerie,
         modelName: caja.modelName,
         salida: null,
+        salidaUser: null,
         entrada: null,
+        entradaUser: null,
         consumos: []
     };
 
@@ -157,9 +160,11 @@ async function getBoxDetails(caja, prestamoNum, loanTimestamp) {
         let salidaTime = null;
         if (!snapSalida.empty) {
             salidaTime = snapSalida.docs[0].data().timestamp;
+            result.salidaUser = snapSalida.docs[0].data().usuarioNombre || snapSalida.docs[0].data().usuarioEmail;
         } else {
             // Si no encontramos el movimiento exacto, usamos la fecha general del préstamo
             salidaTime = loanTimestamp;
+            result.salidaUser = loanUser;
         }
         result.salida = salidaTime;
 
@@ -178,20 +183,28 @@ async function getBoxDetails(caja, prestamoNum, loanTimestamp) {
         
         if (!snapEntrada.empty) {
             result.entrada = snapEntrada.docs[0].data().timestamp;
+            result.entradaUser = snapEntrada.docs[0].data().usuarioNombre || snapEntrada.docs[0].data().usuarioEmail;
         }
 
         // C. Buscar Ítems Consumidos (Historial de cambios a "REEMPLAZAR")
         // Buscamos en el historial cualquier cambio ocurrido DESPUÉS de que salió la caja.
+        // NOTA: Quitamos el filtro de timestamp de la query para evitar problemas de índices en Firebase.
+        // Filtramos por fecha manualmente aquí abajo.
         const qHistorial = query(
             collection(db, "historial"),
-            where("detalles.cajaSerie", "==", caja.cajaSerie),
-            where("timestamp", ">=", salidaTime)
+            where("detalles.cajaSerie", "==", caja.cajaSerie)
         );
         
         const snapHistorial = await getDocs(qHistorial);
         
         snapHistorial.forEach(doc => {
             const h = doc.data();
+            
+            // Filtrado manual de fecha para asegurar que el consumo fue DESPUÉS de la salida
+            const hDate = h.timestamp?.toDate ? h.timestamp.toDate() : new Date(h.timestamp);
+            const sDate = salidaTime?.toDate ? salidaTime.toDate() : new Date(salidaTime);
+            if (hDate < sDate) return;
+
             // Filtramos: Solo nos interesan modificaciones donde el valor nuevo sea "REEMPLAZAR"
             // Y que hayan ocurrido antes de la siguiente salida (si es que hubo otra), 
             // pero para simplificar asumimos que son relevantes si ocurrieron después de esta salida.
@@ -242,7 +255,7 @@ function renderBoxItem(details, index) {
             <ul style="margin: 0; padding-left: 20px; font-size: 0.85em; color: #555;">`;
         
         details.consumos.forEach(c => {
-            const parts = c.codigoDesc.split(';');
+            const parts = (c.codigoDesc || '').split(';');
             const code = parts[0] || '?';
             const desc = parts[1] || '?';
             consumosHtml += `<li style="margin-bottom: 4px;">
@@ -267,10 +280,12 @@ function renderBoxItem(details, index) {
                         <div>
                             <span style="display: block; color: #888; font-size: 0.8em; text-transform: uppercase; letter-spacing: 0.5px;">Salida</span>
                             <span style="font-size: 0.95em; color: #333;">${salidaStr}</span>
+                            <div style="font-size: 0.85em; color: #666; margin-top: 2px;">👤 ${details.salidaUser || 'N/A'}</div>
                         </div>
                         <div>
                             <span style="display: block; color: #888; font-size: 0.8em; text-transform: uppercase; letter-spacing: 0.5px;">Entrada</span>
                             <span style="font-size: 0.95em; color: #333;">${entradaStr}</span>
+                            ${details.entrada ? `<div style="font-size: 0.85em; color: #666; margin-top: 2px;">👤 ${details.entradaUser || 'N/A'}</div>` : ''}
                         </div>
                     </div>
 
@@ -289,3 +304,9 @@ searchInput.addEventListener('keypress', (e) => {
         buscarPrestamo();
     }
 });
+
+if (menuBtn) {
+    menuBtn.addEventListener('click', () => {
+        window.location.href = 'menu.html';
+    });
+}
