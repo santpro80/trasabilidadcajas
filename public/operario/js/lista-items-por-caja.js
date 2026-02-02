@@ -8,7 +8,7 @@ import {
 
 document.addEventListener('DOMContentLoaded', () => {
     console.log("DOM completamente cargado y analizado");
-    console.log("cambionamiento para onedrive directo");
+    console.log("ELEMENTO DE refresh 2.0 a ver si ahora si");
     const userDisplayNameElement = document.getElementById('user-display-name');
     const logoutBtn = document.getElementById('logout-btn');
     const backBtn = document.getElementById('back-btn');
