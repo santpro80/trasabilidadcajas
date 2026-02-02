@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestión de Usuarios | Sistema de Trazabilidad</title>
     <link rel="icon" href="assets/logo.png" type="image/png">
+    <!-- Agregamos Tailwind CSS para los estilos del buscador y formulario -->
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body {
             margin: 0;
@@ -50,73 +52,25 @@
         }
         .main-content {
             padding: 40px 20px;
-            max-width: 600px;
+            max-width: 800px;
             margin: 0 auto;
         }
-        .form-card {
-            background-color: rgba(255, 255, 255, 0.95);
-            border-radius: 15px;
-            padding: 30px 40px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-        }
-        .form-card h1 {
-            color: #4285F4;
-            text-align: center;
-            margin-top: 0;
-        }
-        .form-card p {
-            text-align: center;
-            margin-bottom: 30px;
-            color: #555;
-        }
-        .form-group {
-            margin-bottom: 20px;
-        }
-        label {
-            display: block;
-            font-weight: 500;
-            margin-bottom: 8px;
-            color: #333;
-        }
-        input[type="email"], select {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            font-size: 1em;
-            box-sizing: border-box;
-        }
-        input:focus, select:focus {
-            outline: none;
-            border-color: #4285F4;
-            box-shadow: 0 0 0 3px rgba(66, 133, 244, 0.2);
-        }
-        .btn-submit {
-            background-color: #28a745;
-            color: white;
-            padding: 12px 25px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 1.1em;
-            width: 100%;
-            margin-top: 20px;
-            font-weight: bold;
-        }
-        #message {
-            margin-top: 20px;
-            font-weight: bold;
-            text-align: center;
-            padding: 10px;
-            border-radius: 5px;
-        }
+        /* Estilos para mensajes de feedback */
         .message-success {
             background-color: #d4edda;
             color: #155724;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 15px;
+            text-align: center;
         }
         .message-error {
             background-color: #f8d7da;
             color: #721c24;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 15px;
+            text-align: center;
         }
     </style>
 </head>
@@ -126,22 +80,72 @@
         <div class="user-info"><span id="user-display-name"></span><button id="logout-btn" class="logout-btn">Cerrar sesión</button></div>
     </header>
     <main class="main-content">
-        <div class="form-card">
-            <h1>Gestión de Usuarios</h1>
-            <p>Asigna roles a los usuarios del sistema.</p>
-            <div class="form-group">
-                <label for="user-email">Correo Electrónico del Usuario:</label>
-                <input type="email" id="user-email" placeholder="ejemplo@correo.com">
+        <!-- Contenedor Principal con estilos de Tailwind -->
+        <div class="bg-white/95 backdrop-blur rounded-xl shadow-2xl p-8 border border-white/20">
+            
+            <h1 class="text-2xl font-bold text-blue-600 text-center mb-2">Gestión de Usuarios</h1>
+            <p class="text-gray-500 text-center mb-8">Busca y edita los roles del personal.</p>
+
+            <!-- 1. Buscador con Autocompletado -->
+            <div class="relative mb-8">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Buscar Usuario</label>
+                <div class="relative">
+                    <input 
+                        type="text" 
+                        id="search-input" 
+                        placeholder="Escribe el nombre o usuario (ej. Santi...)" 
+                        class="w-full p-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                        autocomplete="off"
+                    >
+                    <svg class="w-5 h-5 text-gray-400 absolute left-3 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                </div>
+                
+                <!-- Lista de Sugerencias (Oculta por defecto) -->
+                <ul id="suggestions-list" class="absolute z-50 w-full bg-white border border-gray-200 rounded-lg shadow-xl mt-1 max-h-60 overflow-y-auto hidden">
+                    <!-- Las opciones se inyectarán aquí con JS -->
+                </ul>
             </div>
-            <div class="form-group">
-                <label for="user-role">Asignar Rol:</label>
-                <select id="user-role">
-                    <option value="operador">Operador</option>
-                    <option value="supervisor">Supervisor</option>
-                    <option value="mantenimiento">Mantenimiento</option>
-                </select>
+
+            <!-- 2. Formulario de Edición (Oculto hasta seleccionar) -->
+            <div id="edit-form-container" class="hidden transition-all duration-300 ease-in-out">
+                <div class="grid grid-cols-1 gap-5">
+                    
+                    <!-- Nombre Completo (Readonly) -->
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wide">Nombre Completo</label>
+                        <input type="text" id="edit-name" class="w-full mt-1 p-2 bg-gray-50 border border-gray-200 rounded text-gray-700 cursor-not-allowed" readonly>
+                    </div>
+
+                    <!-- Usuario y Email (Grid) -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 uppercase tracking-wide">Usuario</label>
+                            <input type="text" id="edit-username" class="w-full mt-1 p-2 bg-gray-50 border border-gray-200 rounded text-gray-700 cursor-not-allowed" readonly>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 uppercase tracking-wide">Email</label>
+                            <input type="text" id="edit-email" class="w-full mt-1 p-2 bg-gray-50 border border-gray-200 rounded text-gray-700 cursor-not-allowed" readonly>
+                        </div>
+                    </div>
+
+                    <!-- Rol (Editable) -->
+                    <div class="bg-blue-50 p-4 rounded-lg border border-blue-100">
+                        <label class="block text-sm font-bold text-blue-800 mb-2">Rol Asignado</label>
+                        <select id="edit-role" class="w-full p-2 border border-blue-300 rounded focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                            <option value="operario">Operario</option>
+                            <option value="supervisor">Supervisor</option>
+                            <option value="mantenimiento">Mantenimiento</option>
+                        </select>
+                    </div>
+
+                    <!-- Botón de Acción -->
+                    <button id="update-user-btn" class="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold py-3 px-4 rounded-lg shadow-md transform transition hover:-translate-y-0.5">
+                        Actualizar Usuario
+                    </button>
+                </div>
             </div>
-            <button id="assign-role-btn" class="btn-submit" disabled>Asignar Rol</button>
+
+            <!-- Mensajes -->
             <div id="message"></div>
         </div>
     </main>
