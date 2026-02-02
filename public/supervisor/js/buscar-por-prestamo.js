@@ -247,45 +247,59 @@ function renderBoxItem(details, index) {
     
     let consumosHtml = '';
     if (details.consumos.length > 0) {
-        consumosHtml = `<div style="margin-top: 10px; padding: 10px; background: #fff5f5; border-radius: 6px; border-left: 4px solid #dc3545;">
-            <div style="font-size: 0.9em; color: #dc3545; font-weight: bold; margin-bottom: 6px; display: flex; align-items: center; gap: 5px;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
-                Ítems Consumidos / Reemplazados:
+        consumosHtml = `<div style="margin-top: 20px; padding: 15px; background: #fff5f5; border-radius: 8px; border: 1px solid #f5c6cb;">
+            <div style="font-size: 1em; color: #721c24; font-weight: bold; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #f5c6cb; padding-bottom: 8px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                Ítems Consumidos / Reemplazados
             </div>
-            <ul style="margin: 0; padding-left: 20px; font-size: 0.85em; color: #555;">`;
+            <div style="display: flex; flex-direction: column; gap: 10px;">`;
         
         details.consumos.forEach(c => {
             const parts = (c.codigoDesc || '').split(';');
             const code = parts[0] || '?';
             const desc = parts[1] || '?';
-            consumosHtml += `<li style="margin-bottom: 4px;">
-                <strong>${code}</strong> - ${desc} <br>
-                <span style="font-size: 0.9em; color: #777;">Serie anterior: <strong>${c.serieAnterior}</strong></span>
-            </li>`;
+            
+            consumosHtml += `
+                <div style="display: flex; justify-content: space-between; align-items: center; background: white; padding: 12px 15px; border-radius: 6px; border: 1px solid #eee; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <span style="font-weight: 700; color: #333; font-size: 1.1em;">${code}</span>
+                        <span style="font-size: 0.95em; color: #666;">${desc}</span>
+                    </div>
+                    <div style="text-align: right; min-width: 140px;">
+                        <span style="display: block; font-size: 0.75em; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Serie Anterior</span>
+                        <span style="display: inline-block; font-size: 1.4em; font-weight: 800; color: #d32f2f; background-color: #ffebee; padding: 6px 12px; border-radius: 6px; border: 1px solid #ffcdd2;">
+                            ${c.serieAnterior}
+                        </span>
+                    </div>
+                </div>`;
         });
-        consumosHtml += `</ul></div>`;
+        consumosHtml += `</div></div>`;
     }
 
     return `
-        <div class="movement-item" style="background: #fff; padding: 15px; border-radius: 8px; border: 1px solid #e0e0e0; margin-bottom: 10px;">
-            <div style="display: flex; align-items: flex-start; gap: 12px;">
-                <span class="movement-label salida" style="background-color: #e8f0fe; color: #4285F4; padding: 5px 12px; border-radius: 20px; font-size: 0.9em; min-width: auto; height: fit-content;">
+        <div class="movement-item" style="background: #fff; padding: 20px; border-radius: 10px; border: 1px solid #e0e0e0; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+            <div style="display: flex; align-items: flex-start; gap: 15px;">
+                <span class="movement-label salida" style="background-color: #e8f0fe; color: #4285F4; padding: 6px 14px; border-radius: 20px; font-size: 1em; font-weight: bold; min-width: auto; height: fit-content;">
                     #${index + 1}
                 </span>
-                <div style="flex-grow: 1;">
-                    <div style="font-weight: 700; font-size: 1.15em; color: #333;">${details.cajaSerie}</div>
-                    <div style="font-size: 0.95em; color: #666; margin-bottom: 8px;">${details.modelName}</div>
+                <div style="flex-grow: 1; width: 100%;">
+                    <div style="margin-bottom: 15px;">
+                        <div style="font-weight: 800; font-size: 1.4em; color: #2c3e50;">${details.cajaSerie}</div>
+                        <div style="font-size: 1em; color: #555;">${details.modelName}</div>
+                    </div>
                     
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding-top: 8px; border-top: 1px dashed #eee;">
-                        <div>
-                            <span style="display: block; color: #888; font-size: 0.8em; text-transform: uppercase; letter-spacing: 0.5px;">Salida</span>
-                            <span style="font-size: 0.95em; color: #333;">${salidaStr}</span>
-                            <div style="font-size: 0.85em; color: #666; margin-top: 2px;">👤 ${details.salidaUser || 'N/A'}</div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 15px; background-color: #f8f9fa; border-radius: 8px; border: 1px solid #eee;">
+                        <div style="border-right: 1px solid #e0e0e0; padding-right: 10px;">
+                            <span style="display: block; color: #666; font-size: 0.85em; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px;">Salida</span>
+                            <span style="font-size: 1.1em; color: #333; font-weight: 600; display: block; margin-bottom: 4px;">${salidaStr}</span>
+                            <div style="font-size: 0.9em; color: #555; display: flex; align-items: center; gap: 5px;">
+                                👤 ${details.salidaUser || 'N/A'}
+                            </div>
                         </div>
-                        <div>
-                            <span style="display: block; color: #888; font-size: 0.8em; text-transform: uppercase; letter-spacing: 0.5px;">Entrada</span>
-                            <span style="font-size: 0.95em; color: #333;">${entradaStr}</span>
-                            ${details.entrada ? `<div style="font-size: 0.85em; color: #666; margin-top: 2px;">👤 ${details.entradaUser || 'N/A'}</div>` : ''}
+                        <div style="padding-left: 10px;">
+                            <span style="display: block; color: #666; font-size: 0.85em; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px;">Entrada</span>
+                            <span style="font-size: 1.1em; color: #333; font-weight: 600; display: block; margin-bottom: 4px;">${entradaStr}</span>
+                            ${details.entrada ? `<div style="font-size: 0.9em; color: #555; display: flex; align-items: center; gap: 5px;">👤 ${details.entradaUser || 'N/A'}</div>` : ''}
                         </div>
                     </div>
 
