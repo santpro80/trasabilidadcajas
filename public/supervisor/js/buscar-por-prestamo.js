@@ -1,167 +1,144 @@
-import {
-    auth,
-    db,
-    onAuthStateChanged,
-    signOut,
-    getDoc,
-    doc,
-    collection, query, where, orderBy, getDocs, limit
-} from './firebase-config.js';
+import { db, doc, getDoc } from './firebase-config.js';
 
-document.addEventListener('DOMContentLoaded', () => {
-    const userDisplayNameElement = document.getElementById('user-display-name');
-    const logoutBtn = document.getElementById('logout-btn');
-    const menuBtn = document.getElementById('menu-btn');
-    const searchInput = document.getElementById('prestamo-search-input');
-    const searchBtn = document.getElementById('search-btn');
-    const resultsContainer = document.getElementById('results-container');
-    const loadingState = document.getElementById('loading-state');
-    const emptyState = document.getElementById('empty-state');
-    const errorState = document.getElementById('error-state');
+const searchInput = document.getElementById('prestamo-search-input');
+const searchBtn = document.getElementById('search-btn');
+const resultsContainer = document.getElementById('results-container');
+const loadingState = document.getElementById('loading-state');
+const emptyState = document.getElementById('empty-state');
+const errorState = document.getElementById('error-state');
 
-    let currentUser = null;
-
-    onAuthStateChanged(auth, async (user) => {
-        if (user) {
-            currentUser = user;
-            const userDoc = await getDoc(doc(db, "users", user.uid));
-            if (userDisplayNameElement) {
-                userDisplayNameElement.textContent = userDoc.exists() ? userDoc.data().name : user.email;
-            }
-        } else {
-            window.location.href = 'login.html';
-        }
-    });
-
-    const showState = (state) => {
-        loadingState.style.display = 'none';
-        emptyState.style.display = 'none';
-        errorState.style.display = 'none';
-        resultsContainer.style.display = 'none';
-
-        if (state === 'loading') loadingState.style.display = 'block';
-        else if (state === 'empty') emptyState.style.display = 'block';
-        else if (state === 'error') errorState.style.display = 'block';
-        else if (state === 'results') resultsContainer.style.display = 'flex';
-    };
-
-    const performSearch = async () => {
-        const numeroPrestamo = searchInput.value.trim();
-        if (!numeroPrestamo) {
-            alert('Por favor, ingresa un número de préstamo.');
-            return;
-        }
-
-        showState('loading');
-        resultsContainer.innerHTML = '';
-
-        try {
-            const prestamoDocRef = doc(db, "prestamos", numeroPrestamo);
-            const salidaDocSnap = await getDoc(prestamoDocRef);
-
-            if (!salidaDocSnap.exists()) {
-                emptyState.querySelector('p').textContent = `No se encontraron cajas para el préstamo "${numeroPrestamo}".`;
-                showState('empty');
-                return;
-            }
-
-            const salidaData = salidaDocSnap.data();
-            const cajaSerie = salidaData.cajaSerie;
-            const salidaTimestamp = salidaData.timestamp;
-
-            const movimientosQuery = query(
-                collection(db, "movimientos_cajas"),
-                where("cajaSerie", "==", cajaSerie),
-                where("tipo", "==", "Entrada"),
-                where("timestamp", ">", salidaTimestamp),
-                orderBy("timestamp", "asc"),
-                limit(1)
-            );
-            const entradaSnapshot = await getDocs(movimientosQuery);
-            const entradaData = entradaSnapshot.empty ? null : entradaSnapshot.docs[0].data();
-            const entradaTimestamp = entradaData ? entradaData.timestamp : null;
-            const consumoQuery = query(
-                collection(db, "historial"),
-                where("detalles.cajaSerie", "==", cajaSerie),
-                where("detalles.valorNuevo", "==", "REEMPLAZAR"),
-                where("timestamp", ">", salidaTimestamp),
-                ...(entradaTimestamp ? [where("timestamp", "<", entradaTimestamp)] : [])
-            );
-            const consumoSnapshot = await getDocs(consumoQuery);
-            const itemsConsumidos = consumoSnapshot.docs.map(doc => doc.data().detalles);
-            renderResults(salidaData, entradaData, itemsConsumidos);
-            showState('results');
-
-        } catch (error) {
-            console.error("Error al buscar por préstamo:", error);
-            errorState.querySelector('p').textContent = `Error: ${error.message}`;
-            showState('error');
-        }
-    };
-
-    const renderResults = (salida, entrada, consumidos) => {
-        resultsContainer.innerHTML = ''; 
-        const resultCard = document.createElement('div');
-        resultCard.className = 'result-card';
-
-        const fechaSalida = salida.timestamp ? new Date(salida.timestamp.seconds * 1000).toLocaleString('es-AR') : 'N/A';
-        const fechaEntrada = entrada ? new Date(entrada.timestamp.seconds * 1000).toLocaleString('es-AR') : 'Aún no registrada';
-
-        resultCard.innerHTML = `
-            <div class="result-header">
-                <div class="caja-serie">${salida.cajaSerie || 'N/A'}</div>
-                <div class="modelo">${salida.modelName || 'No especificado'}</div>
-            </div>
-            <div class="movements">
-                <div class="movement-item">
-                    <span class="movement-label salida">Salida:</span>
-                    <span class="movement-date">${fechaSalida}</span>
-                    <span class="movement-user">por ${salida.usuarioNombre || 'N/A'}</span>
-                </div>
-                <div class="movement-item">
-                    <span class="movement-label entrada">Entrada:</span>
-                    <span class="movement-date">${fechaEntrada}</span>
-                    ${entrada ? `<span class="movement-user">por ${entrada.usuarioNombre || 'N/A'}</span>` : ''}
-                </div>
-            </div>
-        `;
-
-        if (consumidos.length > 0) {
-            const consumoCard = document.createElement('div');
-            consumoCard.className = 'consumo-card';
-            let itemsHTML = consumidos.map(item => `<li>${item.itemDescripcion} (Serie: ${item.valorAnterior})</li>`).join('');
-            
-            consumoCard.innerHTML = `
-                <h3>Ítems Consumidos en este Préstamo</h3>
-                <ul>${itemsHTML}</ul>
-            `;
-            resultCard.appendChild(consumoCard);
-        }
-        resultCard.addEventListener('click', () => {
-            const url = `lista-items-por-caja.html?selectedSerialNumber=${encodeURIComponent(salida.cajaSerie)}&modelName=${encodeURIComponent(salida.modelName)}`;
-            window.location.href = url;
+// Función auxiliar para formatear fechas de manera legible
+function formatDate(timestamp) {
+    if (!timestamp) return 'Fecha desconocida';
+    // Si es un objeto Timestamp de Firestore
+    if (timestamp.toDate) {
+        return timestamp.toDate().toLocaleString('es-ES', {
+            day: '2-digit', month: '2-digit', year: 'numeric',
+            hour: '2-digit', minute: '2-digit'
         });
+    }
+    // Si ya es una fecha o string
+    return new Date(timestamp).toLocaleString('es-ES');
+}
 
-        resultsContainer.appendChild(resultCard);
-    };
-    searchBtn.addEventListener('click', performSearch);
-    searchInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-            performSearch();
+async function buscarPrestamo() {
+    const prestamoNum = searchInput.value.trim();
+    
+    if (!prestamoNum) {
+        alert("Por favor, ingresa un número de préstamo.");
+        return;
+    }
+
+    // Resetear estados de la interfaz
+    resultsContainer.innerHTML = '';
+    loadingState.style.display = 'block';
+    emptyState.style.display = 'none';
+    errorState.style.display = 'none';
+
+    try {
+        // Referencia al documento del préstamo en la colección 'prestamos'
+        const docRef = doc(db, "prestamos", prestamoNum);
+        const docSnap = await getDoc(docRef);
+
+        loadingState.style.display = 'none';
+
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            renderResult(prestamoNum, data);
+        } else {
+            // No se encontró el documento
+            resultsContainer.innerHTML = `
+                <div class="state-message" style="background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; padding: 15px; border-radius: 8px;">
+                    <p style="margin: 0;">No se encontró ningún registro para el préstamo N° <strong>${prestamoNum}</strong>.</p>
+                </div>
+            `;
         }
-    });
+    } catch (error) {
+        console.error("Error al buscar el préstamo:", error);
+        loadingState.style.display = 'none';
+        errorState.style.display = 'block';
+    }
+}
 
-    if (menuBtn) {
-        menuBtn.addEventListener('click', () => {
-            window.location.href = 'menu.html';
+function renderResult(prestamoNum, data) {
+    // 1. Determinar la lista de cajas (soporte para estructura nueva y antigua)
+    let cajas = [];
+    
+    if (data.cajas && Array.isArray(data.cajas)) {
+        // Estructura NUEVA: Array de cajas
+        cajas = data.cajas;
+    } else if (data.cajaSerie) {
+        // Estructura ANTIGUA: Solo una caja en la raíz del documento
+        cajas.push({
+            cajaSerie: data.cajaSerie,
+            modelName: data.modelName || 'Modelo no especificado'
         });
     }
 
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', () => {
-            signOut(auth).then(() => {
-                window.location.href = 'login.html';
-            });
+    // 2. Construir el HTML de la tarjeta de resultados
+    const card = document.createElement('div');
+    card.className = 'result-card';
+
+    // Encabezado de la tarjeta (Info del Préstamo)
+    const headerHtml = `
+        <div class="result-header" style="flex-direction: column; align-items: flex-start; gap: 8px;">
+            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center; flex-wrap: wrap; gap: 10px;">
+                <span class="caja-serie" style="color: #4285F4; font-size: 1.3em; display: flex; align-items: center; gap: 8px;">
+                    📄 Préstamo #${prestamoNum}
+                </span>
+                <span class="movement-date" style="color: #555; font-size: 0.95em;">
+                    📅 ${formatDate(data.timestamp)}
+                </span>
+            </div>
+            <div class="movement-user" style="width: 100%; border-top: 1px solid #eee; padding-top: 8px; margin-top: 5px;">
+                👤 Generado por: <strong>${data.usuarioNombre || data.usuarioEmail || 'Usuario desconocido'}</strong>
+                ${data.usuarioEmail ? `<br><small style="color: #888; margin-left: 20px;">(${data.usuarioEmail})</small>` : ''}
+            </div>
+        </div>
+    `;
+
+    // Cuerpo de la tarjeta (Lista de Cajas)
+    let bodyHtml = '<div class="movements">';
+    
+    if (cajas.length > 0) {
+        bodyHtml += `
+            <h4 style="margin: 5px 0 15px 0; color: #2c3e50; display: flex; align-items: center; gap: 8px;">
+                📦 Cajas Asociadas (${cajas.length})
+            </h4>
+        `;
+        
+        cajas.forEach((caja, index) => {
+            bodyHtml += `
+                <div class="movement-item" style="background: #fff; padding: 12px; border-radius: 8px; border: 1px solid #e0e0e0; margin-bottom: 8px; transition: transform 0.2s;">
+                    <span class="movement-label salida" style="background-color: #e8f0fe; color: #4285F4; padding: 4px 10px; border-radius: 20px; font-size: 0.85em; margin-right: 10px; min-width: auto;">
+                        #${index + 1}
+                    </span>
+                    <div style="flex-grow: 1;">
+                        <div style="font-weight: 700; font-size: 1.1em; color: #333;">${caja.cajaSerie}</div>
+                        <div style="font-size: 0.9em; color: #666;">${caja.modelName}</div>
+                    </div>
+                </div>
+            `;
         });
+    } else {
+        bodyHtml += `
+            <div style="text-align: center; padding: 20px; color: #888; font-style: italic;">
+                No se encontraron detalles de cajas para este préstamo.
+            </div>
+        `;
+    }
+    
+    bodyHtml += '</div>';
+
+    card.innerHTML = headerHtml + bodyHtml;
+    resultsContainer.appendChild(card);
+}
+
+// Event Listeners
+searchBtn.addEventListener('click', buscarPrestamo);
+
+searchInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+        buscarPrestamo();
     }
 });
