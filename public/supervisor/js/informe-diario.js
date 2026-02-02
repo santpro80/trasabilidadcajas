@@ -176,7 +176,7 @@ const initializePage = () => {
 };
 logoutBtn?.addEventListener('click', () => {
     signOut(auth).then(() => {
-        window.location.href = 'login.html';
+        window.location.href = '../login.html';
     });
 });
 

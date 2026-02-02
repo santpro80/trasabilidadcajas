@@ -260,6 +260,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     logoutBtn.addEventListener('click', async () => {
         await signOut(auth);
-        window.location.href = 'login.html';
+        window.location.href = '../login.html';
     });
 });

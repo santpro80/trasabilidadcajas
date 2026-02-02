@@ -49,7 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     backBtn.addEventListener('click', () => window.location.href = 'menu.html');
     logoutBtn.addEventListener('click', () => {
-        signOut(auth).then(() => window.location.href = 'login.html');
+        signOut(auth).then(() => window.location.href = '../login.html');
     });
 
     async function loadProblemas() {

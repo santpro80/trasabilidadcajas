@@ -453,6 +453,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (cancelEditBtn) cancelEditBtn.addEventListener('click', () => { if (editSerialModal) editSerialModal.style.display = 'none'; });
     if (cancelDeleteBtn) cancelDeleteBtn.addEventListener('click', () => { if (deleteConfirmModal) deleteConfirmModal.style.display = 'none'; });
     if (backBtn) backBtn.addEventListener('click', () => window.history.back());
-    if (logoutBtn) logoutBtn.addEventListener('click', () => signOut(auth).then(() => { if (unsubscribeFromItems) unsubscribeFromItems(); window.location.href = 'login.html'; }));
+    if (logoutBtn) logoutBtn.addEventListener('click', () => signOut(auth).then(() => { if (unsubscribeFromItems) unsubscribeFromItems(); window.location.href = '../login.html'; }));
     if (menuBtn) menuBtn.addEventListener('click', () => { window.location.href = 'menu.html'; });
 });

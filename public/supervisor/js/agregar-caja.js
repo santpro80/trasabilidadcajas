@@ -334,5 +334,5 @@ document.addEventListener('DOMContentLoaded', () => {
 
     addItemBtn.addEventListener('click', addDynamicItemRow);
     backBtn.addEventListener('click', () => window.history.back());
-    logoutBtn.addEventListener('click', () => signOut(auth).then(() => window.location.href = 'login.html'));
+    logoutBtn.addEventListener('click', () => signOut(auth).then(() => window.location.href = '../login.html'));
 });
