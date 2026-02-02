@@ -1,13 +1,24 @@
-import { auth, db, onAuthStateChanged, signOut, getDoc, doc, functions, httpsCallable } from './firebase-config.js';
+
+import { auth, db, onAuthStateChanged, signOut, getDoc, doc, updateDoc, collection, getDocs, query, orderBy } from './firebase-config.js';
 
 document.addEventListener('DOMContentLoaded', () => {
-    const assignRoleBtn = document.getElementById('assign-role-btn');
     const messageDiv = document.getElementById('message');
     const backBtn = document.getElementById('back-btn');
     const logoutBtn = document.getElementById('logout-btn');
     const userDisplayName = document.getElementById('user-display-name');
-    const userEmailInput = document.getElementById('user-email');
-    const userRoleSelect = document.getElementById('user-role');
+    
+    // Nuevos elementos del DOM
+    const searchInput = document.getElementById('search-input');
+    const suggestionsList = document.getElementById('suggestions-list');
+    const editFormContainer = document.getElementById('edit-form-container');
+    const editName = document.getElementById('edit-name');
+    const editUsername = document.getElementById('edit-username');
+    const editEmail = document.getElementById('edit-email');
+    const editRole = document.getElementById('edit-role');
+    const updateUserBtn = document.getElementById('update-user-btn');
+
+    let allUsersCache = []; // Cache local para búsqueda instantánea
+    let selectedUserId = null;
 
     let notificationTimeout;
 
@@ -34,69 +45,116 @@ document.addEventListener('DOMContentLoaded', () => {
                 const userData = userDocSnap.data();
                 console.log("Datos del usuario desde Firestore:", userData); // <-- DEBUG LOG
                 userDisplayName.textContent = userData.name || user.email;
-                console.log ("hasta aca tamo chelo") ; // <-- DEBUG LOG
+                
                 // Habilitar el botón solo si el usuario es supervisor
                 if (userData.role === "supervisor") {
-                    assignRoleBtn.disabled = false;
-
-                    assignRoleBtn.addEventListener('click', async () => {
-                        console.log("el botón ha sido presionado"); 
-                        const email = userEmailInput.value;
-                        const role = userRoleSelect.value;
-
-                        if (!email) {
-                            showMessage('Por favor, introduce un correo electrónico.', 'error');
-                            return;
-                        }
-
-                        showMessage('Asignando rol...', 'info');
-
-                        try {
-                            //INICIO CÓDIGO DE DEPURACIÓN DE TOKEN
-                            console.log("Forzando actualización del token para depuración...");
-                            await auth.currentUser.getIdToken(true);
-                            const idToken = await auth.currentUser.getIdToken();
-                            try {
-                                const payload = JSON.parse(atob(idToken.split('.')[1]));
-                                console.log("CONTENIDO COMPLETO DEL TOKEN (CLAIMS):", payload);
-                            } catch (e) {
-                                console.error("No se pudo decodificar el token:", e);
-                            }
-                            //FIN CÓDIGO DE DEPURACIÓN DE TOKEN
-
-                            const setCustomUserRole = httpsCallable(functions, 'setCustomUserRole');
-                            const result = await setCustomUserRole({ email: email, role: role });
-                            
-                            showMessage(result.data.message, 'success');
-                            userEmailInput.value = ''; 
-
-                        } catch (error) {
-                            console.error('Error al asignar rol:', error);
-                            if (error.code === 'functions/permission-denied') {
-                                showMessage('Error: No tienes permiso para realizar esta acción.', 'error');
-                            } else if (error.code === 'functions/internal') {
-                                showMessage('Error interno del servidor. Revisa los logs de la función.', 'error');
-                            } else {
-                                showMessage(`Error: ${error.message}`, 'erroRun Azure/functions-action@v1
-Using RBAC for authentication, GitHub Action will perform resource validation.
-Error: Execution Exception (state: ValidateAzureResource) (step: Invocation)
-Error:   Resource intanciapdfsvillalba-g9amc0c0b9daecc8 of type Microsoft.Web/Sites doesn't exist.
-Error:     Error: Resource intanciapdfsvillalba-g9amc0c0b9daecc8 of type Microsoft.Web/Sites doesn't exist.
-    at AzureResourceFilterUtility.<anonymous> (/home/runner/work/_actions/Azure/functions-action/v1/node_modules/azure-actions-appservice-rest/Utilities/AzureResourceFilterUtility.js:26:23)
-    at Generator.next (<anonymous>)
-    at fulfilled (/home/runner/work/_actions/Azure/functions-action/v1/node_modules/azure-actions-appservice-rest/Utilities/AzureResourceFilterUtility.js:5:58)
-    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
-Error: Deployment Failed!r');
-                            }
-                        }
-                    });
-                } console.log ("llego hasta aca"); 
+                    loadAllUsers();
+                }
             }
         } catch (error) {
             console.error("Error fetching user data:", error);
             userDisplayName.textContent = user.email; 
         }
     });
+
+    // 1. Cargar todos los usuarios (Optimizado para búsqueda local)
+    const loadAllUsers = async () => {
+        try {
+            const q = query(collection(db, "users"), orderBy("name"));
+            const querySnapshot = await getDocs(q);
+            
+            allUsersCache = querySnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+            console.log(`Usuarios cargados: ${allUsersCache.length}`);
+        } catch (error) {
+            console.error("Error cargando usuarios:", error);
+            showMessage("Error al cargar la lista de usuarios.", "error");
+        }
+    };
+
+    // 2. Lógica del Buscador (Filtrado en tiempo real)
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            const term = e.target.value.toLowerCase().trim();
+            suggestionsList.innerHTML = '';
+            
+            if (term.length < 1) {
+                suggestionsList.classList.add('hidden');
+                return;
+            }
+
+            const filtered = allUsersCache.filter(user => 
+                (user.name && user.name.toLowerCase().includes(term)) || 
+                (user.username && user.username.toLowerCase().includes(term))
+            );
+
+            if (filtered.length > 0) {
+                suggestionsList.classList.remove('hidden');
+                filtered.forEach(user => {
+                    const li = document.createElement('li');
+                    li.className = "p-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100 transition-colors";
+                    li.innerHTML = `
+                        <div class="font-bold text-gray-800">${user.name || 'Sin nombre'}</div>
+                        <div class="text-xs text-gray-500">@${user.username || 'N/A'} | ${user.email}</div>
+                    `;
+                    li.addEventListener('click', () => selectUser(user));
+                    suggestionsList.appendChild(li);
+                });
+            } else {
+                suggestionsList.classList.add('hidden');
+            }
+        });
+    }
+
+    // 3. Seleccionar Usuario y Rellenar Formulario
+    const selectUser = (user) => {
+        selectedUserId = user.id;
+        editName.value = user.name || '';
+        editUsername.value = user.username || '';
+        editEmail.value = user.email || '';
+        editRole.value = user.role || 'operario'; // Default a operario si no tiene rol
+        
+        suggestionsList.classList.add('hidden');
+        searchInput.value = ''; // Limpiar buscador
+        editFormContainer.classList.remove('hidden');
+        showMessage('');
+    };
+
+    // 4. Actualizar Rol en Firestore
+    if (updateUserBtn) {
+        updateUserBtn.addEventListener('click', async () => {
+            if (!selectedUserId) return;
+            
+            const newRole = editRole.value;
+            showMessage('Guardando cambios...', 'info');
+            updateUserBtn.disabled = true;
+
+            try {
+                const userRef = doc(db, "users", selectedUserId);
+                await updateDoc(userRef, {
+                    role: newRole
+                });
+
+                // Actualizar cache local para reflejar el cambio sin recargar
+                const cachedUser = allUsersCache.find(u => u.id === selectedUserId);
+                if (cachedUser) cachedUser.role = newRole;
+
+                showMessage(`Rol actualizado a "${newRole.toUpperCase()}" correctamente.`, 'success');
+                setTimeout(() => {
+                    editFormContainer.classList.add('hidden');
+                    showMessage('');
+                }, 2000);
+
+            } catch (error) {
+                console.error("Error al actualizar:", error);
+                showMessage("Error al guardar en la base de datos.", "error");
+            } finally {
+                updateUserBtn.disabled = false;
+            }
+        });
+    }
 
     backBtn.addEventListener('click', () => {
         window.location.href = 'menu.html';
