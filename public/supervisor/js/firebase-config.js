@@ -185,10 +185,67 @@ export const showNotification = (message, type = 'success') => {
 };
 
 export const uploadToOneDrive = async (fileName, blob, folderPath) => {
-    console.log(`[uploadToOneDrive] Simulando subida de archivo: ${fileName} en ruta: ${folderPath}`);
-    // TODO: Aquí debes implementar la lógica real de subida a OneDrive (Microsoft Graph API)
-    // Por ahora devolvemos true para que el flujo de la aplicación continúe sin errores.
-    return true;
+    console.log(`[uploadToOneDrive] Iniciando subida real: ${fileName}`);
+    const user = auth.currentUser;
+    if (!user) {
+        console.error("Usuario no autenticado.");
+        return false;
+    }
+
+    try {
+        // 1. Obtener tokens de Firestore
+        const userDocRef = doc(db, "users", user.uid);
+        const userDoc = await getDoc(userDocRef);
+        if (!userDoc.exists()) throw new Error("Usuario no encontrado en BD");
+        
+        const data = userDoc.data();
+        // Intentamos obtener el token de acceso (soporta estructura plana u objeto)
+        let accessToken = data.oneDriveAccessToken || (data.oneDriveTokenData ? data.oneDriveTokenData.access_token : null);
+        const refreshToken = data.oneDriveRefreshToken;
+
+        if (!accessToken || !refreshToken) {
+            console.error("Faltan tokens de OneDrive en el perfil del usuario.");
+            return false;
+        }
+
+        // Función interna para subir
+        const performUpload = async (token) => {
+            const url = `https://graph.microsoft.com/v1.0/me/drive/root:/${folderPath}/${fileName}:/content`;
+            const response = await fetch(url, {
+                method: 'PUT',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/pdf' },
+                body: blob
+            });
+            if (response.status === 401) throw new Error("UNAUTHORIZED");
+            if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
+            return true;
+        };
+
+        try {
+            await performUpload(accessToken);
+            console.log("✅ Archivo subido a OneDrive correctamente.");
+            return true;
+        } catch (error) {
+            if (error.message === "UNAUTHORIZED") {
+                console.warn("⚠️ Token vencido. Renovando...");
+                const refreshUrl = 'https://us-central1-cajas-secuela.cloudfunctions.net/refrescarTokenOneDrive';
+                const res = await fetch(refreshUrl, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ refreshToken }) });
+                if (!res.ok) throw new Error("Error al renovar token");
+                
+                const newTokens = await res.json();
+                console.log("🔄 Token renovado exitosamente."); // ¡Aquí volverá a aparecer tu mensaje!
+                
+                await updateDoc(userDocRef, { oneDriveAccessToken: newTokens.access_token, oneDriveRefreshToken: newTokens.refresh_token || refreshToken });
+                await performUpload(newTokens.access_token);
+                console.log("✅ Archivo subido tras renovación.");
+                return true;
+            }
+            throw error;
+        }
+    } catch (e) {
+        console.error("❌ Error en uploadToOneDrive:", e);
+        return false;
+    }
 };
 
 export { 
