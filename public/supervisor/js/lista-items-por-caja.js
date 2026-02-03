@@ -412,7 +412,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (searchInput) searchInput.addEventListener('input', () => renderFilteredItems(allLoadedItemsData, searchInput.value));
     if (addItemBtn) addItemBtn.addEventListener('click', addNewItemRow);
-    console.log("debuddedante for ´pr que estamos de verdad ")
+    console.log("debuddedante for pr que estamos de verdad ")
     if (downloadPdfBtn) downloadPdfBtn.addEventListener('click', () => { 
         console.log("Botón de reporte presionado, mostrando modal de tipo de reporte.");
         if (tipoReporteModal) tipoReporteModal.style.display = 'flex'; 
