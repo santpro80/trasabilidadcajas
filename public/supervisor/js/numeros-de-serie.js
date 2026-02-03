@@ -290,7 +290,7 @@ document.addEventListener('DOMContentLoaded', () => {
             closeConfirmEntryModal();
         }
     });
-
+console.log('Hello, world!');
     addCajaBtn.addEventListener('click', () => {
         localStorage.setItem('tracingStartTime', Date.now());
         localStorage.setItem('tracingModelName', currentModelName);
