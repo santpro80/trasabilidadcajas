@@ -184,6 +184,13 @@ export const showNotification = (message, type = 'success') => {
     notificationTimeout = setTimeout(() => { toast.classList.remove('show'); }, 3000);
 };
 
+export const uploadToOneDrive = async (fileName, blob, folderPath) => {
+    console.log(`[uploadToOneDrive] Simulando subida de archivo: ${fileName} en ruta: ${folderPath}`);
+    // TODO: Aquí debes implementar la lógica real de subida a OneDrive (Microsoft Graph API)
+    // Por ahora devolvemos true para que el flujo de la aplicación continúe sin errores.
+    return true;
+};
+
 export { 
     httpsCallable, onAuthStateChanged, signOut, signInWithEmailAndPassword,
     createUserWithEmailAndPassword, updatePassword, reauthenticateWithCredential,
