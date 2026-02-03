@@ -27,6 +27,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const cancelEntryBtn = document.getElementById('cancel-entry-btn');
     const confirmEntryBtn = document.getElementById('confirm-entry-btn');
 
+    // Inyectar estilos para animación hover (efecto visual suave)
+    const style = document.createElement('style');
+    style.textContent = `
+        .list-item {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .list-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+    `;
+    document.head.appendChild(style);
+
     let currentModelName = '';
     let currentZonaName = '';
     let serialToDelete = null;
@@ -58,7 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             if (userDisplayName) { userDisplayName.textContent = userDocSnap.exists() ? userDocSnap.data().name : user.email; }
             
-            if (userRole === 'supervisor') {
+            if (userRole === 'supervisor' || userRole === 'operario') {
                 if(addCajaBtn) addCajaBtn.style.display = 'block';
             }
 
@@ -110,48 +123,81 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        // 1. Agrupar por primera letra
+        const groups = {};
         serials.forEach(serial => {
-            const li = document.createElement('li');
-            li.className = 'list-item';
+            const letter = serial.charAt(0).toUpperCase();
+            if (!groups[letter]) groups[letter] = [];
+            groups[letter].push(serial);
+        });
+
+        // 2. Configurar estilos para columnas (Flexbox)
+        serialNumbersList.style.display = 'flex';
+        serialNumbersList.style.flexWrap = 'wrap';
+        serialNumbersList.style.gap = '20px';
+        serialNumbersList.style.alignItems = 'flex-start';
+
+        const sortedKeys = Object.keys(groups).sort();
+
+        // 3. Renderizar cada columna
+        sortedKeys.forEach(key => {
+            const groupSerials = groups[key].sort(); // Orden alfabético/numérico automático
+
+            const columnLi = document.createElement('li');
+            columnLi.style.listStyle = 'none';
+            columnLi.style.flex = '1 1 300px'; // Ancho flexible
+            columnLi.style.padding = '10px';
             
-            let buttonsContainer = document.createElement('div');
-            buttonsContainer.className = 'action-buttons-container';
+            const title = document.createElement('h3');
+            title.textContent = `Serie ${key}`;
+            title.style.textAlign = 'center';
+            title.style.marginBottom = '15px';
+            columnLi.appendChild(title);
 
-            const registrarBtn = document.createElement('button');
-            registrarBtn.className = 'btn-register-entry';
-            registrarBtn.title = 'Registrar Entrada Simple';
-            registrarBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>`;
-            registrarBtn.addEventListener('click', async (e) => {
-                e.stopPropagation();
-                openConfirmEntryModal(serial);
-            });
-            buttonsContainer.appendChild(registrarBtn);
+            const subList = document.createElement('ul');
+            subList.style.listStyle = 'none';
+            subList.style.padding = '0';
+            subList.style.display = 'flex';
+            subList.style.flexDirection = 'column';
+            subList.style.gap = '10px';
 
-            if (userRole === 'supervisor') {
-                const deleteBtn = document.createElement('button');
-                deleteBtn.className = 'btn-delete-caja';
-                deleteBtn.title = 'Eliminar caja';
-                deleteBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
-                deleteBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    openDeleteModal(serial);
+            groupSerials.forEach(serial => {
+                const li = document.createElement('li');
+                li.className = 'list-item';
+                li.style.width = '100%';
+                
+                let buttonsContainer = document.createElement('div');
+                buttonsContainer.className = 'action-buttons-container';
+
+                if (userRole === 'supervisor') {
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.className = 'btn-delete-caja';
+                    deleteBtn.title = 'Eliminar caja';
+                    deleteBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
+                    deleteBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        openDeleteModal(serial);
+                    });
+                    buttonsContainer.appendChild(deleteBtn);
+                }
+                
+                const serialContainer = document.createElement('div');
+                serialContainer.className = 'serial-container';
+                serialContainer.innerHTML = `<span class="serial-text">${serial.toUpperCase()}</span>`;
+                serialContainer.addEventListener('click', () => {
+                    const url = `lista-items-por-caja.html?selectedSerialNumber=${encodeURIComponent(serial)}&modelName=${encodeURIComponent(currentModelName)}&zonaName=${encodeURIComponent(currentZonaName)}`;
+                    window.location.href = url;
                 });
-                buttonsContainer.appendChild(deleteBtn);
-            }
-            
-            const serialContainer = document.createElement('div');
-            serialContainer.className = 'serial-container';
-            serialContainer.innerHTML = `<span class="serial-text">${serial.toUpperCase()}</span>`;
-            serialContainer.addEventListener('click', () => {
-                const url = `lista-items-por-caja.html?selectedSerialNumber=${encodeURIComponent(serial)}&modelName=${encodeURIComponent(currentModelName)}&zonaName=${encodeURIComponent(currentZonaName)}`;
-                window.location.href = url;
-            });
 
-            li.appendChild(serialContainer);
-            li.appendChild(buttonsContainer);
-            serialNumbersList.appendChild(li);
+                li.appendChild(serialContainer);
+                li.appendChild(buttonsContainer);
+                subList.appendChild(li);
+            });
+            columnLi.appendChild(subList);
+            serialNumbersList.appendChild(columnLi);
         });
         showState(serialNumbersList);
+        serialNumbersList.style.display = 'flex'; // Forzar flex después de showState
     };
 
     const deleteCaja = async () => {
