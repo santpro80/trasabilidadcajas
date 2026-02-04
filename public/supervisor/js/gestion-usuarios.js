@@ -1,5 +1,5 @@
 
-import { auth, db, onAuthStateChanged, signOut, getDoc, doc, updateDoc, collection, getDocs, query, orderBy } from './firebase-config.js';
+import { auth, db, onAuthStateChanged, signOut, getDoc, doc, updateDoc, collection, getDocs, query, orderBy, setDoc } from './firebase-config.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     const messageDiv = document.getElementById('message');
@@ -15,6 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const editUsername = document.getElementById('edit-username');
     const editEmail = document.getElementById('edit-email');
     const editRole = document.getElementById('edit-role');
+    const editSector = document.getElementById('edit-sector');
     const updateUserBtn = document.getElementById('update-user-btn');
 
     let allUsersCache = []; // Cache local para búsqueda instantánea
@@ -74,6 +75,36 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    // Función para cargar los sectores desde Firebase (Igual que en registro)
+    const loadSectors = async () => {
+        if (!editSector) return;
+        
+        try {
+            const docRef = doc(db, "config", "sectors_list");
+            const docSnap = await getDoc(docRef);
+            let sectors = [];
+
+            if (docSnap.exists()) {
+                sectors = docSnap.data().list || [];
+            } else {
+                sectors = ['002', '004', '005', '007', '008'];
+                await setDoc(docRef, { list: sectors });
+            }
+
+            editSector.innerHTML = '<option value="" disabled selected>Selecciona un sector</option>';
+            sectors.forEach(sector => {
+                const option = document.createElement('option');
+                option.value = sector;
+                option.textContent = sector;
+                editSector.appendChild(option);
+            });
+        } catch (error) {
+            console.error("Error cargando sectores:", error);
+        }
+    };
+
+    loadSectors();
+
     // 2. Lógica del Buscador (Filtrado en tiempo real)
     if (searchInput) {
         searchInput.addEventListener('input', (e) => {
@@ -115,6 +146,7 @@ document.addEventListener('DOMContentLoaded', () => {
         editUsername.value = user.username || '';
         editEmail.value = user.email || '';
         editRole.value = user.role || 'operario'; // Default a operario si no tiene rol
+        if (editSector) editSector.value = user.sector || '';
         
         suggestionsList.classList.add('hidden');
         searchInput.value = ''; // Limpiar buscador
@@ -128,18 +160,21 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!selectedUserId) return;
             
             const newRole = editRole.value;
+            const newSector = editSector ? editSector.value : null;
+
             showMessage('Guardando cambios...', 'info');
             updateUserBtn.disabled = true;
 
             try {
                 const userRef = doc(db, "users", selectedUserId);
                 await updateDoc(userRef, {
-                    role: newRole
+                    role: newRole,
+                    sector: newSector
                 });
 
                 // Actualizar cache local para reflejar el cambio sin recargar
                 const cachedUser = allUsersCache.find(u => u.id === selectedUserId);
-                if (cachedUser) cachedUser.role = newRole;
+                if (cachedUser) { cachedUser.role = newRole; cachedUser.sector = newSector; }
 
                 showMessage(`Rol actualizado a "${newRole.toUpperCase()}" correctamente.`, 'success');
                 setTimeout(() => {
