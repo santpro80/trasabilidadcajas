@@ -176,7 +176,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const cachedUser = allUsersCache.find(u => u.id === selectedUserId);
                 if (cachedUser) { cachedUser.role = newRole; cachedUser.sector = newSector; }
 
-                showMessage(`Rol actualizado a "${newRole.toUpperCase()}" correctamente.`, 'success');
+                showMessage(`Rol y/o sector actualizado " correctamente.`, 'success');
                 setTimeout(() => {
                     editFormContainer.classList.add('hidden');
                     showMessage('');
