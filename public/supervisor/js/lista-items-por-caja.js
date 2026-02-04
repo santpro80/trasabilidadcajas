@@ -50,6 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let unsubscribeFromItems = null;
     let currentSelectedItem = null; 
     let reportType = ''; 
+    let currentUserSector = '';
 
     onAuthStateChanged(auth, async (user) => {
         if (!user) { 
@@ -61,7 +62,13 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log("Usuario autenticado:", user.uid);
         if (userDisplayNameElement) {
             const userDoc = await getDoc(doc(db, "users", user.uid));
-            userDisplayNameElement.textContent = userDoc.exists() ? userDoc.data().name : user.email;
+            if (userDoc.exists()) {
+                const userData = userDoc.data();
+                userDisplayNameElement.textContent = userData.name;
+                currentUserSector = userData.sector || '';
+            } else {
+                userDisplayNameElement.textContent = user.email;
+            }
         }
         initializePage();
     });
@@ -368,7 +375,8 @@ document.addEventListener('DOMContentLoaded', () => {
             // 4. GENERAR NOMBRE DE ARCHIVO Y BLOB
             let fileName;
             if (tipo === 'Salida') {
-                fileName = `${prestamoNum} - ${modelName} ${currentSelectedSerialNumber}.pdf`;
+                const sectorPrefix = currentUserSector ? `${currentUserSector} - ` : '';
+                fileName = `${sectorPrefix}${prestamoNum} - ${modelName} ${currentSelectedSerialNumber}.pdf`;
             } else {
                 try {
                     // Consultamos el historial para ver cuántas veces entró esta caja
