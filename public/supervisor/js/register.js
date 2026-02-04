@@ -1,4 +1,4 @@
-import { auth, db, createUserWithEmailAndPassword, setDoc, doc, collection, query, where, getDocs, reauthenticateWithCredential, EmailAuthProvider } from './firebase-config.js';
+import { auth, db, createUserWithEmailAndPassword, setDoc, doc, collection, query, where, getDocs, reauthenticateWithCredential, EmailAuthProvider, getDoc } from './firebase-config.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     const registerForm = document.getElementById('registerForm');
@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const emailInput = document.getElementById('email');
     const passwordInput = document.getElementById('password');
     const confirmPasswordInput = document.getElementById('confirm-password');
+    const sectorSelect = document.getElementById('sector');
     const roleSelect = document.getElementById('role');
     const supervisorPasswordGroup = document.getElementById('supervisor-password-group');
     const supervisorPasswordInput = document.getElementById('supervisor-password'); 
@@ -25,6 +26,39 @@ document.addEventListener('DOMContentLoaded', () => {
         supervisorPasswordGroup.style.display = roleSelect.value === 'supervisor' ? 'block' : 'none';
     });
 
+    // Función para cargar los sectores desde Firebase
+    const loadSectors = async () => {
+        if (!sectorSelect) return;
+        
+        try {
+            // Referencia a la configuración de sectores en la colección 'config'
+            const docRef = doc(db, "config", "sectors_list");
+            const docSnap = await getDoc(docRef);
+            let sectors = [];
+
+            if (docSnap.exists()) {
+                sectors = docSnap.data().list || [];
+            } else {
+                // Si no existe, creamos la lista inicial en Firebase
+                sectors = ['002', '004', '005', '007', '008'];
+                await setDoc(docRef, { list: sectors });
+            }
+
+            sectorSelect.innerHTML = '<option value="" disabled selected>Selecciona un sector</option>';
+            sectors.forEach(sector => {
+                const option = document.createElement('option');
+                option.value = sector;
+                option.textContent = sector;
+                sectorSelect.appendChild(option);
+            });
+        } catch (error) {
+            console.error("Error cargando sectores:", error);
+            showMessage("Error al cargar la lista de sectores.");
+        }
+    };
+
+    loadSectors();
+
     registerForm.addEventListener('submit', async (event) => {
         event.preventDefault();
         
@@ -36,6 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const email = emailInput.value;
         const password = passwordInput.value;
         const confirmPassword = confirmPasswordInput.value;
+        const sector = sectorSelect ? sectorSelect.value : '';
         const role = roleSelect.value;
         const supervisorPassword = supervisorPasswordInput.value;
 
@@ -47,6 +82,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (!/^[A-Z0-9]+$/.test(username)) {
             showMessage('Error: El nombre de usuario solo puede contener letras y números, sin espacios.');
+            submitBtn.disabled = false;
+            return;
+        }
+
+        if (sectorSelect && !sector) {
+            showMessage('Error: Debes seleccionar un sector.');
             submitBtn.disabled = false;
             return;
         }
@@ -80,7 +121,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 name: name,
                 username: username,
                 email: email,
-                role: role
+                role: role,
+                sector: sector
             });
 
             showMessage('¡Usuario registrado con éxito! Redirigiendo...', 'success');
