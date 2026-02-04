@@ -1,6 +1,6 @@
 
 import { auth, db, onAuthStateChanged, signOut, getDoc, doc, updateDoc, collection, getDocs, query, orderBy, setDoc } from './firebase-config.js';
-
+console.log('Gestion de usuarios script  mamawurbo!');
 document.addEventListener('DOMContentLoaded', () => {
     const messageDiv = document.getElementById('message');
     const backBtn = document.getElementById('back-btn');
