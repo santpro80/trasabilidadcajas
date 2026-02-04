@@ -16,6 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const clearFilterBtn = document.getElementById('clear-filter-btn');
 
     let allHistoryItems = [];
+    let usersMap = {}; // Mapa para relacionar email -> sector
 
     const showState = (state) => {
         if(loadingState) loadingState.style.display = 'none';
@@ -39,7 +40,20 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const historyRef = collection(db, "historial");
             const q = query(historyRef, orderBy("timestamp", "desc"));
-            const querySnapshot = await getDocs(q);
+            
+            // Cargamos historial y usuarios al mismo tiempo
+            const [querySnapshot, usersSnapshot] = await Promise.all([
+                getDocs(q),
+                getDocs(collection(db, "users"))
+            ]);
+
+            // Guardamos los sectores de los usuarios actuales en un mapa
+            usersSnapshot.forEach(doc => {
+                const data = doc.data();
+                if (data.email && data.sector) {
+                    usersMap[data.email] = data.sector;
+                }
+            });
 
             allHistoryItems = querySnapshot.docs.map(doc => doc.data());
             applyFiltersAndRender();
@@ -111,11 +125,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const row = document.createElement('tr');
             const date = item.timestamp ? item.timestamp.toDate().toLocaleString('es-AR', { hour12: false }) : 'N/A';
             const detalleMensaje = item.detalles?.mensaje || 'Sin detalles';
+            
+            // Si el historial no tiene sector guardado, usamos el sector actual del usuario
+            const sector = item.sector || usersMap[item.usuarioEmail] || 'N/A';
 
             row.innerHTML = `
                 <td>${date}</td>
                 <td>${item.usuarioNombre || item.usuarioEmail || 'N/A'}</td>
-                <td>${item.sector || 'N/A'}</td>
+                <td>${sector}</td>
                 <td>${item.accion || 'N/A'}</td>
                 <td>${detalleMensaje}</td>
             `;
