@@ -78,7 +78,7 @@
             margin-bottom: 8px;
             color: #333;
         }
-        input[type="email"], select {
+        input, select {
             width: 100%;
             padding: 12px;
             border: 1px solid #ddd;
@@ -118,6 +118,24 @@
             background-color: #f8d7da;
             color: #721c24;
         }
+        .hidden { display: none; }
+        .relative { position: relative; }
+        #suggestions-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            border: 1px solid #ddd;
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            background: white;
+            position: absolute;
+            width: 100%;
+            z-index: 10;
+            box-sizing: border-box;
+        }
+        .bg-gray-100 { background-color: #f3f4f6; }
     </style>
 </head>
 <body>
@@ -128,20 +146,45 @@
     <main class="main-content">
         <div class="form-card">
             <h1>Gestión de Usuarios</h1>
-            <p>Asigna roles a los usuarios del sistema.</p>
-            <div class="form-group">
-                <label for="user-email">Correo Electrónico del Usuario:</label>
-                <input type="email" id="user-email" placeholder="ejemplo@correo.com">
+            <p>Busca y edita usuarios del sistema.</p>
+            
+            <!-- Buscador -->
+            <div class="form-group relative">
+                <label for="search-input">Buscar Usuario:</label>
+                <input type="text" id="search-input" placeholder="Escribe nombre o usuario..." autocomplete="off">
+                <ul id="suggestions-list" class="hidden"></ul>
             </div>
-            <div class="form-group">
-                <label for="user-role">Asignar Rol:</label>
-                <select id="user-role">
-                    <option value="operador">Operador</option>
-                    <option value="supervisor">Supervisor</option>
-                    <option value="mantenimiento">Mantenimiento</option>
-                </select>
+
+            <!-- Formulario de Edición (Oculto hasta seleccionar usuario) -->
+            <div id="edit-form-container" class="hidden">
+                <div class="form-group">
+                    <label for="edit-name">Nombre:</label>
+                    <input type="text" id="edit-name" disabled class="bg-gray-100">
+                </div>
+                <div class="form-group">
+                    <label for="edit-username">Usuario:</label>
+                    <input type="text" id="edit-username" disabled class="bg-gray-100">
+                </div>
+                <div class="form-group">
+                    <label for="edit-email">Email:</label>
+                    <input type="email" id="edit-email" disabled class="bg-gray-100">
+                </div>
+                <div class="form-group">
+                    <label for="edit-role">Rol:</label>
+                    <select id="edit-role">
+                        <option value="operario">Operario</option>
+                        <option value="supervisor">Supervisor</option>
+                        <option value="mantenimiento">Mantenimiento</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="edit-sector">Sector:</label>
+                    <select id="edit-sector">
+                        <option value="" disabled selected>Cargando sectores...</option>
+                    </select>
+                </div>
+                <button id="update-user-btn" class="btn-submit">Guardar Cambios</button>
             </div>
-            <button id="assign-role-btn" class="btn-submit" disabled>Asignar Rol</button>
             <div id="message"></div>
         </div>
     </main>
