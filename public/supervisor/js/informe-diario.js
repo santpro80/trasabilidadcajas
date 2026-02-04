@@ -1,6 +1,6 @@
 import {
     db, auth, onAuthStateChanged, signOut,
-    getDoc, doc, collection, query, where, getDocs, orderBy, onSnapshot
+    getDoc, doc, collection, query, where, getDocs, orderBy, onSnapshot, setDoc
 } from './firebase-config.js';
 import { setupTicketNotifications } from './global-notifications.js';
 
@@ -33,6 +33,7 @@ const loadingState = document.getElementById('loading-state');
 const emptyState = document.getElementById('empty-state');
 const errorState = document.getElementById('error-state');
 const reportDateInput = document.getElementById('report-date');
+const sectorFilter = document.getElementById('sector-filter');
 const entradasList = document.getElementById('entradas-list');
 const salidasList = document.getElementById('salidas-list');
 const entradasCount = document.getElementById('entradas-count');
@@ -76,6 +77,33 @@ const buildSerialToModelMap = async () => {
     return serialMap;
 };
 
+// Función para cargar los sectores (Igual que en las otras páginas)
+const loadSectors = async () => {
+    if (!sectorFilter) return;
+    
+    try {
+        const docRef = doc(db, "config", "sectors_list");
+        const docSnap = await getDoc(docRef);
+        let sectors = [];
+
+        if (docSnap.exists()) {
+            sectors = docSnap.data().list || [];
+        } else {
+            sectors = ['002', '004', '005', '007', '008'];
+            await setDoc(docRef, { list: sectors });
+        }
+
+        sectors.forEach(sector => {
+            const option = document.createElement('option');
+            option.value = sector;
+            option.textContent = `Sector ${sector}`;
+            sectorFilter.appendChild(option);
+        });
+    } catch (error) {
+        console.error("Error cargando sectores:", error);
+    }
+};
+
 const fetchAndRenderReport = async (fecha) => {
     if (!entradasList || !salidasList) return;
 
@@ -93,16 +121,38 @@ const fetchAndRenderReport = async (fecha) => {
             orderBy("timestamp", "desc")
         );
 
-        const querySnapshot = await getDocs(q);
+        // Cargamos movimientos y usuarios (para mapear sectores antiguos) en paralelo
+        const [querySnapshot, usersSnapshot] = await Promise.all([
+            getDocs(q),
+            getDocs(collection(db, "users"))
+        ]);
 
-        if (querySnapshot.empty) {
+        // Mapa de email -> sector
+        const usersMap = {};
+        usersSnapshot.forEach(doc => {
+            const d = doc.data();
+            if (d.email && d.sector) usersMap[d.email] = d.sector;
+        });
+
+        const selectedSector = sectorFilter ? sectorFilter.value : '';
+
+        // Filtramos en memoria
+        const filteredDocs = querySnapshot.docs.filter(docSnap => {
+            if (!selectedSector) return true; // Si no hay filtro, mostrar todo
+            const data = docSnap.data();
+            // Usamos el sector del documento O el del usuario actual si es un registro viejo
+            const docSector = data.sector || usersMap[data.usuarioEmail];
+            return docSector === selectedSector;
+        });
+
+        if (filteredDocs.length === 0) {
             showState(emptyState);
             return;
         }
 
         let entradas = 0;
         let salidas = 0;
-        querySnapshot.forEach(docSnap => {
+        filteredDocs.forEach(docSnap => {
             const movimiento = docSnap.data();
             const modeloCaja = serialToModelMap.get(movimiento.cajaSerie) || ''; 
 
@@ -110,10 +160,12 @@ const fetchAndRenderReport = async (fecha) => {
             listItem.className = 'list-item';
 
             const prestamoInfo = movimiento.prestamoNum ? `<div class="prestamo-info">Préstamo: ${movimiento.prestamoNum}</div>` : '';
+            const sectorInfo = movimiento.sector || usersMap[movimiento.usuarioEmail] || 'N/A';
 
             listItem.innerHTML = `
                 <div class="item-info">
                     <span class="caja-serie">${movimiento.cajaSerie} ${modeloCaja}</span>
+                    <span class="sector-badge" style="font-size: 0.8em; background: #eef2ff; color: #4f46e5; padding: 2px 6px; border-radius: 4px; margin-right: 5px;">${sectorInfo}</span>
                     <span class="usuario-info">Por: ${movimiento.usuarioNombre || 'N/A'}</span>
                     ${prestamoInfo}
                 </div>
@@ -169,10 +221,16 @@ onAuthStateChanged(auth, async (user) => {
 const initializePage = () => {
     const today = new Date().toISOString().split('T')[0];
     reportDateInput.value = today;
+    loadSectors(); // Cargar lista de sectores
     fetchAndRenderReport(today);
     reportDateInput.addEventListener('change', () => {
         fetchAndRenderReport(reportDateInput.value);
     });
+    if (sectorFilter) {
+        sectorFilter.addEventListener('change', () => {
+            fetchAndRenderReport(reportDateInput.value);
+        });
+    }
 };
 logoutBtn?.addEventListener('click', () => {
     signOut(auth).then(() => {

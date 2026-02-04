@@ -77,7 +77,10 @@ export const registrarMovimientoCaja = async (tipo, cajaSerie, modelName, presta
             throw new Error("No hay usuario autenticado para registrar el movimiento.");
         }
         const userDocSnap = await getDoc(doc(db, "users", user.uid));
-        const userName = userDocSnap.exists() ? userDocSnap.data().name : user.email;
+        const userData = userDocSnap.exists() ? userDocSnap.data() : {};
+        const userName = userData.name || user.email;
+        const userSector = userData.sector || 'N/A';
+
         const fecha = new Date();
         const fechaISO = fecha.toISOString().split('T')[0];
         const mesISO = fecha.toISOString().slice(0, 7); 
@@ -90,7 +93,8 @@ export const registrarMovimientoCaja = async (tipo, cajaSerie, modelName, presta
             mes: mesISO,
             timestamp: serverTimestamp(),
             usuarioNombre: userName,
-            usuarioEmail: user.email
+            usuarioEmail: user.email,
+            sector: userSector
         };
 
         if (tipo === 'Salida' && prestamoNum) {
