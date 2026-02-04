@@ -115,6 +115,7 @@ document.addEventListener('DOMContentLoaded', () => {
             row.innerHTML = `
                 <td>${date}</td>
                 <td>${item.usuarioNombre || item.usuarioEmail || 'N/A'}</td>
+                <td>${item.sector || 'N/A'}</td>
                 <td>${item.accion || 'N/A'}</td>
                 <td>${detalleMensaje}</td>
             `;

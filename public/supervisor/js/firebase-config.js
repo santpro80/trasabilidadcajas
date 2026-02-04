@@ -52,11 +52,15 @@ export const registrarHistorial = async (accion, detalles) => {
         }
         const userDocRef = doc(db, "users", user.uid);
         const userDocSnap = await getDoc(userDocRef);
-        const userName = userDocSnap.exists() ? userDocSnap.data().name : user.email;
+        const userData = userDocSnap.exists() ? userDocSnap.data() : {};
+        const userName = userData.name || user.email;
+        const userSector = userData.sector || 'N/A';
+
         const historialDoc = {
             timestamp: serverTimestamp(),
             usuarioEmail: user.email,
             usuarioNombre: userName,
+            sector: userSector,
             accion: accion,
             detalles: detalles
         };
