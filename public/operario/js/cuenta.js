@@ -27,7 +27,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (userDocSnap.exists()) {
                 const userData = userDocSnap.data();
                 if (userNameElement) userNameElement.textContent = userData.name || 'N/A';
-                if (userRoleElement) userRoleElement.textContent = userData.role || 'N/A';
+                if (userRoleElement && userRoleElement.parentElement) {
+                    userRoleElement.parentElement.style.display = 'none';
+                }
                 if (userDisplayNameElement) userDisplayNameElement.textContent = userData.name || user.email;
             } else {
                 if (userDisplayNameElement) userDisplayNameElement.textContent = user.email;
