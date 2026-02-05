@@ -117,7 +117,7 @@
                     <h2>Operaciones</h2>
                     <nav class="menu-nav">
                         <ul>
-                            <li id="li-cajas" style="display: none;">
+                            <li id="li-cajas">
                                 <button id="btn-cajas">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                         <rect x="2" y="7" width="20" height="15" rx="2" ry="2"></rect>
@@ -329,8 +329,7 @@
             const supervisorOnlyIds = [
                 'li-historial', 'li-informe-diario', 'li-importar-datos',
                 'li-registrar-usuario', 'li-gestion-usuarios', 'li-estadisticas',
-                'li-estados-cajas', 'li-buscar-prestamo', 'li-buscar-reporte',
-                'li-cajas'
+                'li-estados-cajas', 'li-buscar-prestamo', 'li-buscar-reporte'
             ];
             supervisorOnlyIds.forEach(id => {
                 const el = document.getElementById(id);
@@ -339,6 +338,10 @@
 
             // 2. Elementos para Supervisor O Mantenimiento
             if (liVerProblemas) liVerProblemas.style.display = (isSupervisor || isMantenimiento) ? 'block' : 'none';
+
+            // 3. Lógica específica: Modelos de Cajas visible para todos MENOS Mantenimiento
+            const liCajas = document.getElementById('li-cajas');
+            if (liCajas) liCajas.style.display = isMantenimiento ? 'none' : 'block';
 
             // 3. Elementos siempre visibles para todos los roles logueados
             const liTickets = document.getElementById('li-tickets');
