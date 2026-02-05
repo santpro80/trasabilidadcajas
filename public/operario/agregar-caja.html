@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agregar Nueva Caja | Sistema de Trazabilidad</title>
+    <link rel="icon" href="assets/logo.png" type="image/png">
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Inter', Arial, sans-serif;
+            background: linear-gradient(135deg, #6e8efb, #a777e3);
+            color: #2c3e50;
+        }
+        .app-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 25px;
+            background-color: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(5px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        .header-left, .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .user-display-name {
+            font-weight: 500;
+        }
+        .btn-back {
+            background-color: #f0f4f8;
+            color: #4285F4;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .logout-btn {
+            background-color: #dc3545;
+            color: white;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .main-content {
+            padding: 40px 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .form-card {
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 30px 40px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+        .form-card h1 {
+            color: #4285F4;
+            text-align: center;
+            margin-top: 0;
+        }
+        .form-card p {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #555;
+        }
+        .form-group {
+            margin-bottom: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .item-details {
+            flex-grow: 1;
+        }
+        label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: #333;
+        }
+        input[type="text"], select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px; 
+            font-size: 1em;
+            box-sizing: border-box;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: #4285F4;
+            box-shadow: 0 0 0 3px rgba(66, 133, 244, 0.2);
+        }
+        .dynamic-item-row-new {
+            border: 2px dashed #17a2b8;
+            padding: 15px;
+            border-radius: 10px;
+            background-color: #f0fbff;
+        }
+        .dynamic-item-actions {
+            display: flex;
+            gap: 5px;
+        }
+        .btn-save-item {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.2em;
+            font-weight: bold;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .item-code-display {
+            margin-top: 10px;
+            padding: 8px;
+            background-color: #e9ecef;
+            border-radius: 5px;
+            font-family: monospace;
+        }
+        .item-code-display .label {
+            font-weight: bold;
+        }
+        .btn-add-item {
+            background-color: #17a2b8;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            width: 100%;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        .btn-remove-item {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.2em;
+            font-weight: bold;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn-save {
+            background-color: #28a745;
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.1em;
+            width: 100%;
+            margin-top: 20px;
+            font-weight: bold;
+        }
+
+        .static-item-row p {
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin: 0;
+            background-color: #f8f9fa;
+        }
+        .dynamic-item-actions {
+            display: flex;
+            gap: 5px;
+        }
+        .btn-save-item {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.2em;
+            font-weight: bold;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body>
+    <header class="app-header">
+        <div class="header-left"><button id="back-btn" class="btn-back">Volver</button></div>
+        <div class="user-info"><span id="user-display-name"></span><button id="logout-btn" class="logout-btn">Cerrar sesión</button></div>
+    </header>
+    <main class="main-content">
+        <div class="form-card">
+            <h1 id="form-title">Agregar Nueva Caja</h1>
+            <p id="form-subtitle">Rellena los números de serie para la nueva caja.</p>
+            <div class="form-group" style="border-top: none; padding-top: 0;">
+                <div class="item-details"><label for="cajaSerialInput">Número de Serie de la Caja:</label><input type="text" id="cajaSerialInput" placeholder="Ej: AX3001"></div>
+            </div>
+            <hr style="margin-bottom: 20px; border: 0; border-top: 1px solid #eee;">
+            <div id="items-container"></div>
+            <button id="add-item-btn" class="btn-add-item">(+) Agregar Ítem</button>
+            <button id="save-caja-btn" class="btn-save">Guardar Caja</button>
+            <div id="message" style="margin-top: 20px; font-weight: bold; text-align: center;"></div>
+        </div>
+    </main>
+    <script type="module" src="js/agregar-caja.js"></script>   
+</body>
+</html>
