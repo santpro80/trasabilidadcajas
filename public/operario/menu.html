@@ -348,7 +348,7 @@
             if (liTickets) liTickets.style.display = 'block';
 
             const liReportarProblema = document.getElementById('li-reportar-problema');
-            if (liReportarProblema) liReportarProblema.style.display = 'block';
+            if (liReportarProblema) liReportarProblema.style.display = (isSupervisor || isMantenimiento) ? 'block' : 'none';
         };
 
         onAuthStateChanged(auth, async (user) => {
