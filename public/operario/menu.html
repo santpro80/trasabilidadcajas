@@ -320,7 +320,7 @@
         }
 
 
-        const manageMenuVisibility = (role) => {
+        const manageMenuVisibility = (role, user) => {
             const liVerProblemas = document.getElementById('li-ver-problemas');
             const isSupervisor = role === 'supervisor';
             const isMantenimiento = role === 'mantenimiento';
@@ -349,6 +349,15 @@
 
             const liReportarProblema = document.getElementById('li-reportar-problema');
             if (liReportarProblema) liReportarProblema.style.display = (isSupervisor || isMantenimiento) ? 'block' : 'none';
+
+            // --- INICIO: Lógica para Permisos Especiales ---
+            const uidUsuarioEspecial = "k2PzZ3iXA4YNrhBADWj2DC6Or202";
+
+            // Habilitar botón de Informe Diario para este usuario específico
+            if (user && user.uid === uidUsuarioEspecial) {
+                const liInforme = document.getElementById('li-informe-diario');
+                if (liInforme) liInforme.style.display = 'block';
+            }
         };
 
         onAuthStateChanged(auth, async (user) => {
@@ -364,12 +373,12 @@
                         if (userDisplayElement) userDisplayElement.textContent = user.email;
                         currentUserRole = 'operario';
                     }
-                    manageMenuVisibility(currentUserRole);
+                    manageMenuVisibility(currentUserRole, user); // Pasamos el objeto 'user' completo
                     setupTicketNotifications(db, collection, query, where, onSnapshot, user, currentUserRole);
                 } catch (error) {
                     console.error("Error al obtener datos del usuario:", error);
                     if (userDisplayElement) userDisplayElement.textContent = user.email;
-                    manageMenuVisibility('operario');
+                    manageMenuVisibility('operario', null); // Pasamos null si hay error
                 }
             } else {
                 window.location.href = '../login.html';
