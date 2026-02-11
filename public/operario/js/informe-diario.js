@@ -149,7 +149,9 @@ onAuthStateChanged(auth, async (user) => {
             const userRole = userDocSnap.data().role;
             setupTicketNotifications(db, collection, query, where, onSnapshot, user, userRole);
 
-            if (userRole === 'supervisor') {
+            const uidUsuarioEspecial = "k2PzZ3iXA4YNrhBADWj2DC6Or202";
+
+            if (userRole === 'supervisor' || user.uid === uidUsuarioEspecial) {
                 const userName = userDocSnap.data().name || user.email;
                 if (userDisplayNameElement) userDisplayNameElement.textContent = userName;
                 showPageContent();
