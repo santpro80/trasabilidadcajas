@@ -158,9 +158,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
-            if (Object.keys(allPossibleItems).length > 0) {
-                currentItemConsumptionData = allPossibleItems; 
-                renderConsumedItems(allPossibleItems);
+            // Unificar ítems repetidos (ej: eliminar " (2)", " (3)") y sumar sus consumos
+            const mergedItems = {};
+            Object.keys(allPossibleItems).forEach(sanitizedKey => {
+                const count = allPossibleItems[sanitizedKey];
+                const originalName = unSanitizeFieldName(sanitizedKey);
+                
+                // Regex para eliminar espacio + paréntesis + números al final: " (2)"
+                const baseName = originalName.replace(/\s\(\d+\)$/, '');
+                const sanitizedBaseKey = sanitizeFieldName(baseName);
+
+                mergedItems[sanitizedBaseKey] = (mergedItems[sanitizedBaseKey] || 0) + count;
+            });
+
+            if (Object.keys(mergedItems).length > 0) {
+                currentItemConsumptionData = mergedItems; 
+                renderConsumedItems(mergedItems);
             } else {
                 consumedItemsContainer.innerHTML = '<p>No se encontraron ítems definidos para este modelo o no hay datos de consumo.</p>';
                 currentItemConsumptionData = {}; 
