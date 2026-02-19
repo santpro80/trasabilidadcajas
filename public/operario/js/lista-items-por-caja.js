@@ -201,6 +201,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const descDisplay = newRow.querySelector('.item-desc-display');
             descDisplay.textContent = desc ? `Descripción: ${desc}` : 'El código no tiene descripción asignada.';
         });
+        const itemSerialInput = newRow.querySelector('.item-serial-input');
+        itemSerialInput.addEventListener('input', (e) => {
+            e.target.value = e.target.value.toUpperCase().slice(0, 6);
+            if (e.target.value.length >= 2) {
+                e.target.setAttribute('inputmode', 'numeric');
+            } else {
+                e.target.setAttribute('inputmode', 'text');
+            }
+        });
         newRow.querySelector('.cancel-add-btn').addEventListener('click', () => newRow.remove());
         newRow.querySelector('.save-add-btn').addEventListener('click', () => saveNewItem(newRow));
     };
@@ -251,9 +260,24 @@ document.addEventListener('DOMContentLoaded', () => {
     const openEditModal = (originalName, currentSerial) => {
         currentEditingItem = { originalName, oldSerial: currentSerial };
         if (modalItemCodeDescription) modalItemCodeDescription.textContent = originalName;
-        if (newSerialNumberInput) newSerialNumberInput.value = (currentSerial === 'REEMPLAZAR') ? '0' : currentSerial;
+        if (newSerialNumberInput) {
+            newSerialNumberInput.value = (currentSerial === 'REEMPLAZAR') ? '0' : currentSerial;
+            newSerialNumberInput.setAttribute('inputmode', newSerialNumberInput.value.length >= 2 ? 'numeric' : 'text');
+        }
         if (editSerialModal) editSerialModal.style.display = 'flex';
     };
+
+    // Cambio dinámico de teclado para el número de serie (2 letras + 4 números)
+    if (newSerialNumberInput) {
+        newSerialNumberInput.addEventListener('input', (e) => {
+            e.target.value = e.target.value.toUpperCase().slice(0, 6);
+            if (e.target.value.length >= 2) {
+                e.target.setAttribute('inputmode', 'numeric');
+            } else {
+                e.target.setAttribute('inputmode', 'text');
+            }
+        });
+    }
 
     const openDeleteModal = (sanitized, original) => {
         itemToDelete = { sanitized, original };
@@ -447,6 +471,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const url = `reportar-problema.html?serial=${encodeURIComponent(currentSelectedSerialNumber)}&modelo=${encodeURIComponent(modelName)}`;
         window.location.href = url;
     });
+
+    // Configuración del campo de préstamo (Solo números y numpad)
+    if (prestamoInput) {
+        prestamoInput.setAttribute('inputmode', 'numeric');
+        prestamoInput.addEventListener('input', (e) => {
+            e.target.value = e.target.value.replace(/[^0-9]/g, '');
+        });
+    }
 
     if (confirmPrestamoBtn) confirmPrestamoBtn.addEventListener('click', () => { const num = prestamoInput.value.trim(); if (num) generarPDF('Salida', num); else showNotification("Por favor, ingresa un número de préstamo.", "error"); });
     if (cancelPrestamoBtn) cancelPrestamoBtn.addEventListener('click', () => { if (prestamoModal) prestamoModal.style.display = 'none'; });
