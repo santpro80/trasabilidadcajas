@@ -246,7 +246,7 @@
             if (liGestionUsuarios) liGestionUsuarios.style.display = isSupervisor ? 'block' : 'none';
             if (liEstadisticas) liEstadisticas.style.display = isSupervisor ? 'block' : 'none';
             if (liEstadosCajas) liEstadosCajas.style.display = isSupervisor ? 'block' : 'none';
-            if (liReportarProblema) liReportarProblema.style.display = isSupervisor ? 'block' : 'none';
+            if (liReportarProblema) liReportarProblema.style.display = (isSupervisor || isMantenimiento) ? 'block' : 'none';
             if (liBuscarPrestamo) liBuscarPrestamo.style.display = isSupervisor ? 'block' : 'none';
 
             if (liVerProblemas) liVerProblemas.style.display = (isSupervisor || isMantenimiento) ? 'block' : 'none';
