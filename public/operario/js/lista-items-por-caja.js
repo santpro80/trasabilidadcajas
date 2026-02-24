@@ -33,6 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const tipoReporteModal = document.getElementById('tipoReporteModal');
     const btnEntrada = document.getElementById('btn-entrada');
     const btnSalida = document.getElementById('btn-salida');
+    const btnCancelarReporte = document.getElementById('btn-cancelar-reporte');
     const prestamoModal = document.getElementById('prestamoModal');
     const prestamoInput = document.getElementById('prestamo-input');
     const cancelPrestamoBtn = document.getElementById('cancel-prestamo-btn');
@@ -453,6 +454,10 @@ document.addEventListener('DOMContentLoaded', () => {
         reportType = 'Salida';
         if (tipoReporteModal) tipoReporteModal.style.display = 'none';
         if (observationModal) observationModal.style.display = 'flex';
+    });
+
+    if (btnCancelarReporte) btnCancelarReporte.addEventListener('click', () => {
+        if (tipoReporteModal) tipoReporteModal.style.display = 'none';
     });
 
     if (noObservationBtn) noObservationBtn.addEventListener('click', () => {
