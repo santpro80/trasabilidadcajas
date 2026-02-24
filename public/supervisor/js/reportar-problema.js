@@ -415,12 +415,50 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             messageDiv.style.color = 'green';
+            
+            // --- Limpieza completa del formulario ---
             cajaSerialInput.value = '';
-            if (cajaNumeroInput) cajaNumeroInput.value = '';
+            cajaSerialInput.dataset.lastValue = ''; 
+            if (cajaNumeroInput) {
+                cajaNumeroInput.value = '';
+                cajaNumeroInput.dataset.lastValue = '';
+            }
             cajaModeloInput.value = '';
-            problemaCheckboxes.forEach(checkbox => checkbox.checked = false);
+
+            // Resetear checkboxes "No tiene"
+            const chkNoSerial = document.getElementById(`chk_no_${cajaSerialInput.id}`);
+            if (chkNoSerial && chkNoSerial.checked) {
+                chkNoSerial.checked = false;
+                chkNoSerial.dispatchEvent(new Event('change'));
+                cajaSerialInput.value = ''; 
+            }
+
+            if (cajaNumeroInput) {
+                const chkNoNumero = document.getElementById(`chk_no_${cajaNumeroInput.id}`);
+                if (chkNoNumero && chkNoNumero.checked) {
+                    chkNoNumero.checked = false;
+                    chkNoNumero.dispatchEvent(new Event('change'));
+                    cajaNumeroInput.value = ''; 
+                }
+            }
+
+            // Resetear todos los checkboxes de problemas (incluidos dinámicos)
+            const allCheckboxes = document.querySelectorAll('input[name="problema"]');
+            allCheckboxes.forEach(checkbox => {
+                if (checkbox.checked) {
+                    checkbox.checked = false;
+                    checkbox.dispatchEvent(new Event('change')); // Resetea inputs dinámicos asociados
+                }
+            });
+
             otroProblemaTextarea.value = '';
-            otroProblemaContainer.style.display = 'none';
+            if (otroCheckbox && otroCheckbox.checked) {
+                otroCheckbox.checked = false;
+                otroCheckbox.dispatchEvent(new Event('change'));
+            }
+            
+            // Enfocar el primer campo para el siguiente reporte
+            cajaSerialInput.focus();
 
             setTimeout(() => {
                 messageDiv.textContent = '';
