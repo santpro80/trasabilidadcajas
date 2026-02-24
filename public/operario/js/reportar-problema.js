@@ -291,6 +291,13 @@ document.addEventListener('DOMContentLoaded', () => {
             if (modelo) {
                 cajaModeloInput.value = modelo;
             }
+            if (urlParams.get('sinNumero') === 'true' && cajaNumeroInput) {
+                const chkNoNumero = document.getElementById(`chk_no_${cajaNumeroInput.id}`);
+                if (chkNoNumero) {
+                    chkNoNumero.checked = true;
+                    chkNoNumero.dispatchEvent(new Event('change'));
+                }
+            }
         } else {
             window.location.href = 'login.html';
         }
