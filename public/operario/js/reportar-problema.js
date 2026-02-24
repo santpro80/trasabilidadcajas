@@ -65,6 +65,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
     addNoOptionCheckbox(cajaSerialInput, 'No tiene número de serie', 'S/S');
     addNoOptionCheckbox(cajaNumeroInput, 'No tiene número de caja', '00');
+
+    // Evitar que se seleccionen ambas opciones "No tiene" al mismo tiempo
+    const chkNoSerial = document.getElementById(`chk_no_${cajaSerialInput.id}`);
+    const chkNoNumero = document.getElementById(`chk_no_${cajaNumeroInput.id}`);
+
+    if (chkNoSerial && chkNoNumero) {
+        chkNoSerial.addEventListener('change', () => {
+            if (chkNoSerial.checked && chkNoNumero.checked) {
+                chkNoNumero.click(); // Desmarca el otro si ambos están marcados
+            }
+        });
+        chkNoNumero.addEventListener('change', () => {
+            if (chkNoNumero.checked && chkNoSerial.checked) {
+                chkNoSerial.click(); // Desmarca el otro si ambos están marcados
+            }
+        });
+    }
     // --- FIN: Lógica para checkboxes "No tiene" ---
 
     // --- INICIO: Nueva Lista de Problemas (Dinámica) ---
