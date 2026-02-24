@@ -129,34 +129,71 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Lógica para campo de diámetro en fresas
             if (texto === "Cambiar fresas" || texto === "Afilar fresas") {
-                const diamContainer = document.createElement('span');
+                const diamContainer = document.createElement('div');
                 diamContainer.id = `container_diam_${index}`;
                 diamContainer.style.display = 'none';
                 diamContainer.style.alignItems = 'center';
                 diamContainer.style.marginLeft = '5px';
+                diamContainer.style.flexWrap = 'wrap';
 
                 const diamLabel = document.createElement('span');
                 diamLabel.textContent = 'diametro: ';
                 diamLabel.style.fontSize = '0.9rem';
                 diamLabel.style.marginRight = '5px';
-
-                const diamInput = document.createElement('input');
-                diamInput.type = 'text';
-                diamInput.id = `diam_new_${index}`;
-                diamInput.maxLength = 2;
-                diamInput.style.width = '40px';
-                diamInput.style.padding = '2px 5px';
-                diamInput.style.textAlign = 'center';
-                diamInput.placeholder = '00';
-
                 diamContainer.appendChild(diamLabel);
-                diamContainer.appendChild(diamInput);
+
+                const inputsWrapper = document.createElement('div');
+                inputsWrapper.style.display = 'flex';
+                inputsWrapper.style.flexWrap = 'wrap';
+                inputsWrapper.style.gap = '5px';
+                inputsWrapper.style.alignItems = 'center';
+                diamContainer.appendChild(inputsWrapper);
+
+                const addInput = () => {
+                    const newInput = document.createElement('input');
+                    newInput.type = 'text';
+                    newInput.className = `diam-input-${index}`;
+                    newInput.maxLength = 2;
+                    newInput.style.width = '40px';
+                    newInput.style.padding = '2px 5px';
+                    newInput.style.textAlign = 'center';
+                    newInput.placeholder = '00';
+                    inputsWrapper.appendChild(newInput);
+                    return newInput;
+                };
+
+                const firstInput = addInput();
+
+                const plusBtn = document.createElement('button');
+                plusBtn.textContent = '+';
+                plusBtn.type = 'button';
+                plusBtn.style.marginLeft = '5px';
+                plusBtn.style.cursor = 'pointer';
+                plusBtn.style.padding = '0 6px';
+                plusBtn.style.height = '26px';
+                plusBtn.style.lineHeight = '1';
+                plusBtn.style.fontSize = '1.2rem';
+                plusBtn.style.background = '#e9ecef';
+                plusBtn.style.border = '1px solid #ced4da';
+                plusBtn.style.borderRadius = '4px';
+
+                plusBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const inp = addInput();
+                    inp.focus();
+                });
+
+                diamContainer.appendChild(plusBtn);
                 div.appendChild(diamContainer);
 
                 input.addEventListener('change', () => {
-                    diamContainer.style.display = input.checked ? 'inline-flex' : 'none';
-                    if (input.checked) diamInput.focus();
-                    else diamInput.value = '';
+                    diamContainer.style.display = input.checked ? 'flex' : 'none';
+                    if (input.checked) {
+                        firstInput.focus();
+                    } else {
+                        inputsWrapper.innerHTML = '';
+                        addInput();
+                    }
                 });
             }
 
@@ -291,9 +328,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Verificar si tiene input de diámetro asociado
                 if (textoProblema === "Cambiar fresas" || textoProblema === "Afilar fresas") {
                     const index = checkbox.id.split('_').pop();
-                    const diamInput = document.getElementById(`diam_new_${index}`);
-                    if (diamInput && diamInput.value.trim()) {
-                        textoProblema += ` (Diám: ${diamInput.value.trim()})`;
+                    const inputs = document.querySelectorAll(`.diam-input-${index}`);
+                    const values = [];
+                    inputs.forEach(inp => {
+                        if (inp.value.trim()) values.push(inp.value.trim());
+                    });
+                    
+                    if (values.length > 0) {
+                        textoProblema += ` (Diám: ${values.join(', ')})`;
                     }
                 }
                 tareas.push({ texto: textoProblema, completada: false });
