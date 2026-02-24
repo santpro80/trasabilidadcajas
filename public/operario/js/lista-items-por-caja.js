@@ -472,7 +472,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (yesObservationBtn) yesObservationBtn.addEventListener('click', () => {
         if (observationModal) observationModal.style.display = 'none';
-        const url = `reportar-problema.html?serial=${encodeURIComponent(currentSelectedSerialNumber)}&modelo=${encodeURIComponent(modelName)}`;
+        const url = `reportar-problema.html?serial=${encodeURIComponent(currentSelectedSerialNumber)}&modelo=${encodeURIComponent(modelName)}&sinNumero=true`;
         window.location.href = url;
     });
 
