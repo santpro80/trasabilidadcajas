@@ -67,6 +67,77 @@ document.addEventListener('DOMContentLoaded', () => {
     addNoOptionCheckbox(cajaNumeroInput, 'No tiene número de caja', '00');
     // --- FIN: Lógica para checkboxes "No tiene" ---
 
+    // --- INICIO: Nueva Lista de Problemas (Dinámica) ---
+    const nuevosProblemas = [
+        "Contenedoras mal grabadas o sin grabar",
+        "Arreglar manijas",
+        "Cambiar fresas (números)",
+        "Afilar fresas (números)",
+        "Agregar mecha",
+        "Faltante de instrumental",
+        "Roscas dañadas",
+        "Canulado dañado",
+        "Vastagos inclinados",
+        "Instrumental no grabado"
+    ];
+
+    // 1. Ocultar checkboxes anteriores (excepto 'Otro')
+    const existingCheckboxes = document.querySelectorAll('input[name="problema"]');
+    existingCheckboxes.forEach(chk => {
+        if (chk.id !== 'problema_otro') {
+            if (chk.parentElement && (chk.parentElement.classList.contains('form-check') || chk.parentElement.tagName === 'DIV')) {
+                chk.parentElement.style.display = 'none';
+            } else {
+                chk.style.display = 'none';
+                const label = document.querySelector(`label[for="${chk.id}"]`);
+                if (label) label.style.display = 'none';
+            }
+        }
+    });
+
+    // 2. Inyectar nueva lista
+    if (otroCheckbox) {
+        const container = document.createElement('div');
+        container.id = 'lista-problemas-dinamica';
+        container.style.marginBottom = '10px';
+
+        nuevosProblemas.forEach((texto, index) => {
+            const div = document.createElement('div');
+            div.style.marginBottom = '8px';
+            div.style.display = 'flex';
+            div.style.alignItems = 'center';
+
+            const input = document.createElement('input');
+            input.type = 'checkbox';
+            input.name = 'problema';
+            input.value = texto;
+            input.id = `prob_new_${index}`;
+            input.style.marginRight = '10px';
+            input.style.transform = "scale(1.2)";
+            input.style.cursor = 'pointer';
+
+            const label = document.createElement('label');
+            label.htmlFor = `prob_new_${index}`;
+            label.textContent = texto;
+            label.style.cursor = 'pointer';
+            label.style.fontSize = '1rem';
+
+            div.appendChild(input);
+            div.appendChild(label);
+            container.appendChild(div);
+        });
+
+        // Insertar antes del bloque de "Otro"
+        let target = otroCheckbox;
+        if (otroCheckbox.parentElement && (otroCheckbox.parentElement.classList.contains('form-check') || otroCheckbox.parentElement.tagName === 'DIV')) {
+            target = otroCheckbox.parentElement;
+        }
+        if (target.parentNode) {
+            target.parentNode.insertBefore(container, target);
+        }
+    }
+    // --- FIN: Nueva Lista de Problemas ---
+
     // Forzar mayúsculas al escribir el serial
     if (cajaSerialInput) {
         cajaSerialInput.addEventListener('input', (e) => {
