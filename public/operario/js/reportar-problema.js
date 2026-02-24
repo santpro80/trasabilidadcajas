@@ -1,5 +1,5 @@
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { doc, setDoc, serverTimestamp, collection, addDoc, query, where, getDocs, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { doc, setDoc, serverTimestamp, collection, addDoc, query, where, getDocs, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 import { app, db } from "./firebase-config.js";
 
 const auth = getAuth(app);
@@ -8,6 +8,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const cajaSerialInput = document.getElementById('cajaSerialInput');
     const cajaNumeroInput = document.getElementById('cajaNumeroInput');
     const cajaModeloInput = document.getElementById('cajaModeloInput');
+    const tipoCajaSelect = document.getElementById('tipoCajaSelect');
+    const modeloCajaSelect = document.getElementById('modeloCajaSelect');
     const problemaCheckboxes = document.querySelectorAll('input[name="problema"]');
     const otroCheckbox = document.getElementById('problema_otro');
     const otroProblemaContainer = document.getElementById('otroProblemaContainer');
@@ -358,6 +360,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             if (modelo) {
                 cajaModeloInput.value = modelo;
+                // Si viene con modelo predefinido, asumimos modo "Otro" o manual para mostrarlo directamente
+                if (tipoCajaSelect) tipoCajaSelect.value = 'OTRO';
+                if (cajaModeloInput) cajaModeloInput.style.display = 'block';
             }
             if (urlParams.get('sinNumero') === 'true' && cajaNumeroInput) {
                 const chkNoNumero = document.getElementById(`chk_no_${cajaNumeroInput.id}`);
@@ -370,6 +375,63 @@ document.addEventListener('DOMContentLoaded', () => {
             window.location.href = 'login.html';
         }
     });
+
+    // --- Lógica para Selectores de Tipo y Modelo ---
+    if (tipoCajaSelect && modeloCajaSelect && cajaModeloInput) {
+        tipoCajaSelect.addEventListener('change', async () => {
+            const tipo = tipoCajaSelect.value;
+            
+            // Resetear estados
+            modeloCajaSelect.innerHTML = '<option value="">Seleccione Modelo...</option>';
+            cajaModeloInput.value = '';
+            
+            if (tipo === 'OTRO') {
+                modeloCajaSelect.style.display = 'none';
+                cajaModeloInput.style.display = 'block';
+                cajaModeloInput.focus();
+            } else if (tipo === 'PLACAS' || tipo === 'CLAVOS') {
+                cajaModeloInput.style.display = 'none';
+                modeloCajaSelect.style.display = 'block';
+                modeloCajaSelect.innerHTML = '<option value="">Cargando...</option>';
+
+                try {
+                    // Buscar los modelos en la colección "Cajas" usando el tipo como ID
+                    const docRef = doc(db, "Cajas", tipo);
+                    const docSnap = await getDoc(docRef);
+
+                    modeloCajaSelect.innerHTML = '<option value="">Seleccione Modelo...</option>';
+
+                    if (docSnap.exists()) {
+                        const data = docSnap.data();
+                        const modelos = Object.keys(data).sort();
+                        
+                        modelos.forEach(mod => {
+                            const option = document.createElement('option');
+                            option.value = mod;
+                            option.textContent = mod;
+                            modeloCajaSelect.appendChild(option);
+                        });
+                    } else {
+                        modeloCajaSelect.innerHTML = '<option value="">No hay modelos disponibles</option>';
+                    }
+                } catch (error) {
+                    console.error("Error cargando modelos:", error);
+                    modeloCajaSelect.innerHTML = '<option value="">Error al cargar</option>';
+                }
+            } else {
+                // Caso "Seleccione Tipo..." (vacío)
+                modeloCajaSelect.style.display = 'none';
+                cajaModeloInput.style.display = 'none';
+            }
+        });
+
+        modeloCajaSelect.addEventListener('change', () => {
+            // Al seleccionar un modelo del dropdown, actualizamos el input oculto
+            // que es el que usa el botón de enviar.
+            cajaModeloInput.value = modeloCajaSelect.value;
+        });
+    }
+
     backBtn.addEventListener('click', () => {
         window.history.back();
     });

@@ -160,8 +160,17 @@
                     <input type="text" id="cajaNumeroInput" placeholder="00" maxlength="2" pattern="[0-9]{2}" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1em; box-sizing: border-box; text-align: center;">
                 </div>
                 <div style="flex: 1;">
-                    <label for="cajaModeloInput" style="display: block; margin-bottom: 8px; font-weight: 500; color: #333;">Modelo de la Caja</label>
-                    <input type="text" id="cajaModeloInput" placeholder="Ej: Modelo A" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1em; box-sizing: border-box;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #333;">Modelo de la Caja</label>
+                    <div style="display: flex; gap: 10px; margin-bottom: 5px;">
+                        <select id="tipoCajaSelect" style="flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 8px; background-color: white;">
+                            <option value="">Tipo...</option>
+                            <option value="PLACAS">Placas</option>
+                            <option value="CLAVOS">Clavos</option>
+                            <option value="OTRO">Otro</option>
+                        </select>
+                        <select id="modeloCajaSelect" style="flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 8px; background-color: white; display: none;"></select>
+                    </div>
+                    <input type="text" id="cajaModeloInput" placeholder="Escriba el modelo..." style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1em; box-sizing: border-box; display: none;">
                 </div>
             </div>
             
