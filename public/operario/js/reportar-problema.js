@@ -214,6 +214,74 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             }
 
+            // Lógica para instrumental (Faltante o No grabado)
+            if (texto === "Faltante de instrumental" || texto === "Instrumental no grabado") {
+                const instrContainer = document.createElement('div');
+                instrContainer.id = `container_instr_${index}`;
+                instrContainer.style.display = 'none';
+                instrContainer.style.alignItems = 'center';
+                instrContainer.style.marginLeft = '5px';
+                instrContainer.style.flexWrap = 'wrap';
+
+                const instrLabel = document.createElement('span');
+                instrLabel.textContent = 'Detalle: ';
+                instrLabel.style.fontSize = '0.9rem';
+                instrLabel.style.marginRight = '5px';
+                instrContainer.appendChild(instrLabel);
+
+                const inputsWrapper = document.createElement('div');
+                inputsWrapper.style.display = 'flex';
+                inputsWrapper.style.flexWrap = 'wrap';
+                inputsWrapper.style.gap = '5px';
+                inputsWrapper.style.alignItems = 'center';
+                instrContainer.appendChild(inputsWrapper);
+
+                const addInput = () => {
+                    const newInput = document.createElement('input');
+                    newInput.type = 'text';
+                    newInput.className = `instr-input-${index}`;
+                    newInput.style.width = '120px';
+                    newInput.style.padding = '2px 5px';
+                    newInput.placeholder = 'Descripción';
+                    inputsWrapper.appendChild(newInput);
+                    return newInput;
+                };
+
+                const firstInput = addInput();
+
+                const plusBtn = document.createElement('button');
+                plusBtn.textContent = '+';
+                plusBtn.type = 'button';
+                plusBtn.style.marginLeft = '5px';
+                plusBtn.style.cursor = 'pointer';
+                plusBtn.style.padding = '0 6px';
+                plusBtn.style.height = '26px';
+                plusBtn.style.lineHeight = '1';
+                plusBtn.style.fontSize = '1.2rem';
+                plusBtn.style.background = '#e9ecef';
+                plusBtn.style.border = '1px solid #ced4da';
+                plusBtn.style.borderRadius = '4px';
+
+                plusBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const inp = addInput();
+                    inp.focus();
+                });
+
+                instrContainer.appendChild(plusBtn);
+                div.appendChild(instrContainer);
+
+                input.addEventListener('change', () => {
+                    instrContainer.style.display = input.checked ? 'flex' : 'none';
+                    if (input.checked) {
+                        firstInput.focus();
+                    } else {
+                        inputsWrapper.innerHTML = '';
+                        addInput();
+                    }
+                });
+            }
+
             container.appendChild(div);
         });
 
@@ -362,6 +430,21 @@ document.addEventListener('DOMContentLoaded', () => {
                         textoProblema += ` (Diám: ${values.join(', ')})`;
                     }
                 }
+
+                // Verificar si tiene input de instrumental asociado
+                if (textoProblema === "Faltante de instrumental" || textoProblema === "Instrumental no grabado") {
+                    const index = checkbox.id.split('_').pop();
+                    const inputs = document.querySelectorAll(`.instr-input-${index}`);
+                    const values = [];
+                    inputs.forEach(inp => {
+                        if (inp.value.trim()) values.push(inp.value.trim());
+                    });
+                    
+                    if (values.length > 0) {
+                        textoProblema += ` (Detalle: ${values.join(', ')})`;
+                    }
+                }
+
                 tareas.push({ texto: textoProblema, completada: false });
             }
         });
