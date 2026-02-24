@@ -18,6 +18,55 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let currentUser = null;
 
+    // --- INICIO: Lógica para checkboxes "No tiene" ---
+    const addNoOptionCheckbox = (inputElement, labelText, noValue) => {
+        if (!inputElement) return;
+        
+        const wrapper = document.createElement('div');
+        wrapper.style.display = 'flex';
+        wrapper.style.alignItems = 'center';
+        wrapper.style.marginTop = '5px';
+        wrapper.style.marginBottom = '15px';
+        
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.id = `chk_no_${inputElement.id}`;
+        checkbox.style.marginRight = '8px';
+        checkbox.style.width = '18px';
+        checkbox.style.height = '18px';
+        checkbox.style.cursor = 'pointer';
+
+        const label = document.createElement('label');
+        label.htmlFor = checkbox.id;
+        label.textContent = labelText;
+        label.style.cursor = 'pointer';
+        label.style.fontSize = '0.9rem';
+        label.style.color = '#555';
+
+        wrapper.appendChild(checkbox);
+        wrapper.appendChild(label);
+
+        inputElement.parentNode.insertBefore(wrapper, inputElement.nextSibling);
+
+        checkbox.addEventListener('change', () => {
+            if (checkbox.checked) {
+                inputElement.dataset.lastValue = inputElement.value;
+                inputElement.value = noValue;
+                inputElement.readOnly = true;
+                inputElement.style.backgroundColor = '#e9ecef';
+            } else {
+                inputElement.value = inputElement.dataset.lastValue || '';
+                inputElement.readOnly = false;
+                inputElement.style.backgroundColor = '';
+                inputElement.focus();
+            }
+        });
+    };
+
+    addNoOptionCheckbox(cajaSerialInput, 'No tiene número de serie', 'S/S');
+    addNoOptionCheckbox(cajaNumeroInput, 'No tiene número de caja', '00');
+    // --- FIN: Lógica para checkboxes "No tiene" ---
+
     // Forzar mayúsculas al escribir el serial
     if (cajaSerialInput) {
         cajaSerialInput.addEventListener('input', (e) => {
@@ -106,13 +155,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Validaciones de formato
         const serialRegex = /^[A-Z]{2}\d{4}$/; // 2 Letras + 4 Números
-        if (!serialRegex.test(serial)) {
+        
+        const isNoSerial = document.getElementById(`chk_no_${cajaSerialInput.id}`)?.checked;
+        if (!isNoSerial && !serialRegex.test(serial)) {
             messageDiv.textContent = 'El número de serie debe tener 2 letras y 4 números (Ej: AA1234).';
             messageDiv.style.color = 'red';
             return;
         }
 
-        if (cajaNumeroInput && !/^\d{2}$/.test(numero)) {
+        const isNoNumero = cajaNumeroInput ? document.getElementById(`chk_no_${cajaNumeroInput.id}`)?.checked : false;
+
+        if (cajaNumeroInput && !isNoNumero && !/^\d{2}$/.test(numero)) {
             messageDiv.textContent = 'El campo N° debe tener exactamente 2 números.';
             messageDiv.style.color = 'red';
             return;
