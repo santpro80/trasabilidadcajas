@@ -8,7 +8,7 @@ import {
 
 document.addEventListener('DOMContentLoaded', () => {
     console.log("DOM completamente cargado y analizado");
-    console.log("ELEMENTO DE refresh 2.0 a ver si ahora si");
+    console.log("cambiando el fondo de la página para verificar que el script se está ejecutando correctamente");
     const userDisplayNameElement = document.getElementById('user-display-name');
     const logoutBtn = document.getElementById('logout-btn');
     const backBtn = document.getElementById('back-btn');
@@ -279,7 +279,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
-
     const openDeleteModal = (sanitized, original) => {
         itemToDelete = { sanitized, original };
         if (deleteModalText) deleteModalText.textContent = `¿Seguro que deseas eliminar "${original}"?`;
