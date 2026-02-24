@@ -182,9 +182,9 @@ exports.verificarCajaConProblemas = onDocumentCreated("movimientos_cajas/{movimi
     const movimiento = event.data.data();
     console.log("Datos recibidos:", JSON.stringify(movimiento));
 
-    // 1. FILTRO: Solo nos interesa si es una "Entrada"
-    if (!movimiento || movimiento.tipo !== 'Entrada') {
-        console.log(`Cancelado: El tipo es '${movimiento?.tipo}', se esperaba 'Entrada'.`);
+    // 1. FILTRO: Ahora permitimos 'Entrada' y 'Salida' para detectar cajas dañadas en cualquier movimiento
+    if (!movimiento || (movimiento.tipo !== 'Entrada' && movimiento.tipo !== 'Salida')) {
+        console.log(`Cancelado: El tipo es '${movimiento?.tipo}', se esperaba 'Entrada' o 'Salida'.`);
         return;
     }
 
@@ -247,8 +247,8 @@ exports.verificarCajaConProblemas = onDocumentCreated("movimientos_cajas/{movimi
         const tokens = tokensAndUsers.map(item => item.token);
         const payload = {
             data: {
-                title: '⚠️ Caja con Daños Ingresada',
-                body: `El modelo de la caja es ${modeloCaja} y su número de serie es ${serialCaja}\nProblemas: ${listaFallas}\nComunicarse con el sector de lavado para su administración`,
+                title: `⚠️ Caja con Daños Detectada (${movimiento.tipo})`,
+                body: `¡Atención! Se registró una ${movimiento.tipo} de la caja ${serialCaja} (Modelo: ${modeloCaja}) que tiene reportes pendientes.\nProblemas: ${listaFallas}`,
                 tipo: 'alerta_mantenimiento',
                 id_caja: serialCaja,
                 mensaje: 'Caja dañada ingresada',
