@@ -71,8 +71,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const nuevosProblemas = [
         "Contenedoras mal grabadas o sin grabar",
         "Arreglar manijas",
-        "Cambiar fresas (números)",
-        "Afilar fresas (números)",
+        "Cambiar fresas",
+        "Afilar fresas",
         "Agregar mecha",
         "Faltante de instrumental",
         "Roscas dañadas",
@@ -106,6 +106,7 @@ document.addEventListener('DOMContentLoaded', () => {
             div.style.marginBottom = '8px';
             div.style.display = 'flex';
             div.style.alignItems = 'center';
+            div.style.flexWrap = 'wrap';
 
             const input = document.createElement('input');
             input.type = 'checkbox';
@@ -121,9 +122,44 @@ document.addEventListener('DOMContentLoaded', () => {
             label.textContent = texto;
             label.style.cursor = 'pointer';
             label.style.fontSize = '1rem';
+            label.style.marginRight = '10px';
 
             div.appendChild(input);
             div.appendChild(label);
+
+            // Lógica para campo de diámetro en fresas
+            if (texto === "Cambiar fresas" || texto === "Afilar fresas") {
+                const diamContainer = document.createElement('span');
+                diamContainer.id = `container_diam_${index}`;
+                diamContainer.style.display = 'none';
+                diamContainer.style.alignItems = 'center';
+                diamContainer.style.marginLeft = '5px';
+
+                const diamLabel = document.createElement('span');
+                diamLabel.textContent = 'diametro: ';
+                diamLabel.style.fontSize = '0.9rem';
+                diamLabel.style.marginRight = '5px';
+
+                const diamInput = document.createElement('input');
+                diamInput.type = 'text';
+                diamInput.id = `diam_new_${index}`;
+                diamInput.maxLength = 2;
+                diamInput.style.width = '40px';
+                diamInput.style.padding = '2px 5px';
+                diamInput.style.textAlign = 'center';
+                diamInput.placeholder = '00';
+
+                diamContainer.appendChild(diamLabel);
+                diamContainer.appendChild(diamInput);
+                div.appendChild(diamContainer);
+
+                input.addEventListener('change', () => {
+                    diamContainer.style.display = input.checked ? 'inline-flex' : 'none';
+                    if (input.checked) diamInput.focus();
+                    else diamInput.value = '';
+                });
+            }
+
             container.appendChild(div);
         });
 
@@ -250,7 +286,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
         selectedProblemas.forEach(checkbox => {
             if (checkbox.value !== 'Otro') {
-                tareas.push({ texto: checkbox.value, completada: false });
+                let textoProblema = checkbox.value;
+                
+                // Verificar si tiene input de diámetro asociado
+                if (textoProblema === "Cambiar fresas" || textoProblema === "Afilar fresas") {
+                    const index = checkbox.id.split('_').pop();
+                    const diamInput = document.getElementById(`diam_new_${index}`);
+                    if (diamInput && diamInput.value.trim()) {
+                        textoProblema += ` (Diám: ${diamInput.value.trim()})`;
+                    }
+                }
+                tareas.push({ texto: textoProblema, completada: false });
             }
         });
 
