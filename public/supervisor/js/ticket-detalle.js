@@ -68,10 +68,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const userDocSnap = await getDoc(doc(db, "users", user.uid));
             if (userDocSnap.exists()) {
                 const userData = userDocSnap.data();
-                currentUserRole = userData.role || 'operador'; 
+                currentUserRole = userData.role || 'operario'; 
                 currentUserName = userData.name;
             } else {
-                currentUserRole = 'operador';
+                currentUserRole = 'operario';
             }
             await markAsRead(); 
             listenForTicketUpdates(); 

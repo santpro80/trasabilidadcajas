@@ -43,7 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (currentUserRole === 'supervisor' && (ticketData.unreadCounts?.supervisor || 0) > 0) {
                 console.log("markAsRead: Condition for SUPERVISOR met. Resetting count.");
                 updateData['unreadCounts.supervisor'] = 0;
-            } else if (currentUserRole === 'operario' && ticketData.operatorUid === currentUser.uid && (ticketData.unreadCounts?.operator || 0) > 0) {
+            } else if (currentUserRole === 'operador' && ticketData.operatorUid === currentUser.uid && (ticketData.unreadCounts?.operator || 0) > 0) {
                 console.log("markAsRead: Condition for OPERATOR met. Resetting count.");
                 updateData['unreadCounts.operator'] = 0;
             } else {
