@@ -9,163 +9,250 @@
         font-family: 'Inter', Arial, sans-serif;
         margin: 0;
         min-height: 100vh;
-        background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
-        color: #333;
+        background: linear-gradient(135deg, #6e8efb, #a777e3);
+        color: #2c3e50;
+        display: flex;
+        flex-direction: column;
+        overflow-x: hidden;
     }
     header {
-        background-color: rgba(255, 255, 255, 0.9);
-        backdrop-filter: blur(5px);
-        padding: 15px 25px;
+        background-color: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        padding: 15px 30px;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        position: sticky;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        position: fixed;
         top: 0;
+        left: 0;
+        right: 0;
         z-index: 1000;
+        transition: all 0.3s ease;
     }
 
     header h1 {
-        color: #4285F4;
+        background: linear-gradient(45deg, #4285F4, #34A853);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
         margin: 0;
-        font-size: 1.5em;
+        font-size: 1.8em;
+        font-weight: 800;
+        letter-spacing: -0.5px;
     }
     main {
-        padding: 25px;
-        max-width: 900px;
+        padding: 100px 20px 40px;
+        max-width: 1000px;
         margin: 0 auto;
         width: 100%;
+        box-sizing: border-box;
+        flex-grow: 1;
     }
     button {
         cursor: pointer;
-        border-radius: 8px;
+        border-radius: 12px;
         border: none;
         font-weight: 600;
-        transition: all 0.2s ease;
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        font-family: inherit;
     }
 
     #menu-btn, #volver-btn {
-        background-color: #6c757d;
-        color: white;
+        background-color: rgba(255, 255, 255, 0.5);
+        color: #4285F4;
         padding: 10px 20px;
+        border: 1px solid rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(4px);
+    }
+    
+    #menu-btn:hover, #volver-btn:hover {
+        background-color: #ffffff;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     }
 
     #crear-ticket-btn {
-        background-color: #4285F4;
+        background: linear-gradient(135deg, #4285F4, #2b6cdb);
         color: white;
-        padding: 12px 25px;
+        padding: 16px 30px;
         font-size: 1.1em;
-        margin-bottom: 25px;
+        margin-bottom: 30px;
+        width: 100%;
+        box-shadow: 0 8px 20px rgba(66, 133, 244, 0.3);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+        letter-spacing: 0.5px;
     }
+    
+    #crear-ticket-btn:hover {
+        transform: translateY(-4px) scale(1.01);
+        box-shadow: 0 12px 25px rgba(66, 133, 244, 0.4);
+    }
+
     #tickets-container {
         display: grid;
-        gap: 20px;
+        gap: 25px;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    }
+
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(30px); }
+        to { opacity: 1; transform: translateY(0); }
     }
 
     .ticket-card {
-        background-color: #fff;
-        border-radius: 12px;
-        padding: 20px;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        background-color: rgba(255, 255, 255, 0.95);
+        border-radius: 20px;
+        padding: 25px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
         cursor: pointer;
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-        border-left: 5px solid #4285F4;
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        border: 1px solid rgba(255, 255, 255, 0.5);
         position: relative; 
+        animation: fadeInUp 0.6s ease-out forwards;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
     }
 
     .notification-badge {
         position: absolute;
-        top: 15px;
-        right: 15px;
-        background-color: #dc3545; 
+        top: -10px;
+        right: -10px;
+        background: linear-gradient(135deg, #ff6b6b, #ee5253);
         color: white;
         border-radius: 50%;
-        width: 24px;
-        height: 24px;
+        width: 28px;
+        height: 28px;
         display: flex;
         justify-content: center;
         align-items: center;
         font-size: 0.9em;
         font-weight: bold;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        z-index: 1;
+        box-shadow: 0 4px 10px rgba(238, 82, 83, 0.4);
+        z-index: 10;
+        border: 2px solid white;
     }
 
     .ticket-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+        transform: translateY(-8px);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+        background-color: #ffffff;
     }
 
     .ticket-subject {
-        font-size: 1.2em;
-        font-weight: 600;
-        color: #333;
-        margin-bottom: 10px;
+        font-size: 1.25em;
+        font-weight: 700;
+        color: #2c3e50;
+        margin-bottom: 15px;
+        line-height: 1.4;
     }
 
     .ticket-status {
         display: inline-block;
-        padding: 5px 12px;
-        border-radius: 20px;
-        font-size: 0.8em;
-        font-weight: 700;
+        padding: 6px 14px;
+        border-radius: 30px;
+        font-size: 0.75em;
+        font-weight: 800;
         text-transform: uppercase;
-        margin-bottom: 15px;
+        letter-spacing: 1px;
+        margin-bottom: 20px;
+        align-self: flex-start;
     }
 
     .status-abierto {
-        background-color: #e8f5e9; 
-        color: #2e7d32; 
+        background-color: #e6f4ea; 
+        color: #1e8e3e; 
+        border: 1px solid rgba(30, 142, 62, 0.1);
     }
 
     .status-cerrado {
-        background-color: #ffebee; 
-        color: #c62828; 
+        background-color: #fce8e6; 
+        color: #d93025; 
+        border: 1px solid rgba(217, 48, 37, 0.1);
     }
 
     .ticket-last-update {
         font-size: 0.85em;
-        color: #666;
+        color: #95a5a6;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 5px;
     }
+    
+    .ticket-last-update::before {
+        content: '🕒';
+        font-size: 0.9em;
+        opacity: 0.7;
+    }
+
     .modal-overlay {
         position: fixed;
         top: 0;
         left: 0;
         width: 100%;
         height: 100%;
-        background-color: rgba(0, 0, 0, 0.6);
+        background-color: rgba(44, 62, 80, 0.6);
+        backdrop-filter: blur(8px);
         display: none;
         justify-content: center;
         align-items: center;
         z-index: 2000;
+        animation: fadeIn 0.3s ease;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    
+    @keyframes scaleIn {
+        from { transform: scale(0.9); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
     }
 
     .modal-content {
-        background-color: white;
-        border-radius: 15px;
-        padding: 30px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        background-color: #ffffff;
+        border-radius: 24px;
+        padding: 40px;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
         width: 90%;
-        max-width: 500px;
+        max-width: 550px;
         display: flex;
         flex-direction: column;
-        gap: 15px;
+        gap: 20px;
+        animation: scaleIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
 
     .modal-content h2 {
         margin-top: 0;
         color: #4285F4;
+        font-size: 1.8em;
     }
 
     .modal-content input[type="text"],
     .modal-content textarea {
         width: 100%;
-        padding: 12px;
-        border: 1px solid #ccc;
-        border-radius: 8px;
+        padding: 15px;
+        border: 2px solid #f0f2f5;
+        border-radius: 12px;
+        background-color: #f8f9fa;
         font-family: inherit;
         font-size: 1em;
         box-sizing: border-box; 
+        transition: all 0.3s ease;
+    }
+    
+    .modal-content input[type="text"]:focus,
+    .modal-content textarea:focus {
+        outline: none;
+        border-color: #4285F4;
+        background-color: #fff;
+        box-shadow: 0 0 0 4px rgba(66, 133, 244, 0.1);
     }
 
     .modal-content textarea {
@@ -177,119 +264,164 @@
         display: flex;
         justify-content: flex-end;
         gap: 15px;
-        margin-top: 10px;
+        margin-top: 15px;
     }
 
     .btn-modal {
-        padding: 10px 25px;
+        padding: 12px 25px;
         border: none;
-        border-radius: 8px;
+        border-radius: 10px;
         cursor: pointer;
         font-weight: 600;
+        font-size: 1em;
     }
 
     .btn-modal.primary {
-        background-color: #4285F4;
+        background: linear-gradient(135deg, #4285F4, #2b6cdb);
         color: white;
+        box-shadow: 0 4px 15px rgba(66, 133, 244, 0.3);
+    }
+    
+    .btn-modal.primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(66, 133, 244, 0.4);
     }
 
     .btn-modal.secondary {
-        background-color: #6c757d;
-        color: white;
+        background-color: #f1f3f4;
+        color: #5f6368;
     }
+    
+    .btn-modal.secondary:hover {
+        background-color: #e8eaed;
+        color: #202124;
+    }
+
     #mensajes-container {
-        background-color: #f0f2f5;
-        border-radius: 12px;
+        background-color: #f8f9fa;
+        border-radius: 16px;
         padding: 20px;
         height: 50vh;
         overflow-y: auto;
         display: flex;
         flex-direction: column;
         gap: 15px;
+        border: 1px solid #e0e0e0;
     }
 
     .message {
-        padding: 12px 18px;
-        border-radius: 20px;
-        max-width: 70%;
+        padding: 15px 20px;
+        border-radius: 18px;
+        max-width: 75%;
         word-wrap: break-word;
+        position: relative;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
     }
 
     .message.sent {
-        background-color: #4285F4;
+        background: linear-gradient(135deg, #4285F4, #3367d6);
         color: white;
         align-self: flex-end;
-        border-bottom-right-radius: 5px;
+        border-bottom-right-radius: 4px;
     }
 
     .message.received {
-        background-color: #fff;
+        background-color: #ffffff;
         color: #333;
         align-self: flex-start;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        border-bottom-left-radius: 5px;
+        border-bottom-left-radius: 4px;
+        border: 1px solid #f0f0f0;
     }
 
     .message-sender {
-        font-size: 0.8em;
-        font-weight: 600;
+        font-size: 0.75em;
+        font-weight: 700;
         margin-bottom: 5px;
-        color: #888;
+        opacity: 0.8;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
 
     .message.sent .message-sender {
-        color: #e0e0e0;
+        color: rgba(255,255,255,0.9);
+    }
+    
+    .message.received .message-sender {
+        color: #888;
     }
 
     .message-text {
         font-size: 1em;
-        line-height: 1.4;
+        line-height: 1.5;
     }
 
     .message-date {
         font-size: 0.75em;
-        color: #aaa;
-        margin-top: 8px;
+        opacity: 0.7;
+        margin-top: 5px;
         text-align: right;
     }
 
     .message.sent .message-date {
-        color: #e0e0e0;
+        color: rgba(255,255,255,0.8);
     }
+    
+    .message.received .message-date {
+        color: #aaa;
+    }
+    
     #respuesta-container {
         margin-top: 20px;
         display: flex;
-        gap: 10px;
+        gap: 15px;
+        align-items: flex-end;
     }
 
     #respuesta-container textarea {
         flex-grow: 1;
-        border-radius: 8px;
-        border: 1px solid #ccc;
-        padding: 12px;
+        border-radius: 20px;
+        border: 2px solid #e0e0e0;
+        padding: 15px;
         font-size: 1em;
         resize: none;
         height: 50px;
-        transition: height 0.2s ease;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
     }
 
     #respuesta-container textarea:focus {
-        height: 100px;
+        height: 80px;
+        border-color: #4285F4;
     }
 
     #enviar-respuesta-btn {
-        background-color: #4285F4;
+        background-color: #4285F4; /* Fallback */
+        background: linear-gradient(135deg, #4285F4, #2b6cdb);
         color: white;
         padding: 0 25px;
+        height: 54px;
+        border-radius: 20px;
+        box-shadow: 0 4px 10px rgba(66, 133, 244, 0.3);
+    }
+    
+    #enviar-respuesta-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 15px rgba(66, 133, 244, 0.4);
     }
 
     #cerrar-ticket-btn {
-        background-color: #dc3545;
-        color: white;
-        padding: 12px 25px;
+        background-color: #ffebee;
+        color: #c62828;
+        padding: 15px 25px;
         font-size: 1em;
         margin-top: 20px;
         width: 100%;
+        border: 1px solid rgba(198, 40, 40, 0.2);
+    }
+    
+    #cerrar-ticket-btn:hover {
+        background-color: #dc3545;
+        color: white;
     }
     </style>
 </head>
