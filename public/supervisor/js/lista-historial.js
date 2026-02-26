@@ -31,7 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
             userDisplayNameElement.textContent = userDoc.exists() ? userDoc.data().name : user.email;
             loadHistoryData();
         } else if (!user) {
-            window.location.href = 'login.html';
+            window.location.href = '../login.html';
         }
     });
     
