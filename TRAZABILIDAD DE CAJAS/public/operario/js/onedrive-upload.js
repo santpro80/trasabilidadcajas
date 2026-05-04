@@ -74,7 +74,12 @@ window.uploadToOneDrive = async function(fileName, fileBlob, folderPath) {
         
         const token = await getODAccessToken();
         
-        const encodedPath = encodeURIComponent(folderPath + '/' + fileName);
+        // CORRECCIÓN: Codificar cada segmento por separado para que los '/' se mantengan como separadores de carpeta
+        const fullPath = folderPath + '/' + fileName;
+        const encodedPath = fullPath.split('/')
+            .map(segment => encodeURIComponent(segment))
+            .join('/');
+
         const url = `https://graph.microsoft.com/v1.0/me/drive/root:/${encodedPath}:/content`;
 
         const response = await fetch(url, {
@@ -91,7 +96,20 @@ window.uploadToOneDrive = async function(fileName, fileBlob, folderPath) {
             console.log("✅ Archivo subido exitosamente a OneDrive", json);
             return json;
         } else {
-            throw new Error(await response.text());
+            const errorText = await response.text();
+            let errorMessage = "Error en la subida a OneDrive";
+            
+            try {
+                const errorJson = JSON.parse(errorText);
+                if (errorJson.error && errorJson.error.message) {
+                    errorMessage = `OneDrive Error: ${errorJson.error.message}`;
+                }
+            } catch (e) {
+                errorMessage = `OneDrive Error (${response.status}): ${errorText}`;
+            }
+            
+            console.error("❌ Detalle del error de Microsoft Graph:", errorText);
+            throw new Error(errorMessage);
         }
     } catch (error) {
         console.error("❌ Falló la subida a OneDrive:", error);
