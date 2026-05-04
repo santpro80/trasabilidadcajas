@@ -160,16 +160,7 @@ export function initGlobalSidebar() {
                 </button>
             </div>
 
-            <!-- Profile Section -->
-            <div class="flex items-center gap-4 mb-8 p-4 rounded-2xl bg-slate-200/50 dark:bg-slate-800/30 border border-slate-300/50 dark:border-slate-800/50 shrink-0">
-                <div class="size-10 rounded-full bg-villalba-blue flex items-center justify-center text-white font-black shadow-lg shadow-blue-500/20">
-                    ${userName.charAt(0).toUpperCase()}
-                </div>
-                <div class="flex flex-col overflow-hidden">
-                    <span class="text-[11px] font-black uppercase text-slate-900 dark:text-white truncate">${userName}</span>
-                    <span class="text-[9px] font-bold uppercase text-slate-500 dark:text-slate-400 truncate">${currentRole}</span>
-                </div>
-            </div>
+
 
             <!-- App Switcher -->
             <div class="mb-8 shrink-0">
@@ -192,8 +183,19 @@ export function initGlobalSidebar() {
             </div>
 
             <!-- Bottom Actions -->
-            <div class="mt-auto pt-6 border-t border-slate-200 dark:border-slate-800 shrink-0">
-                <button onclick="window.location.href='${baseRoot}login.html'" class="flex items-center w-full gap-4 p-3 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors text-rose-500 border-none bg-transparent cursor-pointer group">
+            <div class="mt-auto pt-6 border-t border-slate-200 dark:border-slate-800 shrink-0 flex flex-col gap-4">
+                <!-- Profile Section -->
+                <div class="flex items-center gap-3 p-3 rounded-xl bg-slate-200/50 dark:bg-slate-800/30 border border-slate-300/50 dark:border-slate-800/50">
+                    <div class="size-10 rounded-full bg-villalba-blue flex items-center justify-center text-white font-black shadow-lg shadow-blue-500/20">
+                        ${userName.charAt(0).toUpperCase()}
+                    </div>
+                    <div class="flex flex-col overflow-hidden">
+                        <span class="text-[11px] font-black uppercase text-slate-900 dark:text-white truncate">${userName}</span>
+                        <span class="text-[9px] font-bold uppercase text-slate-500 dark:text-slate-400 truncate">${currentRole}</span>
+                    </div>
+                </div>
+
+                <button onclick="handleGlobalLogout()" class="flex items-center w-full gap-4 p-3 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors text-rose-500 border-none bg-transparent cursor-pointer group">
                     <span class="material-symbols-outlined text-[20px] group-hover:rotate-12 transition-transform">logout</span>
                     <span class="text-[11px] font-bold uppercase tracking-wide flex-1 text-left">Cerrar Sesión</span>
                 </button>
