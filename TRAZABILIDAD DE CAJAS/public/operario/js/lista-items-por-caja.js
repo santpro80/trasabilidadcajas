@@ -513,32 +513,17 @@ document.addEventListener('DOMContentLoaded', () => {
     if (btnEntrada) btnEntrada.addEventListener('click', () => {
         reportType = 'Entrada';
         if (tipoReporteModal) tipoReporteModal.style.display = 'none';
-        if (observationModal) observationModal.style.display = 'flex';
+        generarPDF('Entrada');
     });
 
     if (btnSalida) btnSalida.addEventListener('click', () => {
         reportType = 'Salida';
         if (tipoReporteModal) tipoReporteModal.style.display = 'none';
-        if (observationModal) observationModal.style.display = 'flex';
+        if (prestamoModal) prestamoModal.style.display = 'flex';
+        if (prestamoInput) prestamoInput.focus();
     });
 
     if (cancelReportBtn) cancelReportBtn.addEventListener('click', () => { tipoReporteModal.style.display = 'none'; });
-
-    if (noObservationBtn) noObservationBtn.addEventListener('click', () => {
-        if (observationModal) observationModal.style.display = 'none';
-        if (reportType === 'Entrada') {
-            generarPDF('Entrada');
-        } else if (reportType === 'Salida') {
-            if (prestamoModal) prestamoModal.style.display = 'flex';
-            if (prestamoInput) prestamoInput.focus();
-        }
-    });
-
-    if (yesObservationBtn) yesObservationBtn.addEventListener('click', () => {
-        if (observationModal) observationModal.style.display = 'none';
-        const url = `reportar-problema.html?serial=${encodeURIComponent(currentSelectedSerialNumber)}&modelo=${encodeURIComponent(modelName)}`;
-        window.location.href = url;
-    });
 
     if (prestamoInput) {
         prestamoInput.setAttribute('inputmode', 'numeric');
