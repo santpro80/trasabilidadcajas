@@ -14,13 +14,44 @@ document.addEventListener('DOMContentLoaded', () => {
     let codeToDescMap = new Map();
 
     let notificationTimeout;
-    const showNotification = (message, type = 'error') => {
-        if(messageDiv) {
-            messageDiv.textContent = message;
-            messageDiv.style.color = type === 'error' ? 'red' : 'green';
-            clearTimeout(notificationTimeout);
-            notificationTimeout = setTimeout(() => { messageDiv.textContent = ''; }, 3000);
+    const showNotification = (message, type = 'success') => {
+        const toast = document.getElementById('notification-toast');
+        const icon = document.getElementById('toast-icon');
+        const msg = document.getElementById('toast-message');
+        if (!toast || !icon || !msg) return;
+
+        const toastContent = toast.querySelector('.toast-content');
+        if (!toastContent) return;
+
+        clearTimeout(notificationTimeout);
+        msg.textContent = message;
+        
+        let iconName = 'info';
+        if (type === 'success') iconName = 'check_circle';
+        if (type === 'error') iconName = 'error';
+        if (type === 'warning') iconName = 'warning';
+        icon.textContent = iconName;
+        
+        toastContent.className = 'toast-content flex items-center gap-3 p-4 rounded-2xl shadow-2xl transition-all duration-300';
+        
+        if (type === 'success') {
+            toastContent.className += ' bg-emerald-500 text-white dark:bg-slate-900/90 dark:backdrop-blur-md dark:border dark:border-emerald-500/30 dark:text-emerald-400';
+        } else if (type === 'error') {
+            toastContent.className += ' bg-rose-500 text-white dark:bg-slate-900/90 dark:backdrop-blur-md dark:border dark:border-rose-500/30 dark:text-rose-400';
+        } else if (type === 'warning') {
+            toastContent.className += ' bg-amber-500 text-slate-800 dark:bg-slate-900/90 dark:backdrop-blur-md dark:border dark:border-amber-500/30 dark:text-amber-400';
+        } else {
+            toastContent.className += ' bg-slate-800 text-white dark:bg-slate-900/90 dark:backdrop-blur-md dark:border dark:border-white/10 dark:text-slate-200';
         }
+
+        toast.className = 'fixed bottom-8 left-1/2 -translate-x-1/2 z-[200] max-w-sm w-full transition-all duration-500';
+        toast.style.opacity = '1';
+        toast.style.transform = 'translateX(-50%) translateY(0)';
+
+        notificationTimeout = setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateX(-50%) translateY(20px)';
+        }, 3000);
     };
     const forceUppercase = (event) => {
         const input = event.target;
@@ -37,6 +68,77 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             input.setAttribute('inputmode', 'text');
         }
+    };
+
+    let lastDuplicateState = false;
+    const validateInputsAndCount = () => {
+        const itemInputs = Array.from(itemsContainer.querySelectorAll('.item-serial-input'));
+        let filledCount = 0;
+        const valueMap = new Map();
+        let hasDuplicate = false;
+
+        itemInputs.forEach(input => {
+            input.classList.remove('focus:ring-emerald-500/50', 'focus:border-emerald-500', 'border-amber-500', 'focus:ring-amber-500/50');
+            input.classList.add('focus:ring-emerald-500/50', 'focus:border-emerald-500');
+            const warningIcon = input.parentElement.querySelector('.duplicate-warning');
+            if (warningIcon) warningIcon.remove();
+        });
+
+        itemInputs.forEach(input => {
+            const val = input.value.trim().toUpperCase();
+            if (val && val !== 'REEMPLAZAR') {
+                filledCount++;
+                if (valueMap.has(val)) {
+                    hasDuplicate = true;
+                    // Mark current
+                    input.classList.remove('focus:ring-emerald-500/50', 'focus:border-emerald-500', 'border-slate-200', 'dark:border-white/10');
+                    input.classList.add('border-amber-500', 'focus:ring-amber-500/50');
+                    const warningSpan = document.createElement('span');
+                    warningSpan.className = 'duplicate-warning material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-amber-500 text-[20px] pointer-events-none';
+                    warningSpan.textContent = 'warning';
+                    warningSpan.title = "Número de serie repetido";
+                    input.parentElement.style.position = 'relative';
+                    input.parentElement.appendChild(warningSpan);
+                    
+                    // Mark previous
+                    const firstInput = valueMap.get(val);
+                    if (firstInput) {
+                        firstInput.classList.remove('focus:ring-emerald-500/50', 'focus:border-emerald-500', 'border-slate-200', 'dark:border-white/10');
+                        firstInput.classList.add('border-amber-500', 'focus:ring-amber-500/50');
+                        if (!firstInput.parentElement.querySelector('.duplicate-warning')) {
+                            const warningSpan2 = document.createElement('span');
+                            warningSpan2.className = 'duplicate-warning material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-amber-500 text-[20px] pointer-events-none';
+                            warningSpan2.textContent = 'warning';
+                            warningSpan2.title = "Número de serie repetido";
+                            firstInput.parentElement.style.position = 'relative';
+                            firstInput.parentElement.appendChild(warningSpan2);
+                        }
+                    }
+                } else {
+                    valueMap.set(val, input);
+                    input.classList.add('border-slate-200', 'dark:border-white/10');
+                }
+            } else if (!val || val === 'REEMPLAZAR') {
+                input.classList.add('border-slate-200', 'dark:border-white/10');
+            }
+        });
+
+        const itemsCountDisplay = document.getElementById('items-count-display');
+        if (itemsCountDisplay) {
+            itemsCountDisplay.textContent = `Items llenados: ${filledCount}`;
+            if (filledCount > 0) {
+                itemsCountDisplay.classList.add('text-emerald-500', 'dark:text-emerald-400');
+                itemsCountDisplay.classList.remove('text-slate-400', 'dark:text-slate-500');
+            } else {
+                itemsCountDisplay.classList.remove('text-emerald-500', 'dark:text-emerald-400');
+                itemsCountDisplay.classList.add('text-slate-400', 'dark:text-slate-500');
+            }
+        }
+
+        if (hasDuplicate && !lastDuplicateState) {
+            showNotification("Cuidado, número de serie repetido", "warning");
+        }
+        lastDuplicateState = hasDuplicate;
     };
 
     onAuthStateChanged(auth, async (user) => {
@@ -64,6 +166,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 if (event.target.matches('.item-serial-input')) {
                     handleKeyboardChange(event);
+                    validateInputsAndCount();
                 }
             });
         }
@@ -123,19 +226,35 @@ document.addEventListener('DOMContentLoaded', () => {
     const renderStaticItemRow = (itemName) => {
         const [itemCode, description] = itemName.split(';');
         const formGroup = document.createElement('div');
-        formGroup.className = 'form-group static-item-row';
+        formGroup.className = 'bg-white dark:bg-slate-800/40 rounded-2xl p-4 lg:p-5 border border-slate-200 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-villalba-blue/40 hover:-translate-y-1 dark:hover:border-villalba-blue/50 flex flex-col md:flex-row items-start md:items-center gap-4 group transition-all duration-300 shadow-sm hover:shadow-xl relative overflow-hidden static-item-row';
         formGroup.dataset.itemName = itemName; 
         formGroup.innerHTML = `
-            <div class="item-details">
-                <label><span style="font-weight: bold;">Código: ${itemCode}</span><br><span style="font-style: italic;">${description || ''}</span></label>
-                <input type="text" class="item-serial-input" placeholder="N° de Serie del Ítem">
+            <div class="flex-1 w-full grid grid-cols-1 md:grid-cols-[120px_1fr_150px] gap-4 items-center relative z-10">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 shrink-0 rounded-xl bg-villalba-blue/10 flex items-center justify-center text-villalba-blue transition-colors group-hover:bg-villalba-blue group-hover:text-white">
+                        <span class="material-symbols-outlined text-[20px]">inventory_2</span>
+                    </div>
+                    <span class="text-xs font-black tracking-widest text-slate-500 uppercase group-hover:text-villalba-blue transition-colors">${itemCode || 'S/C'}</span>
+                </div>
+                
+                <h3 class="font-bold text-slate-800 dark:text-slate-200 text-sm leading-tight uppercase break-words" title="${description || ''}">${description || ''}</h3>
+                
+                <div class="flex items-center pr-2">
+                    <input type="text" class="item-serial-input w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-white/10 text-slate-800 dark:text-white text-sm font-bold rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all uppercase placeholder:normal-case placeholder:font-normal placeholder:text-slate-400" placeholder="N° Serie">
+                </div>
             </div>
-            <button type="button" class="btn-remove-item" title="Quitar de la lista">X</button>
+            
+            <div class="flex-shrink-0 ml-auto w-full md:w-auto flex justify-end relative z-10">
+                <button type="button" class="btn-remove-item w-10 h-10 rounded-xl bg-rose-50 dark:bg-rose-500/10 text-rose-500 flex items-center justify-center hover:bg-rose-500 hover:text-white transition-colors border border-rose-100 dark:border-rose-500/20 shadow-sm" title="Quitar de la lista">
+                    <span class="material-symbols-outlined text-[20px] pointer-events-none">close</span>
+                </button>
+            </div>
+            <div class="absolute inset-0 bg-gradient-to-r from-villalba-blue/0 to-villalba-blue/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
         `;
         itemsContainer.appendChild(formGroup);
         formGroup.querySelector('.btn-remove-item').addEventListener('click', () => { 
             formGroup.remove(); 
-            // applyEnterNavigation(); // Ya no es necesario
+            validateInputsAndCount();
         });
     };
  
@@ -145,16 +264,27 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         const newRow = document.createElement('div');
-        newRow.className = 'form-group dynamic-item-row-new';
+        newRow.className = 'form-group dynamic-item-row-new bg-blue-50/50 dark:bg-blue-900/10 rounded-2xl p-4 lg:p-5 border-2 border-dashed border-villalba-blue/40 dark:border-villalba-blue/50 flex flex-col md:flex-row items-start md:items-center gap-4 transition-all duration-300 relative overflow-hidden';
         newRow.innerHTML = `
-            <div class="item-details">
-                <input type="text" class="manual-code-input" placeholder="Ingresar código de producto..." style="margin-bottom: 10px;">
-                <div class="item-desc-display" style="font-family: monospace; margin-bottom: 10px; min-height: 1.2em;"></div>
-                <input type="text" class="item-serial-input" placeholder="N° de Serie del Ítem">
+            <div class="flex-1 w-full grid grid-cols-1 md:grid-cols-[140px_1fr_150px] gap-4 items-center">
+                <div class="flex items-center">
+                    <input type="text" class="manual-code-input w-full bg-white dark:bg-slate-900/80 border border-slate-300 dark:border-white/20 text-slate-800 dark:text-white text-sm font-bold rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-villalba-blue/50 focus:border-villalba-blue transition-all uppercase placeholder:normal-case placeholder:font-normal placeholder:text-slate-400" placeholder="Código">
+                </div>
+                
+                <h3 class="item-desc-display font-medium text-slate-600 dark:text-slate-400 text-sm leading-tight uppercase break-words">Esperando código...</h3>
+                
+                <div class="flex items-center pr-2">
+                    <input type="text" class="item-serial-input w-full bg-white dark:bg-slate-900/80 border border-slate-300 dark:border-white/20 text-slate-800 dark:text-white text-sm font-bold rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all uppercase placeholder:normal-case placeholder:font-normal placeholder:text-slate-400" placeholder="N° Serie">
+                </div>
             </div>
-            <div class="dynamic-item-actions">
-                <button type="button" class="btn-remove-item cancel-add-btn">X</button>
-                <button type="button" class="btn-save-item save-add-btn">✓</button>
+            
+            <div class="flex-shrink-0 ml-auto w-full md:w-auto flex justify-end gap-2 dynamic-item-actions">
+                <button type="button" class="btn-remove-item cancel-add-btn w-10 h-10 rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 flex items-center justify-center hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors shadow-sm" title="Cancelar">
+                    <span class="material-symbols-outlined text-[20px] pointer-events-none">close</span>
+                </button>
+                <button type="button" class="btn-save-item save-add-btn w-10 h-10 rounded-xl bg-emerald-500 text-white flex items-center justify-center hover:bg-emerald-600 transition-colors shadow-sm" title="Confirmar">
+                    <span class="material-symbols-outlined text-[20px] pointer-events-none">check</span>
+                </button>
             </div>
         `;
         itemsContainer.appendChild(newRow);
@@ -166,9 +296,11 @@ document.addEventListener('DOMContentLoaded', () => {
             newRow.querySelector('.item-desc-display').textContent = desc ? `Descripción: ${desc}` : 'El código no tiene descripción asignada.';
         });
 
-        newRow.querySelector('.cancel-add-btn').addEventListener('click', () => newRow.remove());
+        newRow.querySelector('.cancel-add-btn').addEventListener('click', () => {
+            newRow.remove();
+            validateInputsAndCount();
+        });
         newRow.querySelector('.save-add-btn').addEventListener('click', () => saveDynamicItem(newRow));
-        // applyEnterNavigation(); // Ya no es necesario
     };
 
     const saveDynamicItem = (rowElement) => {
@@ -194,17 +326,35 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const itemName = `${itemCode};${description}`;
         
-        rowElement.className = 'form-group static-item-row';
+        rowElement.className = 'bg-white dark:bg-slate-800/40 rounded-2xl p-4 lg:p-5 border border-slate-200 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-villalba-blue/40 hover:-translate-y-1 dark:hover:border-villalba-blue/50 flex flex-col md:flex-row items-start md:items-center gap-4 group transition-all duration-300 shadow-sm hover:shadow-xl relative overflow-hidden static-item-row';
         rowElement.dataset.itemName = itemName;
         rowElement.innerHTML = `
-            <div class="item-details">
-                <label><span style="font-weight: bold;">Código: ${itemCode}</span><br><span style="font-style: italic;">${description}</span></label>
-                <input type="text" class="item-serial-input" value="${itemSerial}" placeholder="N° de Serie del Ítem">
+            <div class="flex-1 w-full grid grid-cols-1 md:grid-cols-[120px_1fr_150px] gap-4 items-center relative z-10">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 shrink-0 rounded-xl bg-villalba-blue/10 flex items-center justify-center text-villalba-blue transition-colors group-hover:bg-villalba-blue group-hover:text-white">
+                        <span class="material-symbols-outlined text-[20px]">inventory_2</span>
+                    </div>
+                    <span class="text-xs font-black tracking-widest text-slate-500 uppercase group-hover:text-villalba-blue transition-colors">${itemCode}</span>
+                </div>
+                
+                <h3 class="font-bold text-slate-800 dark:text-slate-200 text-sm leading-tight uppercase break-words" title="${description}">${description}</h3>
+                
+                <div class="flex items-center pr-2">
+                    <input type="text" class="item-serial-input w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-white/10 text-slate-800 dark:text-white text-sm font-bold rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all uppercase placeholder:normal-case placeholder:font-normal placeholder:text-slate-400" value="${itemSerial}" placeholder="N° Serie">
+                </div>
             </div>
-            <button type="button" class="btn-remove-item" title="Quitar de la lista">X</button>
+            
+            <div class="flex-shrink-0 ml-auto w-full md:w-auto flex justify-end relative z-10">
+                <button type="button" class="btn-remove-item w-10 h-10 rounded-xl bg-rose-50 dark:bg-rose-500/10 text-rose-500 flex items-center justify-center hover:bg-rose-500 hover:text-white transition-colors border border-rose-100 dark:border-rose-500/20 shadow-sm" title="Quitar de la lista">
+                    <span class="material-symbols-outlined text-[20px] pointer-events-none">close</span>
+                </button>
+            </div>
+            <div class="absolute inset-0 bg-gradient-to-r from-villalba-blue/0 to-villalba-blue/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
         `;
-        rowElement.querySelector('.btn-remove-item').addEventListener('click', () => rowElement.remove());
-        // applyEnterNavigation(); // Ya no es necesario
+        rowElement.querySelector('.btn-remove-item').addEventListener('click', () => {
+            rowElement.remove();
+            validateInputsAndCount();
+        });
     };
 
     // Usar delegación de eventos para la navegación con 'Enter'
