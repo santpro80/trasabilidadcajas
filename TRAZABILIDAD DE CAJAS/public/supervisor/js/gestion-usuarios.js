@@ -21,12 +21,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const editAppDeposito = document.getElementById('edit-app-deposito');
     const editRoleDeposito = document.getElementById('edit-role-deposito');
     const depositoRoleContainer = document.getElementById('deposito-role-container');
+    const editRolePedidos = document.getElementById('edit-role-pedidos');
+    const pedidosRoleContainer = document.getElementById('pedidos-role-container');
     const updateUserBtn = document.getElementById('update-user-btn');
 
     // Manejar visibilidad del rol de deposito
     if (editAppDeposito && depositoRoleContainer) {
         editAppDeposito.addEventListener('change', () => {
             depositoRoleContainer.style.display = editAppDeposito.checked ? 'block' : 'none';
+        });
+    }
+
+    if (editAppPedidos && pedidosRoleContainer) {
+        editAppPedidos.addEventListener('change', () => {
+            pedidosRoleContainer.style.display = editAppPedidos.checked ? 'block' : 'none';
         });
     }
 
@@ -174,6 +182,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (editRoleDeposito) {
             editRoleDeposito.value = user.role_deposito || 'operario';
         }
+        if (editRolePedidos) {
+            editRolePedidos.value = user.role_pedidos || 'operario';
+        }
+        
+        if (pedidosRoleContainer) {
+            pedidosRoleContainer.style.display = editAppPedidos.checked ? 'block' : 'none';
+        }
 
         suggestionsList.classList.add('hidden');
         searchInput.value = ''; // Limpiar buscador
@@ -231,6 +246,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (newRoleDeposito) {
                     updates.role_deposito = newRoleDeposito;
                 }
+                const newRolePedidos = editRolePedidos ? editRolePedidos.value : null;
+                if (newRolePedidos) {
+                    updates.role_pedidos = newRolePedidos;
+                }
                 
                 await updateDoc(userRef, updates);
 
@@ -240,6 +259,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     cachedUser.sector = newSector;
                     cachedUser.apps = updatedApps;
                     if (newRoleDeposito) cachedUser.role_deposito = newRoleDeposito;
+                    const newRolePedidos = editRolePedidos ? editRolePedidos.value : null;
+                    if (newRolePedidos) cachedUser.role_pedidos = newRolePedidos;
                 }
 
                 showMessage(`Rol y/o sector actualizado correctamente.`, 'success');

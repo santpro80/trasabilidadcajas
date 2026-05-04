@@ -50,10 +50,8 @@ export function initGlobalSidebar() {
     
     const userName = localStorage.getItem('userName') || 'Usuario';
     
-    // Auto-detect apps: include them if the user has an explicit role saved
+    // Use ONLY apps explicitly habilitated in the database
     let userApps = JSON.parse(localStorage.getItem('userApps') || '["trazabilidad"]');
-    if (rawRolePedidos && !userApps.includes('pedidos')) userApps.push('pedidos');
-    if (rawRoleDeposito && !userApps.includes('deposito')) userApps.push('deposito');
     
     // Detect current app context
     const path = window.location.pathname;
