@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modelos de Cajas | Sistema de Trazabilidad</title>
+    <link rel="icon" href="assets/logo.png" type="image/png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: { "villalba-blue": "#2563eb" },
+                    fontFamily: { sans: ["\"Public Sans\"", "sans-serif"] }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { margin: 0; min-height: 100vh; opacity: 0; animation: fadeInMenu 0.4s ease forwards; animation-delay: 0.15s; }
+        @keyframes fadeInMenu { to { opacity: 1; } }
+        .glass-card { background: rgba(255, 255, 255, 0.9); border: 1px solid rgba(255, 255, 255, 0.2); backdrop-filter: blur(12px); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+        html.dark .glass-card { background: rgba(22, 30, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.05); box-shadow: none; }
+    </style>
+    <link rel="stylesheet" href="../css/dark-theme.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+</head>
+<body class="bg-gradient-to-br from-[#6e8efb] to-[#a777e3] dark:from-[#0a0f16] dark:to-[#0a0f16] text-slate-900 dark:text-[#f1f5f9] antialiased">
+    <header class="bg-[#f8fafc] dark:bg-transparent backdrop-blur-md shadow-sm dark:shadow-none border-b border-white/20 dark:border-white/10 px-4 lg:px-8 py-3 flex items-center justify-between gap-4 sticky top-0 z-40 w-full hover:bg-white/95 transition-colors">
+        <div class="header-left flex items-center gap-4">
+            <button id="back-btn" class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-villalba-blue/10 text-villalba-blue hover:bg-villalba-blue hover:text-white transition-all border border-villalba-blue/20 group">
+                <span class="material-symbols-outlined text-[20px] group-hover:-translate-x-1 transition-transform">arrow_back</span>
+                <span class="text-xs font-bold uppercase tracking-wide">Men�</span>
+            </button>
+        </div>
+        <div class="user-info flex items-center gap-4">
+            <span id="user-display-name" class="hidden md:inline-block text-sm font-bold text-slate-700 dark:text-slate-300 text-center uppercase">Cargando...</span>
+            <button id="logout-btn" class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white transition-all border border-rose-500/20">
+                <span class="material-symbols-outlined text-[18px]">logout</span>
+                <span class="text-xs font-bold uppercase tracking-wide hidden sm:inline-block">Salir</span>
+            </button>
+        </div>
+    </header>
+
+    <main class="px-4 lg:px-8 py-8 lg:py-12 max-w-5xl mx-auto w-full">
+        <div class="glass-card rounded-[2rem] p-6 lg:p-8 mb-8 text-left border border-white/20 dark:border-white/5 shadow-xl relative overflow-hidden">
+            <h1 class="text-3xl lg:text-4xl font-black text-villalba-blue dark:text-white tracking-tight mb-2 uppercase">Modelos de Cajas</h1>
+            <p class="text-sm tracking-widest uppercase text-slate-500 dark:text-slate-400 font-bold leading-relaxed">Selecciona una categor�a de embalaje</p>
+        </div>
+
+        <div class="glass-card rounded-[2.5rem] p-6 lg:p-10 min-h-[400px] border border-white/20 dark:border-white/5 shadow-2xl relative overflow-hidden">
+            <div id="loading-state" class="flex flex-col items-center justify-center p-12">
+                <div class="w-12 h-12 border-4 border-villalba-blue/20 border-t-villalba-blue rounded-full animate-spin mb-4"></div>
+                <p class="text-[10px] font-black uppercase tracking-widest text-slate-500">Sincronizando modelos...</p>
+            </div>
+            
+            <ul id="modelos-list" class="hidden grid grid-cols-1  gap-4"></ul>
+
+            <div id="empty-state" class="hidden flex flex-col items-center justify-center p-12 text-slate-500">
+                <span class="material-symbols-outlined text-5xl mb-4">folder_off</span>
+                <p class="font-bold uppercase tracking-widest text-xs">No hay modelos registrados</p>
+            </div>
+            
+            <div id="error-state" class="hidden flex flex-col items-center justify-center p-12 text-rose-500">
+                <span class="material-symbols-outlined text-5xl mb-4">report_problem</span>
+                <p class="font-bold uppercase tracking-widest text-xs">Error de conexi�n</p>
+            </div>
+        </div>
+    </main>
+
+    <script type="module" src="js/modelos-de-cajas.js"></script>
+    <script type="module">import "../js/theme.js";</script>
+</body>
+</html>

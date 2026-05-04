@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estadísticas | Depósito</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: { extend: { colors: { 'villalba-blue': '#2563eb', 'background-dark': '#0a0f16', 'surface-dark': '#161e2a' } } }
+        }
+    </script>
+    <link rel="stylesheet" href="../css/dark-theme.css">
+    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: 'Public Sans', sans-serif; opacity: 0; animation: fadeInMenu 0.4s ease forwards; animation-delay: 0.1s; }
+        @keyframes fadeInMenu { to { opacity: 1; } }
+        .glass-card { background: rgba(255, 255, 255, 0.9); border: 1px solid rgba(0,0,0,0.1); backdrop-filter: blur(12px); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        html.dark .glass-card { background: rgba(22, 30, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.05); box-shadow: none; }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-[#6e8efb] to-[#a777e3] dark:from-[#0a0f16] dark:to-[#0a0f16] text-slate-900 dark:text-[#f1f5f9] antialiased min-h-screen flex flex-col relative overflow-x-hidden transition-colors duration-300">
+    
+    <!-- Navbar -->
+    <header class="bg-[#f8fafc]/90 dark:bg-background-dark/90 backdrop-blur-md shadow-sm dark:shadow-none border-b border-indigo-100 dark:border-slate-800 px-4 lg:px-6 py-3 flex items-center justify-between sticky top-0 z-40 w-full transition-colors relative">
+        <div class="header-left flex items-center gap-3">
+            <button onclick="window.location.href='menu.html'" class="flex items-center justify-center size-9 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 transition-colors mr-1 group" title="Volver al Menú">
+                <span class="material-symbols-outlined text-[18px] group-hover:-translate-x-1 transition-transform">arrow_back</span>
+            </button>
+            <div class="h-9 w-9 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center text-white shadow-lg shadow-teal-500/20">
+                <span class="material-symbols-outlined text-[18px]">bar_chart</span>
+            </div>
+            <h1 class="text-lg font-black tracking-tight uppercase text-slate-900 dark:text-white mt-0.5 hidden sm:block">Estadísticas de Ítems</h1>
+        </div>
+        <div class="flex items-center gap-4">
+            <span id="user-display-name" class="text-xs font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest hidden md:inline-block">Cargando...</span>
+        </div>
+    </header>
+
+    <main class="flex-1 w-full max-w-6xl mx-auto px-4 py-6 md:py-10 flex flex-col relative z-10 gap-6">
+        
+        <!-- Buscador -->
+        <div class="glass-card rounded-[2rem] p-6 text-left w-full shadow-2xl relative z-20">
+            <h2 class="text-xl md:text-2xl font-black text-slate-800 dark:text-white uppercase tracking-tight mb-4 border-b border-slate-200 dark:border-slate-700/50 pb-4">Consultar Estadísticas</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Código -->
+                <div class="flex flex-col gap-2 relative lg:col-span-1">
+                    <label class="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Código de Pieza</label>
+                    <input type="text" id="codigo-pieza" autocomplete="off" placeholder="Ej: 4211800" class="w-full bg-white dark:bg-black/20 border-2 border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3.5 text-sm font-bold text-slate-800 dark:text-white uppercase outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all shadow-inner placeholder-slate-300 dark:placeholder-slate-600">
+                    <!-- Dropdown autocompletar -->
+                    <div id="autocomplete-list" class="absolute top-[100%] left-0 w-full bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl mt-1 z-50 max-h-48 overflow-y-auto hidden divide-y divide-slate-100 dark:divide-slate-800"></div>
+                </div>
+
+                <!-- Detalle y Preview -->
+                <div class="flex flex-col gap-2 md:col-span-1 lg:col-span-2">
+                    <label class="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Detalle de Producto</label>
+                    <div class="flex items-center gap-3 md:gap-4 bg-slate-50 dark:bg-slate-800/50 border-2 border-slate-200 dark:border-slate-700 rounded-xl p-2 md:p-3 shadow-inner">
+                        <div id="img-container" class="relative w-14 h-14 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hidden items-center justify-center shrink-0 overflow-hidden shadow-sm">
+                            <span id="img-placeholder-icon" class="material-symbols-outlined text-slate-300 dark:text-slate-600 text-2xl absolute z-0 transition-opacity duration-300">inventory_2</span>
+                            <img id="preview-pieza" src="" alt="Preview" class="w-[90%] h-[90%] object-contain relative z-10 transition-opacity duration-300 opacity-0" onload="this.style.opacity='1'; document.getElementById('img-placeholder-icon').style.opacity='0';" onerror="this.style.opacity='0'; document.getElementById('img-placeholder-icon').style.opacity='1';">
+                        </div>
+                        <input type="text" id="detalle-pieza" readonly tabindex="-1" placeholder="Esperando código..." class="flex-1 w-full appearance-none bg-transparent border-0 focus:ring-0 focus:outline-none px-2 py-2 text-sm md:text-base font-bold text-slate-700 dark:text-slate-200 outline-none select-none cursor-default truncate" style="box-shadow: none;">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Botón Buscar -->
+            <button id="btn-buscar" class="mt-6 w-full md:w-auto px-8 py-3.5 bg-emerald-500 text-white rounded-xl font-black uppercase tracking-widest text-[13px] hover:bg-emerald-600 hover:-translate-y-1 active:scale-[0.98] transition-all duration-300 shadow-xl shadow-emerald-500/30 flex items-center justify-center gap-2 opacity-50 cursor-not-allowed pointer-events-none">
+                <span class="material-symbols-outlined text-[18px]">query_stats</span>
+                Generar Gráficos
+            </button>
+        </div>
+
+        <!-- Resultados de Estadísticas (Ocultos inicialmente) -->
+        <div id="stats-container" class="hidden flex-col gap-6">
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Gráfico Semanal -->
+                <div class="glass-card rounded-[2rem] p-6 flex flex-col h-full">
+                    <div class="flex items-center justify-between mb-4 border-b border-slate-200 dark:border-slate-700/50 pb-2">
+                        <h3 class="text-sm font-black text-slate-800 dark:text-white uppercase tracking-widest">Últimos 7 Días</h3>
+                        <span class="material-symbols-outlined text-emerald-500">date_range</span>
+                    </div>
+                    <div class="relative flex-1 w-full h-[250px] md:h-[300px]">
+                        <canvas id="chart-semanal"></canvas>
+                    </div>
+                </div>
+
+                <!-- Gráfico Mensual -->
+                <div class="glass-card rounded-[2rem] p-6 flex flex-col h-full">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-4 border-b border-slate-200 dark:border-slate-700/50 pb-2 gap-2">
+                        <h3 class="text-sm font-black text-slate-800 dark:text-white uppercase tracking-widest">Desglose Mensual</h3>
+                        <select id="select-mes" class="bg-slate-100 dark:bg-slate-800 border-none rounded-lg px-3 py-1.5 text-xs font-bold text-slate-700 dark:text-slate-300 outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer">
+                            <option value="0">Enero</option>
+                            <option value="1">Febrero</option>
+                            <option value="2">Marzo</option>
+                            <option value="3">Abril</option>
+                            <option value="4">Mayo</option>
+                            <option value="5">Junio</option>
+                            <option value="6">Julio</option>
+                            <option value="7">Agosto</option>
+                            <option value="8">Septiembre</option>
+                            <option value="9">Octubre</option>
+                            <option value="10">Noviembre</option>
+                            <option value="11">Diciembre</option>
+                        </select>
+                    </div>
+                    <div class="relative flex-1 w-full h-[250px] md:h-[300px]">
+                        <canvas id="chart-mensual"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gráfico Anual -->
+            <div class="glass-card rounded-[2rem] p-6 w-full">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-4 border-b border-slate-200 dark:border-slate-700/50 pb-2 gap-2">
+                    <h3 class="text-sm font-black text-slate-800 dark:text-white uppercase tracking-widest">Resumen Anual</h3>
+                    <select id="select-anio" class="bg-slate-100 dark:bg-slate-800 border-none rounded-lg px-3 py-1.5 text-xs font-bold text-slate-700 dark:text-slate-300 outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer">
+                        <option value="2024">2024</option>
+                        <option value="2025">2025</option>
+                        <option value="2026">2026</option>
+                    </select>
+                </div>
+                <div class="relative w-full h-[300px] md:h-[350px]">
+                    <canvas id="chart-anual"></canvas>
+                </div>
+            </div>
+            
+        </div>
+    </main>
+
+    <script type="module" src="js/estadisticas.js"></script>
+    <script type="module" src="../js/global-sidebar.js"></script>
+    <script type="module">import "../js/theme.js";</script>
+</body>
+</html>

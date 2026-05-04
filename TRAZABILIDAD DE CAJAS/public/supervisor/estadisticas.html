@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estadísticas | Sistema de Trazabilidad</title>
+    <link rel="icon" href="assets/logo.png" type="image/png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        'villalba-blue': '#2563eb',
+                        'background-dark': '#0a0f16',
+                        'surface-dark': '#161e2a'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', Arial, sans-serif; margin: 0; min-height: 100vh; display: flex; flex-direction: column; background: linear-gradient(135deg, #6e8efb, #a777e3); color: #2c3e50; transition: background 0.3s ease; }
+        .dark body { background: #0a0f16; color: #f1f5f9; }
+
+        .app-header { background-color: rgba(255, 255, 255, 0.9); backdrop-filter: blur(5px); padding: 10px 25px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); width: 100%; box-sizing: border-box; transition: all 0.3s ease; }
+        .dark .app-header { background-color: rgba(10, 15, 22, 0.9); border-bottom: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5); color: white; }
+
+        .btn-back { background-color: #f0f4f8; color: #4285F4; padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; transition: all 0.2s; }
+        .dark .btn-back { background-color: #1e293b; color: #60a5fa; }
+
+        .main-content { padding: 40px 20px; max-width: 900px; margin: 0 auto; width: 100%; box-sizing: border-box; }
+        
+        .stats-card { background-color: #ffffff; border-radius: 20px; padding: 35px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2); transition: all 0.3s ease; }
+        .dark .stats-card { background-color: #161e2a; border: 1px solid rgba(255, 255, 255, 0.05); }
+
+        .month-navigation { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background-color: #f8fafc; padding: 10px 20px; border-radius: 12px; transition: all 0.3s; }
+        .dark .month-navigation { background-color: #1e293b; }
+        
+        .month-navigation button { background-color: #4285F4; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; transition: all 0.2s; shadow: 0 4px 10px rgba(66, 133, 244, 0.2); }
+        .month-navigation button:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(66, 133, 244, 0.3); }
+        .month-navigation button:disabled { background-color: #cbd5e1; cursor: not-allowed; opacity: 0.6; }
+        .dark .month-navigation button:disabled { background-color: #334155; }
+
+        #month-title { color: #1e293b; font-size: 1.25em; font-weight: 700; margin: 0; transition: color 0.3s; }
+        .dark #month-title { color: white; }
+
+        .stats-table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 20px; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; transition: border-color 0.3s; }
+        .dark .stats-table { border-color: #1e293b; }
+
+        .stats-table th { background-color: #f1f5f9; color: #475569; padding: 15px; font-weight: 700; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em; text-align: left; transition: all 0.3s; }
+        .dark .stats-table th { background-color: #0f172a; color: #94a3b8; }
+
+        .stats-table td { padding: 15px; border-bottom: 1px solid #e2e8f0; color: #1e293b; transition: all 0.3s; }
+        .dark .stats-table td { border-bottom-color: #1e293b; color: #cbd5e1; }
+
+        .stats-table tbody tr:nth-child(even) { background-color: #f8fafc; }
+        .dark .stats-table tbody tr:nth-child(even) { background-color: rgba(255, 255, 255, 0.02); }
+
+        .stats-table tbody tr.clickable-row { cursor: pointer; transition: all 0.2s; }
+        .stats-table tbody tr.clickable-row:hover { background-color: #eff6ff; }
+        .dark .stats-table tbody tr.clickable-row:hover { background-color: rgba(66, 133, 244, 0.1); }
+
+        .modal-overlay { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); backdrop-filter: blur(5px); justify-content: center; align-items: center; }
+        .modal-content { background-color: #ffffff; padding: 0; border-radius: 20px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); width: 90%; max-width: 600px; max-height: 85vh; display: flex; flex-direction: column; overflow: hidden; animation: modalIn 0.3s ease-out; transition: background 0.3s; }
+        .dark .modal-content { background-color: #161e2a; color: white; border: 1px solid rgba(255, 255, 255, 0.05); }
+
+        @keyframes modalIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        .modal-header { padding: 25px 30px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; transition: all 0.3s; }
+        .dark .modal-header { border-bottom-color: #1e293b; background-color: #1e293b; }
+
+        .modal-header h2 { margin: 0; color: #4285F4; font-weight: 700; font-size: 1.4rem; }
+        .dark .modal-header h2 { color: #60a5fa; }
+
+        .close-btn { color: #94a3b8; font-size: 28px; font-weight: bold; cursor: pointer; transition: color 0.2s; }
+        .close-btn:hover { color: #ef4444; }
+
+        #consumed-items-container { padding: 25px 30px; overflow-y: auto; flex-grow: 1; }
+        .consumed-item { background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 15px; margin-bottom: 12px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; transition: all 0.3s; }
+        .dark .consumed-item { background-color: #0f172a; border-color: #1e293b; }
+
+        .consumed-item .item-details { display: flex; flex-direction: column; gap: 4px; }
+        .consumed-item .item-code { font-family: 'JetBrains Mono', monospace; font-size: 0.85em; color: #64748b; font-weight: 600; }
+        .consumed-item .item-desc { font-weight: 600; color: #1e293b; transition: color 0.3s; }
+        .dark .consumed-item .item-desc { color: #f1f5f9; }
+        .consumed-item .item-count { font-weight: 800; color: #ef4444; font-size: 1.25em; background-color: rgba(239, 68, 68, 0.1); padding: 4px 12px; border-radius: 8px; }
+
+        .btn-download-excel { background-color: #10b981; color: white; padding: 12px 24px; border: none; border-radius: 10px; cursor: pointer; font-size: 0.95em; font-weight: 700; display: block; width: fit-content; margin: 20px auto 0; transition: all 0.2s; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2); }
+        .btn-download-excel:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(16, 185, 129, 0.3); background-color: #059669; }
+
+        body { opacity: 0; animation: fadeInMenu 0.4s ease forwards; animation-delay: 0.15s; }
+        @keyframes fadeInMenu { to { opacity: 1; } }
+    </style>
+    <link rel="stylesheet" href="../css/dark-theme.css">
+    <script type="module" src="../js/theme.js"></script>
+</head>
+<body class="bg-gradient-to-br from-[#6e8efb] to-[#a777e3] dark:from-[#0a0f16] dark:to-[#0a0f16] text-slate-900 dark:text-[#f1f5f9] antialiased transition-colors duration-300">
+    <header class="app-header dark:bg-background-dark/90 transition-colors duration-300">
+        <div class="header-left">
+            <a href="menu.html" class="btn-back">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5"></path><path d="M12 19l-7-7 7-7"></path></svg>
+                Volver al Menú
+            </a>
+        </div>
+        <div class="flex items-center gap-4">
+            <span id="user-display-name" class="font-bold text-sm"></span>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div class="stats-card">
+            <div class="month-navigation">
+                <button id="prev-month-btn" class="flex items-center gap-2"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"></path></svg> Anterior</button>
+                <h1 id="month-title">Cargando...</h1>
+                <button id="next-month-btn" class="flex items-center gap-2">Siguiente <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"></path></svg></button>
+            </div>
+            
+            <div id="stats-container" class="min-h-[200px] flex items-center justify-center">
+                <div class="flex flex-col items-center gap-4">
+                    <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500"></div>
+                    <p class="text-slate-400 font-medium">Cargando estadísticas...</p>
+                </div>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-4 mt-10 justify-center">
+                <button id="download-box-stats-btn" class="btn-download-excel m-0">
+                    <div class="flex items-center gap-2">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                        Descargar Excel de Salidas
+                    </div>
+                </button>
+                
+                <button id="show-avg-tracing-time-btn" class="btn-download-excel m-0 bg-blue-500 hover:bg-blue-600 shadow-blue-500/20">
+                    <div class="flex items-center gap-2">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                        Ver Tiempo Promedio
+                    </div>
+                </button>
+            </div>
+
+            <div id="avg-tracing-time-results" class="mt-8 transition-all">
+                <!-- Se inyectará aquí con JS -->
+            </div>
+        </div>
+    </main>
+
+    <div id="consumption-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="consumption-modal-title">Consumo de Items</h2>
+                <span class="close-btn">&times;</span>
+            </div>
+            <div id="consumed-items-container">
+                <p class="text-center text-slate-400 py-10">Cargando ítems...</p>
+            </div>
+            <div class="p-6 bg-slate-50 dark:bg-background-dark/50 border-t border-slate-100 dark:border-slate-800">
+                <button id="download-item-consumption-btn" class="btn-download-excel m-0 w-full">
+                    Descargar Excel de Consumo
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="js/estadisticas.js"></script>
+    <script type="module">import { initGlobalSidebar } from '../js/global-sidebar.js'; initGlobalSidebar();</script>
+</body>
+</html>

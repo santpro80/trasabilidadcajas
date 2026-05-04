@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <title>Menú Mantenimiento - Villalba Systems</title>
+    <link rel="icon" href="assets/logo.png" type="image/png">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap"
+        rel="stylesheet" />
+
+    <!-- Material Symbols -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap"
+        rel="stylesheet" />
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        'villalba-blue': '#2563eb',
+                        'background-dark': '#0a0f16',
+                        'surface-dark': '#161e2a',
+                    },
+                    fontFamily: { sans: ['"Public Sans"', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            margin: 0;
+            min-height: 100vh;
+
+            /* Fondo Modo Claro */
+
+            /* Texto Modo Claro */
+            opacity: 0;
+            animation: fadeInMenu 0.4s ease forwards;
+            animation-delay: 0.15s;
+        }
+
+
+
+
+        @keyframes fadeInMenu {
+            to {
+                opacity: 1;
+            }
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(12px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+        }
+
+        html.dark .glass-card {
+            background: rgba(22, 30, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: none;
+        }
+
+        /* Ocultar elementos por defecto hasta que JS los valide */
+        .auth-hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+
+<body
+    class="bg-gradient-to-br from-[#6e8efb] to-[#a777e3] dark:from-[#0a0f16] dark:to-[#0a0f16] text-slate-900 dark:text-[#f1f5f9] antialiased font-sans">
+    <div class="flex h-screen overflow-hidden">
+
+        <!-- Sidebar Drawer is now handled by global-sidebar.js -->
+
+        <!-- Main Content -->
+        <main class="flex-1 overflow-y-auto relative flex flex-col">
+
+            <header
+                class="bg-[#f8fafc] dark:bg-transparent backdrop-blur-md shadow-sm dark:shadow-none border-b border-white/20 dark:border-white/10 px-4 lg:px-8 py-3 flex items-center justify-between gap-4 sticky top-0 z-40 shrink-0 w-full hover:bg-white/95 transition-colors">
+                <div class="header-left flex items-center gap-4">
+                    <span
+                        class="font-black tracking-tighter uppercase text-villalba-blue dark:text-white">Trazabilidad</span>
+                </div>
+                <!-- User Profile & Logout -->
+                <div class="flex items-center gap-4">
+                    <span id="header-user-name"
+                        class="hidden md:inline-block text-sm font-bold text-slate-700 dark:text-slate-300">Cargando...</span>
+                    <button onclick="handleGlobalLogout()"
+                        class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-slate-900 dark:text-white transition-colors border border-rose-500/20">
+                        <span class="material-symbols-outlined text-[18px]">logout</span>
+                        <span class="text-xs font-bold uppercase tracking-wide hidden sm:inline-block">Salir</span>
+                    </button>
+                </div>
+            </header>
+
+            <div class="px-4 lg:px-8 py-8 lg:py-12 flex-1 w-full flex flex-col">
+                <div class="max-w-5xl w-full mx-auto">
+                    <div
+                        class="bg-white dark:bg-transparent dark:border dark:border-white/5 shadow-sm dark:shadow-none rounded-[2rem] p-6 lg:p-10 w-full mb-10">
+                        <div class="mb-8 lg:mb-10 text-left">
+                            <h1
+                                class="text-3xl lg:text-4xl font-black text-villalba-blue dark:text-white tracking-tight mb-2">
+                                Panel Mantenimiento</h1>
+                            <p
+                                class="text-sm tracking-widest uppercase text-slate-500 dark:text-slate-400 font-bold mb-0">
+                                Trazabilidad de Cajas - Soporte Técnico</p>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
+
+                            <!-- Operaciones -->
+                            <div>
+                                <h2
+                                    class="text-xs font-black tracking-[0.2em] text-villalba-blue uppercase mb-4 border-b border-slate-200 dark:border-white/10 pb-2">
+                                    Soporte y Mantenimiento</h2>
+                                <div class="flex flex-col gap-3">
+                                    <button id="btn-cajas"
+                                        class="auth-hidden view-card group flex items-center p-4 rounded-2xl glass-card hover:bg-slate-100 dark:hover:bg-slate-800 transition-all text-left">
+                                        <span
+                                            class="material-symbols-outlined text-3xl text-blue-400 mr-4 group-hover:scale-110 transition-transform">inventory_2</span>
+                                        <div>
+                                            <h3
+                                                class="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                                                Modelos de Cajas
+                                            </h3>
+                                        </div>
+                                    </button>
+
+                                    <button id="btn-tickets"
+                                        class="auth-hidden view-card group flex items-center p-4 rounded-2xl glass-card hover:bg-slate-100 dark:hover:bg-slate-800 transition-all text-left border-emerald-500/20">
+                                        <span
+                                            class="material-symbols-outlined text-3xl text-emerald-400 mr-4 group-hover:scale-110 transition-transform">confirmation_number</span>
+                                        <div>
+                                            <h3
+                                                class="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                                                Tickets Asignados
+                                            </h3>
+                                            <p
+                                                class="text-[10px] text-slate-500 dark:text-slate-400 mt-1 uppercase tracking-widest">
+                                                Resolución de
+                                                soporte</p>
+                                        </div>
+                                    </button>
+
+                                    <button id="btn-estados-cajas"
+                                        class="auth-hidden view-card group flex items-center p-4 rounded-2xl glass-card hover:bg-slate-100 dark:hover:bg-slate-800 transition-all text-left">
+                                        <span
+                                            class="material-symbols-outlined text-3xl text-amber-400 mr-4 group-hover:scale-110 transition-transform">local_shipping</span>
+                                        <div>
+                                            <h3
+                                                class="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                                                Estados Cajas</h3>
+                                        </div>
+                                    </button>
+
+                                    <button id="btn-buscar-reporte"
+                                        class="auth-hidden view-card group flex items-center p-4 rounded-2xl glass-card hover:bg-slate-100 dark:hover:bg-slate-800 transition-all text-left">
+                                        <span
+                                            class="material-symbols-outlined text-3xl text-indigo-400 mr-4 group-hover:scale-110 transition-transform">manage_search</span>
+                                        <div>
+                                            <h3
+                                                class="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                                                Buscar Reporte
+                                            </h3>
+                                        </div>
+                                    </button>
+
+                                    <button id="btn-buscar-prestamo"
+                                        class="auth-hidden view-card group flex items-center p-4 rounded-2xl glass-card hover:bg-slate-100 dark:hover:bg-slate-800 transition-all text-left">
+                                        <span
+                                            class="material-symbols-outlined text-3xl text-purple-400 mr-4 group-hover:scale-110 transition-transform">find_in_page</span>
+                                        <div>
+                                            <h3
+                                                class="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                                                Buscar Préstamo
+                                            </h3>
+                                        </div>
+                                    </button>
+
+                                    <button id="btn-reportar-problema"
+                                        class="auth-hidden view-card group flex items-center p-4 rounded-2xl glass-card hover:bg-slate-100 dark:hover:bg-slate-800 transition-all text-left">
+                                        <span
+                                            class="material-symbols-outlined text-3xl text-rose-400 mr-4 group-hover:scale-110 transition-transform">report_problem</span>
+                                        <div>
+                                            <h3
+                                                class="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                                                Reportar Problema
+                                            </h3>
+                                        </div>
+                                    </button>
+
+                                    <button id="btn-ver-problemas"
+                                        class="auth-hidden view-card group flex items-center p-4 rounded-2xl glass-card hover:bg-slate-100 dark:hover:bg-slate-800 transition-all text-left border-rose-500/20">
+                                        <span
+                                            class="material-symbols-outlined text-3xl text-orange-400 mr-4 group-hover:scale-110 transition-transform">bug_report</span>
+                                        <div>
+                                            <h3
+                                                class="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider text-rose-100">
+                                                Ver
+                                                Problemas Reportados</h3>
+                                        </div>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Administración Global -->
+                            <div>
+                                <h2
+                                    class="text-xs font-black tracking-[0.2em] text-villalba-blue uppercase mb-4 border-b border-slate-200 dark:border-white/10 pb-2">
+                                    Gestión de Cuenta</h2>
+                                <div class="flex flex-col gap-3">
+                                    <button id="btn-historial"
+                                        class="auth-hidden view-card group flex items-center p-4 rounded-2xl glass-card hover:bg-slate-100 dark:hover:bg-slate-800 transition-all text-left">
+                                        <span
+                                            class="material-symbols-outlined text-3xl text-slate-500 dark:text-slate-400 mr-4 group-hover:scale-110 transition-transform">history</span>
+                                        <div>
+                                            <h3
+                                                class="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                                                Historial</h3>
+                                        </div>
+                                    </button>
+
+                                    <button id="btn-informe-diario"
+                                        class="auth-hidden view-card group flex items-center p-4 rounded-2xl glass-card hover:bg-slate-100 dark:hover:bg-slate-800 transition-all text-left">
+                                        <span
+                                            class="material-symbols-outlined text-3xl text-cyan-400 mr-4 group-hover:scale-110 transition-transform">today</span>
+                                        <div>
+                                            <h3
+                                                class="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                                                Informe Diario
+                                            </h3>
+                                        </div>
+                                    </button>
+
+                                    <button id="btn-estadisticas"
+                                        class="auth-hidden view-card group flex items-center p-4 rounded-2xl glass-card hover:bg-slate-100 dark:hover:bg-slate-800 transition-all text-left">
+                                        <span
+                                            class="material-symbols-outlined text-3xl text-teal-400 mr-4 group-hover:scale-110 transition-transform">monitoring</span>
+                                        <div>
+                                            <h3
+                                                class="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                                                Estadísticas</h3>
+                                        </div>
+                                    </button>
+
+                                    <button id="btn-registrar-usuario"
+                                        class="auth-hidden view-card group flex items-center p-4 rounded-2xl glass-card hover:bg-slate-100 dark:hover:bg-slate-800 transition-all text-left">
+                                        <span
+                                            class="material-symbols-outlined text-3xl text-pink-400 mr-4 group-hover:scale-110 transition-transform">person_add</span>
+                                        <div>
+                                            <h3
+                                                class="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                                                Registrar Usuario
+                                            </h3>
+                                        </div>
+                                    </button>
+
+                                    <button id="btn-gestion-usuarios"
+                                        class="auth-hidden view-card group flex items-center p-4 rounded-2xl glass-card hover:bg-slate-100 dark:hover:bg-slate-800 transition-all text-left">
+                                        <span
+                                            class="material-symbols-outlined text-3xl text-fuchsia-400 mr-4 group-hover:scale-110 transition-transform">manage_accounts</span>
+                                        <div>
+                                            <h3
+                                                class="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                                                Gestión de
+                                                Usuarios</h3>
+                                        </div>
+                                    </button>
+
+                                    <button id="btn-importar-datos"
+                                        class="auth-hidden view-card group flex items-center p-4 rounded-2xl glass-card hover:bg-slate-100 dark:hover:bg-slate-800 transition-all text-left">
+                                        <span
+                                            class="material-symbols-outlined text-3xl text-lime-400 mr-4 group-hover:scale-110 transition-transform">upload_file</span>
+                                        <div>
+                                            <h3
+                                                class="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                                                Importar Datos
+                                            </h3>
+                                        </div>
+                                    </button>
+
+                                    <button id="btn-cuenta"
+                                        class="auth-hidden view-card group flex items-center p-4 rounded-2xl glass-card hover:bg-slate-100 dark:hover:bg-slate-800 transition-all text-left">
+                                        <span
+                                            class="material-symbols-outlined text-3xl text-sky-400 mr-4 group-hover:scale-110 transition-transform">account_circle</span>
+                                        <div>
+                                            <h3
+                                                class="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                                                Mi Cuenta Técnica
+                                            </h3>
+                                        </div>
+                                    </button>
+
+                                    <button id="btn-notifications"
+                                        class="auth-hidden view-card group flex items-center p-4 rounded-2xl glass-card hover:bg-slate-100 dark:hover:bg-slate-800 transition-all text-left mb-8">
+                                        <span
+                                            class="material-symbols-outlined text-3xl text-yellow-500 mr-4 group-hover:scale-110 transition-transform">notifications_active</span>
+                                        <div>
+                                            <h3 class="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider"
+                                                id="btn-notifications-text">Activar Notificaciones de Ticktes</h3>
+                                        </div>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script type="module">
+        import { auth, db, onAuthStateChanged, signOut, doc, getDoc, collection, query, where, onSnapshot } from './js/firebase-config.js';
+        import { setupTicketNotifications } from './js/global-notifications.js';
+        import { requestNotificationPermission } from './js/fcm-setup.js';
+
+        // Elementos UI
+        const btnNotificationsText = document.getElementById('btn-notifications-text');
+
+        let currentUserRole = 'mantenimiento';
+        let swRegistration = null;
+
+        // Register Service Worker is here...
+
+        // App switcher is now handled by global-sidebar.js
+
+        // Mostrar botoneras dinámicamente según rol
+        const manageMenuVisibility = (role) => {
+            const isMantenimiento = role === 'mantenimiento';
+
+            const unhide = (id) => { const el = document.getElementById(id); if (el) el.classList.remove('auth-hidden'); }
+
+            if (isMantenimiento) {
+                unhide('btn-cuenta');
+                unhide('btn-tickets');
+                unhide('btn-reportar-problema');
+                unhide('btn-ver-problemas');
+                unhide('btn-notifications');
+            }
+        };
+
+        const updateNotificationButtonUI = () => {
+            if (!('Notification' in window)) return;
+            const btn = document.getElementById('btn-notifications');
+            if (!btn) return;
+
+            // Simple visual update for Tailwind Dark Mode
+            if (Notification.permission === 'default') {
+                btn.classList.add('border', 'border-yellow-500/50', 'bg-yellow-500/10');
+                btnNotificationsText.textContent = '🔔 Alertas: Requerido';
+            } else if (Notification.permission === 'granted') {
+                btn.classList.add('border', 'border-emerald-500/30', 'bg-emerald-500/10');
+                btnNotificationsText.textContent = '✅ Alertas Activas';
+                btnNotificationsText.classList.replace('text-slate-900 dark:text-white', 'text-emerald-300');
+            } else if (Notification.permission === 'denied') {
+                btn.classList.add('border', 'border-rose-500/30', 'bg-rose-500/10');
+                btnNotificationsText.textContent = '❌ Alertas Bloqueadas';
+                btnNotificationsText.classList.replace('text-slate-900 dark:text-white', 'text-rose-300');
+            }
+        };
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                try {
+                    const userDocRef = doc(db, "users", user.uid);
+                    const userDocSnap = await getDoc(userDocRef);
+                    if (userDocSnap.exists()) {
+                        const userData = userDocSnap.data();
+                        currentUserRole = userData.role || 'mantenimiento';
+                        const headerName = document.getElementById('header-user-name');
+                        if (headerName) headerName.textContent = userData.name || user.email;
+                    } else {
+                        currentUserRole = 'mantenimiento';
+                        const headerName = document.getElementById('header-user-name');
+                        if (headerName) headerName.textContent = user.email;
+                    }
+                    manageMenuVisibility(currentUserRole);
+                    updateNotificationButtonUI();
+                    setupTicketNotifications(db, collection, query, where, onSnapshot, user, currentUserRole);
+
+                    // Auto-prompt Notifications
+                    const urlParams = new URLSearchParams(window.location.search);
+                    if (urlParams.get('prompt_notifications') === 'true') {
+                        if ('serviceWorker' in navigator) {
+                            navigator.serviceWorker.ready.then(registration => {
+                                requestNotificationPermission(registration);
+                                const newUrl = window.location.pathname;
+                                window.history.replaceState({}, document.title, newUrl);
+                            });
+                        }
+                    }
+                } catch (error) {
+                    console.error("Error al obtener datos:", error);
+                    manageMenuVisibility('mantenimiento');
+                }
+            } else {
+                window.location.href = '../login.html';
+            }
+        });
+
+        // Event Listeners (Routing)
+        const setupRoute = (id, path) => {
+            const el = document.getElementById(id);
+            if (el) el.addEventListener('click', () => window.location.href = path);
+        }
+
+        // Rutas Mantenimiento
+        setupRoute('btn-cajas', 'modelos-de-cajas.html');
+        setupRoute('btn-cuenta', 'cuenta.html');
+        setupRoute('btn-reportar-problema', 'reportar-problema.html');
+        setupRoute('btn-ver-problemas', 'ver-problemas.html');
+
+        document.getElementById('btn-tickets')?.addEventListener('click', () => {
+            window.location.href = currentUserRole === 'supervisor' ? 'tickets-supervisor.html' : 'tickets-operador.html';
+        });
+
+        document.getElementById('btn-notifications')?.addEventListener('click', async () => {
+            if ('serviceWorker' in navigator) {
+                const registration = await navigator.serviceWorker.ready;
+                try {
+                    await requestNotificationPermission(registration);
+                    alert('✅ Permisos de notificaciones habilitados.');
+                } catch (error) {
+                    console.error(error);
+                    alert('❌ Error al obtener el token.');
+                }
+                updateNotificationButtonUI();
+            }
+        });
+    </script>
+
+    <script type="module">
+        import { initGlobalSidebar } from '../js/global-sidebar.js';
+        initGlobalSidebar();
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0a0f16" />
+  <title>Panel Administrador - Roles y Usuarios</title>
+  <link rel="icon" type="image/png" href="/favicon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700;800;900&display=swap"
+    rel="stylesheet" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap"
+    rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: { 'villalba-blue': '#2563eb', 'background-dark': '#0a0f16', 'surface-dark': '#161e2a' },
+          fontFamily: { sans: ['"Public Sans"', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
+  <!-- Custom Styles -->
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      min-width: 320px;
+      transition: background-color 0.3s, color 0.3s;
+    }
+
+    body {
+      opacity: 0;
+      animation: fadeInMenu 0.4s ease forwards;
+      animation-delay: 0.15s;
+    }
+
+    @keyframes fadeInMenu {
+      to {
+        opacity: 1;
+      }
+    }
+  </style>
+</head>
+
+
+<body
+  class="bg-gradient-to-br from-[#6e8efb] to-[#a777e3] dark:from-[#0a0f16] dark:to-[#0a0f16] text-slate-900 dark:text-[#f1f5f9] antialiased font-sans transition-colors duration-300">
+  <div id="app-container" class="flex h-screen overflow-hidden">
+    <!-- Sidebar Global se inyecta vía global-sidebar.js -->
+
+    <main class="flex-1 overflow-y-auto relative" id="main-content">
+      <div id="loading-state"
+        class="h-full w-full flex flex-col items-center justify-center text-slate-400 gap-4 mt-20">
+        <span class="material-symbols-outlined text-4xl animate-spin text-villalba-blue">sync</span>
+      </div>
+
+      <!-- Main Content Container -->
+      <div id="admin-content" class="hidden">
+        <header
+          class="sticky top-0 z-50 bg-white dark:bg-background-dark border-b border-slate-200 dark:border-slate-800">
+          <div class="flex items-center justify-between px-6 py-4">
+            <div class="flex items-center gap-3">
+              <button
+                id="global-hamburger-btn"
+                onclick="toggleGlobalSidebar()"
+                class="size-10 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                <span class="material-symbols-outlined text-slate-600 dark:text-slate-400">menu</span>
+              </button>
+              <button onclick="window.location.href = 'menu.html'"
+                class="size-10 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 transition-colors ml-[-4px]">
+                <span class="material-symbols-outlined">arrow_back</span>
+              </button>
+              <div
+                class="size-8 rounded-xl bg-gradient-to-br from-villalba-blue to-blue-800 flex items-center justify-center text-white font-black text-sm shadow-lg shadow-blue-500/30">
+                <span class="material-symbols-outlined text-[16px]">admin_panel_settings</span>
+              </div>
+              <h1 class="text-xl font-bold tracking-tight uppercase text-slate-900 dark:text-white mt-1">Panel Administrador</h1>
+            </div>
+          </div>
+        </header>
+
+        <div class="max-w-7xl mx-auto px-4 lg:px-8 py-8 lg:py-12">
+          <div class="mb-10 flex flex-col gap-2">
+            <h1 class="text-3xl font-black tracking-tighter text-slate-900 dark:text-white uppercase leading-none">Gestión de Usuarios</h1>
+            <p class="text-sm text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">Módulo de Pedidos Internos</p>
+
+            <div class="relative group mt-2">
+              <span
+                class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-villalba-blue transition-colors">search</span>
+              <input type="text" id="search-users" placeholder="Buscar por nombre o correo electrónico..."
+                class="w-full h-12 pl-12 pr-4 bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-2xl text-sm font-bold text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-villalba-blue/30 transition-all shadow-sm" />
+            </div>
+          </div>
+
+          <div id="users-container" class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <!-- Javascript injects user cards here -->
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Scripts -->
+  <script src="./js/panel-admin.js" type="module"></script>
+  <script type="module">import '../js/theme.js';</script>
+</body>
+
+</html>

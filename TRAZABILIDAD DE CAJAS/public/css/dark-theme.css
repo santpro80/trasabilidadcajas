@@ -1,0 +1,301 @@
+/* 
+   LAYOUT FIXES (Globales, para que no salten al cambiar de tema)
+*/
+.main-content {
+    max-width: 1200px !important;
+    width: 95% !important;
+}
+
+header .header-left,
+.app-header .header-left,
+.header-left {
+    display: flex !important;
+    align-items: center !important;
+    gap: 1.5rem !important;
+    width: auto !important;
+}
+
+header,
+.app-header {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+}
+
+header h1,
+.app-header h1 {
+    margin: 0 !important;
+    padding: 0 !important;
+    display: block !important;
+    position: static !important;
+}
+
+.list-item,
+tr.list-item,
+.serial-container,
+.dynamic-item-row-new,
+.static-item-row p,
+.item-code-display {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    flex-wrap: nowrap !important;
+}
+
+.btn-delete-caja,
+.btn-delete-item {
+    flex-shrink: 0 !important;
+}
+
+/*
+    DARK THEME OVERRIDES PARA TRAZABILIDAD DE CAJAS (Solo Colores)
+*/
+
+html.dark body {
+    background: #0a0f16 !important;
+    color: #f1f5f9 !important;
+}
+
+/* Headers & Navigation */
+html.dark .app-header,
+html.dark .header-container,
+html.dark header {
+    background-color: rgba(15, 23, 42, 0.9) !important;
+    border-bottom: 1px solid #1e293b !important;
+}
+
+html.dark .btn-back,
+html.dark #menu-btn,
+html.dark #volver-btn {
+    background-color: #1e293b !important;
+    color: #4285F4 !important;
+}
+
+html.dark .btn-back:hover,
+html.dark #menu-btn:hover,
+html.dark #volver-btn:hover {
+    background-color: #334155 !important;
+}
+
+/* Cards and Containers */
+html.dark .title-card,
+html.dark .title-container,
+html.dark .list-container,
+html.dark .form-container,
+html.dark .form-card,
+html.dark .ticket-card,
+html.dark .filter-container,
+html.dark .filtros,
+html.dark .stats-card,
+html.dark .main-container,
+html.dark .details-container,
+html.dark .box-stats,
+html.dark .white-card,
+html.dark .card,
+html.dark .login-card,
+html.dark .account-container,
+html.dark #mensajes-container,
+html.dark #respuesta-container {
+    background-color: #161e2a !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5) !important;
+    border: 1px solid #1e293b !important;
+}
+
+/* Typography elements */
+html.dark .title-card h1,
+html.dark .title-container h1,
+html.dark .form-card h1,
+html.dark h1,
+html.dark h2,
+html.dark h3,
+html.dark strong {
+    color: #f8fafc !important;
+}
+
+html.dark p,
+html.dark span,
+html.dark label,
+html.dark .form-card p,
+html.dark .message-text {
+    color: #cbd5e1;
+}
+
+html.dark header h1 {
+    -webkit-text-fill-color: #f1f5f9 !important;
+    background: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+
+/* Tables */
+html.dark .history-table thead th,
+html.dark table thead th,
+html.dark .table-header {
+    background-color: #0f172a !important;
+    color: #94a3b8 !important;
+    border-bottom: 1px solid #1e293b !important;
+}
+
+html.dark .history-table td,
+html.dark table td,
+html.dark .list-item {
+    color: #cbd5e1 !important;
+    border-bottom-color: #1e293b !important;
+    border-color: #1e293b !important;
+}
+
+html.dark .list-item,
+html.dark tr.list-item,
+html.dark .serial-container,
+html.dark .dynamic-item-row-new,
+html.dark .static-item-row p,
+html.dark .item-code-display {
+    background-color: #161e2a !important;
+    border-color: #1e293b !important;
+    color: #cbd5e1 !important;
+}
+
+html.dark .list-item:hover,
+html.dark tbody tr:hover,
+html.dark .serial-container:hover {
+    background-color: #1e293b !important;
+}
+
+/* Forms and Inputs */
+html.dark input[type="text"],
+html.dark input[type="date"],
+html.dark input[type="number"],
+html.dark input[type="password"],
+html.dark select,
+html.dark textarea,
+html.dark .search-bar,
+html.dark input {
+    background-color: #0f172a !important;
+    border: 1px solid #334155 !important;
+    color: #f1f5f9 !important;
+}
+
+html.dark input:focus,
+html.dark select:focus,
+html.dark textarea:focus {
+    border-color: #4285F4 !important;
+    outline: none !important;
+    box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.2) !important;
+}
+
+html.dark .search-bar-container input::placeholder,
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+    color: #64748b !important;
+}
+
+/* Chat/Tickets Specifics */
+html.dark .message.received {
+    background-color: #1e293b !important;
+    color: #f1f5f9 !important;
+    border-color: #334155 !important;
+}
+
+html.dark .message.sent {
+    background: linear-gradient(135deg, #2563eb, #1e40af) !important;
+}
+
+html.dark .message-sender {
+    color: #94a3b8 !important;
+}
+
+html.dark .ticket-subject {
+    color: #f8fafc !important;
+}
+
+html.dark .status-abierto {
+    background-color: rgba(34, 197, 94, 0.1) !important;
+    color: #4ade80 !important;
+}
+
+html.dark .status-cerrado {
+    background-color: rgba(239, 68, 68, 0.1) !important;
+    color: #f87171 !important;
+}
+
+html.dark .notification-badge {
+    border-color: #161e2a !important;
+}
+
+html.dark #cerrar-ticket-btn,
+html.dark #eliminar-ticket-btn {
+    background-color: rgba(239, 68, 68, 0.1) !important;
+    color: #f87171 !important;
+    border-color: rgba(239, 68, 68, 0.2) !important;
+}
+
+html.dark #cerrar-ticket-btn:hover,
+html.dark #eliminar-ticket-btn:hover {
+    background-color: #ef4444 !important;
+    color: white !important;
+}
+
+/* Specific details for models list */
+html.dark .empty-state,
+html.dark .loading-state,
+html.dark .error-state {
+    color: #94a3b8 !important;
+}
+
+/* Modals */
+html.dark .modal-content,
+html.dark .modal-dialog {
+    background-color: #161e2a !important;
+    border: 1px solid #1e293b !important;
+    color: #f1f5f9 !important;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5) !important;
+}
+
+html.dark .close-btn {
+    color: #94a3b8 !important;
+}
+
+html.dark .close-btn:hover {
+    color: #f8fafc !important;
+}
+
+/* Stats specific */
+html.dark .stat-number {
+    color: #4285F4 !important;
+}
+
+html.dark .stat-title {
+    color: #94a3b8 !important;
+}
+
+/* Specific override for some nested elements to ensure readability */
+html.dark .list-container p {
+    color: #cbd5e1 !important;
+}
+
+/* Specific for Reportar Problema Selection Group */
+html.dark .selection-group {
+    background-color: #0f172a !important;
+    border-color: #334155 !important;
+    color: #f1f5f9 !important;
+}
+
+html.dark .selection-option {
+    color: #cbd5e1 !important;
+    border-bottom-color: #1e293b !important;
+}
+
+html.dark .selection-option:hover {
+    background-color: #1e293b !important;
+}
+
+html.dark .selection-option label {
+    color: #cbd5e1 !important;
+}
+
+html.dark .form-card label {
+    color: #94a3b8 !important;
+}

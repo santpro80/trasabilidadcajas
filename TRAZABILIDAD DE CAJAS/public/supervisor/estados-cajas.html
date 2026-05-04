@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="es" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estado de Cajas | Sistema de Trazabilidad</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+    <link rel="stylesheet" href="../css/dark-theme.css">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: { 'villalba-blue': '#2E5BFF', 'villalba-dark': '#0B0F19' }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { opacity: 0; animation: fadeInBody 0.4s ease forwards 0.1s; }
+        @keyframes fadeInBody { to { opacity: 1; } }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .dark .glass-card {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-[#6e8efb] to-[#a777e3] dark:from-[#0B0F19] dark:to-[#0B0F19] text-slate-800 dark:text-slate-200 min-h-screen font-sans selection:bg-villalba-blue/30 selection:text-villalba-blue m-0 flex flex-col pt-24 pb-8 transition-colors duration-300">
+
+    <header class="fixed top-0 z-50 bg-white/80 dark:bg-[#0B0F19]/80 backdrop-blur-xl border-b border-slate-200 dark:border-white/10 h-20 w-full flex items-center justify-between px-4 lg:px-8 transition-all">
+        <div class="header-left flex items-center gap-4">
+            <h1 class="text-xl lg:text-3xl font-black text-villalba-blue dark:text-white tracking-tight uppercase truncate">Estado de Cajas</h1>
+        </div>
+        <div class="flex items-center gap-4">
+            <span id="user-display-name" class="hidden md:inline text-xs font-bold uppercase tracking-widest text-slate-500">Cargando...</span>
+            <button id="menu-btn" onclick="toggleGlobalSidebar()" class="px-5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs tracking-widest uppercase hover:bg-slate-200 dark:hover:bg-slate-700 transition-all border border-slate-200 dark:border-white/10 flex items-center justify-center gap-2 shadow-sm">
+                <span class="material-symbols-outlined text-[18px]">menu</span>
+                <span class="hidden md:inline">Menú</span>
+            </button>
+            <button id="logout-btn" class="px-5 py-2.5 rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400 font-black text-[10px] tracking-widest uppercase hover:bg-rose-500 hover:text-white transition-all flex items-center gap-2 border border-rose-500/20">
+                <span class="material-symbols-outlined text-[18px]">logout</span>
+                <span class="hidden md:inline">Salir</span>
+            </button>
+        </div>
+    </header>
+
+    <main class="px-4 lg:px-8 max-w-[1400px] w-full mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        
+        <!-- Buscador -->
+        <div class="flex flex-col items-center justify-center max-w-4xl mx-auto w-full group">
+            <div class="w-full relative glass-card rounded-[2.5rem] p-4 lg:p-6 shadow-2xl transition-all group-hover:shadow-blue-500/10 border-white/40">
+                <div class="absolute inset-0 bg-gradient-to-br from-villalba-blue/5 to-transparent pointer-events-none rounded-[2.5rem]"></div>
+                <div class="flex items-center gap-4 relative z-10">
+                    <div class="w-14 h-14 rounded-2xl bg-villalba-blue/10 flex items-center justify-center text-villalba-blue shrink-0 group-hover:scale-110 transition-transform">
+                        <span class="material-symbols-outlined text-[28px]">inventory_2</span>
+                    </div>
+                    <div class="flex-grow flex items-center bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-200 dark:border-white/5 px-5 h-14 focus-within:ring-2 focus-within:ring-villalba-blue/50 transition-all">
+                        <span class="material-symbols-outlined text-slate-400 mr-3">search</span>
+                        <input type="text" id="searchBoxStatusInput" placeholder="Buscar por modelo o número de serie..." class="bg-transparent border-none w-full h-full text-slate-800 dark:text-white font-bold text-sm focus:ring-0 placeholder:text-slate-400 placeholder:font-normal uppercase">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="list-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <!-- JS Injection -->
+            <div id="loading-state" class="col-span-full flex flex-col items-center justify-center p-20 glass-card rounded-[3rem]">
+                <div class="w-14 h-14 border-4 border-villalba-blue/20 border-t-villalba-blue rounded-full animate-spin mb-6"></div>
+                <p class="text-[10px] font-black uppercase tracking-widest text-slate-500 animate-pulse">Analizando Inventario...</p>
+            </div>
+        </div>
+
+    </main>
+
+    <div id="sidebar-container"></div>
+    <script type="module" src="js/estados-cajas.js"></script>
+    <script type="module">
+        import { initGlobalSidebar } from '../js/global-sidebar.js'; 
+        initGlobalSidebar();
+    </script>
+    <script type="module">import "../js/theme.js";</script>
+</body>
+</html>

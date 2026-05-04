@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="es" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catálogo Maestro de Ítems | Sistema de Trazabilidad</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+    <link rel="stylesheet" href="../css/dark-theme.css">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: { 'villalba-blue': '#2E5BFF', 'villalba-dark': '#0B0F19' }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { opacity: 0; animation: fadeInBody 0.4s ease forwards 0.1s; overflow-y: hidden; }
+        @keyframes fadeInBody { to { opacity: 1; } }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .dark .glass-card {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.3); border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(148, 163, 184, 0.5); }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-[#6e8efb] to-[#a777e3] dark:from-[#0B0F19] dark:to-[#0B0F19] text-slate-800 dark:text-slate-200 h-screen font-sans selection:bg-villalba-blue/30 selection:text-villalba-blue m-0 flex flex-col transition-colors duration-300">
+
+    <header class="bg-white/80 dark:bg-[#0B0F19]/80 backdrop-blur-xl border-b border-slate-200 dark:border-white/10 h-20 w-full flex items-center justify-between px-4 lg:px-8 transition-all shrink-0 relative z-50">
+        <div class="header-left flex items-center gap-4 lg:gap-6 md:ml-12">
+            <button onclick="window.location.href='menu.html'" class="px-3 py-1.5 md:px-4 md:py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs tracking-widest uppercase hover:bg-slate-200 dark:hover:bg-slate-700 transition-all border border-slate-200 dark:border-white/10 flex items-center justify-center gap-2 shadow-sm shrink-0">
+                <span class="material-symbols-outlined text-[18px]">arrow_back</span>
+                <span class="hidden md:inline">Volver</span>
+            </button>
+            <h1 class="text-xl lg:text-3xl font-black text-villalba-blue dark:text-white tracking-tight uppercase truncate">Catálogo de Ítems</h1>
+        </div>
+        <div class="flex items-center gap-4">
+            <span id="user-display-name" class="hidden md:inline text-xs font-bold uppercase tracking-widest text-slate-500">Cargando...</span>
+            <button id="logout-btn" class="px-4 py-2 rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400 font-black text-[10px] tracking-widest uppercase hover:bg-rose-500 hover:text-white transition-all flex items-center gap-2 border border-rose-500/20">
+                <span class="material-symbols-outlined text-[18px]">logout</span>
+                <span class="hidden md:inline">Salir</span>
+            </button>
+        </div>
+    </header>
+
+    <main class="flex-grow flex flex-col p-4 lg:p-8 max-w-[1600px] w-full mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 overflow-hidden">
+        
+        <!-- Buscador general -->
+        <div class="flex-shrink-0 flex flex-col items-center justify-center w-full group">
+            <div class="w-full relative glass-card rounded-3xl p-3 shadow-lg transition-all border-white/40">
+                <div class="absolute inset-0 bg-gradient-to-br from-villalba-blue/5 to-transparent pointer-events-none rounded-3xl"></div>
+                <div class="flex items-center gap-4 relative z-10 w-full">
+                    <div class="flex-grow flex items-center bg-white dark:bg-[#0f172a] rounded-2xl border border-slate-200 dark:border-slate-700 px-4 h-12 focus-within:ring-2 focus-within:ring-villalba-blue p-0 m-0 shadow-sm transition-all focus-within:border-villalba-blue">
+                        <span class="material-symbols-outlined text-slate-400 mr-3">search</span>
+                        <input type="text" id="searchInput" placeholder="Buscar por código libre o descripción..." class="bg-transparent w-full h-full py-0 border-none outline-none text-slate-800 dark:text-white font-bold text-sm placeholder:text-slate-400 placeholder:font-normal uppercase" style="box-shadow: none !important; border: none !important; outline: none !important; background-color: transparent !important;">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex-grow glass-card rounded-[2rem] shadow-xl overflow-hidden flex flex-col border border-white/40 dark:border-white/5 relative">
+            <div class="absolute inset-0 bg-gradient-to-b from-white/40 dark:from-white/5 to-transparent pointer-events-none"></div>
+            
+            <div id="scroll-container" class="overflow-auto custom-scrollbar flex-grow relative z-10">
+                <div id="virtual-stretcher" class="absolute top-0 left-0 w-full pointer-events-none" style="height: 0px;"></div>
+                <table class="w-full text-left border-collapse min-w-[900px] relative z-10">
+                    <thead class="sticky top-0 bg-slate-100 dark:bg-slate-800 backdrop-blur-md z-20 border-b border-slate-300 dark:border-white/10 shadow-sm">
+                        <tr>
+                            <th class="py-4 px-4 text-[10px] font-black uppercase tracking-widest text-slate-500 text-center w-28">Imagen</th>
+                            <th class="py-4 px-4 text-[10px] font-black uppercase tracking-widest text-slate-500 w-32">Código</th>
+                            <th class="py-4 px-4 text-[10px] font-black uppercase tracking-widest text-slate-500 w-[50%]">Descripción</th>
+                            <th class="py-3 px-4 w-40">
+                                <!-- Filtro Estado -->
+                                <select id="filterState" class="w-full bg-white dark:bg-[#0f172a] border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-white text-[10px] font-black uppercase tracking-widest rounded-lg px-2 py-1.5 focus:ring-2 focus:ring-villalba-blue shadow-sm cursor-pointer outline-none transition-all">
+                                    <option value="" selected>TODOS LOS ESTADOS</option>
+                                    <option value="presente">PRESENTE</option>
+                                    <option value="a revisar">A REVISAR</option>
+                                    <option value="no aprobada">NO APROBADA</option>
+                                    <option value="fuera de uso">FUERA DE USO</option>
+                                    <option value="descripcion repetida">DESC REPETIDA</option>
+                                </select>
+                            </th>
+                            <th class="py-3 px-4 w-32">
+                                <!-- Filtro Familia -->
+                                <select id="filterFamily" class="w-full bg-white dark:bg-[#0f172a] border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-white text-[10px] font-black uppercase tracking-widest rounded-lg px-2 py-1.5 focus:ring-2 focus:ring-villalba-blue shadow-sm cursor-pointer outline-none transition-all">
+                                    <option value="">FAMILIA (TODAS)</option>
+                                    <!-- Options injected via JS based on data -->
+                                </select>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody id="items-tbody" class="divide-y divide-slate-200/50 dark:divide-white/5">
+                        <!-- JS Injection -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Estados -->
+            <div id="loading-state" class="absolute inset-0 z-30 flex flex-col items-center justify-center bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm">
+                <div class="w-12 h-12 border-4 border-villalba-blue/20 border-t-villalba-blue rounded-full animate-spin mb-4"></div>
+                <p class="text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-300 animate-pulse">Cargando Catálogo Maestro...</p>
+            </div>
+            
+            <div id="empty-state" class="hidden absolute inset-0 z-30 flex flex-col items-center justify-center text-center p-8">
+                <span class="material-symbols-outlined text-[64px] text-slate-300 dark:text-slate-600 mb-4">inventory</span>
+                <h3 class="text-lg font-black text-slate-700 dark:text-slate-300 uppercase tracking-tight mb-2">Sin Resultados</h3>
+                <p class="text-sm text-slate-500 font-medium">No se han encontrado ítems para los filtros seleccionados.</p>
+            </div>
+        </div>
+
+    </main>
+
+    <div id="image-modal" class="fixed inset-0 z-[100] hidden bg-slate-900/90 backdrop-blur-sm opacity-0 transition-opacity duration-300">
+        <button id="close-image-modal" class="absolute top-4 right-4 md:top-8 md:right-8 p-3 text-white bg-white/10 hover:bg-rose-500 rounded-full transition-colors group z-20 shadow-lg">
+            <span class="material-symbols-outlined group-hover:scale-110 transition-transform">close</span>
+        </button>
+
+        <div id="modal-scroll-container" class="w-full h-full overflow-auto flex items-center justify-center p-4">
+            <div id="modal-content-wrapper" class="relative flex flex-col items-center justify-center transition-transform duration-300 transform-origin-center">
+                <img id="modal-image" src="" alt="Vista Previa" class="hidden max-w-[90vw] max-h-[85vh] object-contain rounded-xl shadow-2xl bg-white dark:bg-slate-800 p-2 border border-slate-700 transition-all duration-300">
+            
+            <model-viewer id="modal-3d" src="" 
+                alt="Modelo 3D del Implante" 
+                auto-rotate 
+                camera-controls 
+                shadow-intensity="1" 
+                exposure="1" 
+                environment-image="neutral" 
+                class="hidden w-[90vw] md:w-[600px] xl:w-[800px] h-[60vh] md:h-[600px] bg-slate-800/80 rounded-xl shadow-2xl border border-slate-700">
+                <div slot="poster" class="absolute inset-0 flex items-center justify-center bg-slate-800/80 rounded-xl">
+                    <span class="text-white font-bold text-lg animate-pulse">Cargando Modelo 3D...</span>
+                </div>
+            </model-viewer>
+            
+            <p id="modal-caption" class="text-white font-bold tracking-widest uppercase mt-4 text-sm bg-black/50 px-4 py-1.5 rounded-full z-20 text-center"></p>
+        </div>
+    </div>
+
+    <!-- Controles de Zoom -->
+    <div id="zoom-controls" class="fixed right-6 top-1/2 -translate-y-1/2 flex-col gap-3 z-[150] shadow-2xl bg-black/60 backdrop-blur-md p-2 rounded-2xl border border-white/10 opacity-0 transition-opacity duration-300 hidden md:flex pointer-events-none">
+        <div class="pointer-events-auto flex flex-col gap-3">
+                <button id="zoom-in" class="w-10 h-10 rounded-xl hover:bg-villalba-blue text-white flex items-center justify-center transition-colors" title="Acercar (+)">
+                    <span class="material-symbols-outlined text-[26px]">add</span>
+                </button>
+                <div class="w-full h-px bg-white/20"></div>
+                <button id="zoom-reset" class="w-10 h-10 rounded-xl hover:bg-slate-600 text-white flex items-center justify-center transition-colors" title="Restaurar Visita">
+                    <span class="material-symbols-outlined text-[20px]">fit_screen</span>
+                </button>
+                <div class="w-full h-px bg-white/20"></div>
+                <button id="zoom-out" class="w-10 h-10 rounded-xl hover:bg-villalba-blue text-white flex items-center justify-center transition-colors" title="Alejar (-)">
+                    <span class="material-symbols-outlined text-[26px]">remove</span>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Controles mobile -->
+        <div id="zoom-controls-mobile" class="fixed bottom-10 left-1/2 -translate-x-1/2 gap-3 z-[150] shadow-2xl bg-black/60 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 opacity-0 transition-opacity duration-300 md:hidden flex pointer-events-none">
+            <div class="pointer-events-auto flex gap-3">
+                <button id="zoom-out-mob" class="w-10 h-10 rounded-full hover:bg-villalba-blue text-white flex items-center justify-center transition-colors">
+                    <span class="material-symbols-outlined text-[26px]">remove</span>
+                </button>
+                <button id="zoom-reset-mob" class="w-10 h-10 rounded-full hover:bg-slate-600 text-white flex items-center justify-center transition-colors">
+                    <span class="material-symbols-outlined text-[20px]">fit_screen</span>
+                </button>
+                <button id="zoom-in-mob" class="w-10 h-10 rounded-full hover:bg-villalba-blue text-white flex items-center justify-center transition-colors">
+                    <span class="material-symbols-outlined text-[26px]">add</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden input to upload and convert images -->
+    <input type="file" id="imageProcessorInput" accept="image/*" class="hidden">
+    <!-- Canvas invisible extraido del DOM -->
+    <canvas id="webpCanvas" class="hidden"></canvas>
+
+    <!-- Libreria Model Viewer para 3D -->
+    <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
+
+    <script type="module" src="js/catalogo-items.js"></script>
+    <script type="module">
+        import { initGlobalSidebar } from '../js/global-sidebar.js'; 
+        initGlobalSidebar();
+    </script>
+    <script type="module">import "../js/theme.js";</script>
+</body>
+</html>

@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="es" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agregar Nueva Caja | Sistema de Trazabilidad</title>
+    <link rel="icon" href="../assets/logo.png" type="image/png">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        'villalba-blue': '#243b55',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Google Fonts & Material Symbols -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            opacity: 0;
+            animation: fadeInMenu 0.4s ease forwards;
+            animation-delay: 0.15s;
+        }
+
+        @keyframes fadeInMenu { to { opacity: 1; } }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(12px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        html.dark .glass-card {
+            background: rgba(22, 30, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: none;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.2); border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(148, 163, 184, 0.4); }
+    </style>
+    <link rel="stylesheet" href="../css/dark-theme.css">
+</head>
+<body class="bg-gradient-to-br from-[#6e8efb] to-[#a777e3] dark:from-[#0a0f16] dark:to-[#0a0f16] text-slate-900 dark:text-[#f1f5f9] antialiased">
+    
+    <header class="bg-[#f8fafc] dark:bg-transparent backdrop-blur-md shadow-sm dark:shadow-none border-b border-white/20 dark:border-white/10 px-4 lg:px-8 py-3 flex items-center justify-between gap-4 sticky top-0 z-40 w-full hover:bg-white/95 transition-colors">
+        <div class="flex items-center gap-4">
+            <button id="btn-global-menu" class="flex items-center justify-center w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-villalba-blue hover:text-white transition-all focus:outline-none">
+                <span class="material-symbols-outlined text-2xl font-medium">menu</span>
+            </button>
+            <button id="back-btn" class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-villalba-blue/10 text-villalba-blue dark:bg-white/5 dark:text-slate-300 hover:bg-villalba-blue hover:text-white dark:hover:bg-villalba-blue dark:hover:text-white transition-all font-bold text-sm tracking-wide border border-transparent hover:border-villalba-blue/30">
+                <span class="material-symbols-outlined text-[18px]">arrow_back</span>
+                <span class="hidden sm:inline">Volver</span>
+            </button>
+        </div>
+        <div class="flex items-center gap-4">
+            <span id="user-display-name" class="hidden md:inline-block text-sm font-bold text-slate-700 dark:text-slate-300">Cargando...</span>
+            <button id="logout-btn" class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white transition-all border border-rose-500/20">
+                <span class="material-symbols-outlined text-[18px]">logout</span>
+                <span class="text-xs font-bold uppercase tracking-wide hidden sm:inline-block">Salir</span>
+            </button>
+        </div>
+    </header>
+
+    <main class="px-4 lg:px-8 py-8 lg:py-12 max-w-4xl mx-auto w-full">
+        <div class="glass-card rounded-[2.5rem] p-6 lg:p-10 border border-white/20 dark:border-white/5 shadow-2xl relative overflow-hidden group">
+            <div class="absolute inset-0 bg-gradient-to-r from-villalba-blue/0 to-villalba-blue/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            
+            <div class="mb-10 text-center relative z-10">
+                <h1 id="form-title" class="text-3xl lg:text-4xl font-black text-villalba-blue dark:text-white tracking-tight mb-2 uppercase">Agregar Nueva Caja</h1>
+                <p id="form-subtitle" class="text-sm tracking-widest uppercase text-slate-500 dark:text-slate-400 font-bold">Rellena los números de serie para la nueva caja.</p>
+            </div>
+
+            <div class="relative z-10 space-y-8">
+                <!-- Caja Serial Input -->
+                <div class="bg-white dark:bg-slate-800/50 rounded-2xl p-6 border border-slate-100 dark:border-white/5 shadow-sm relative overflow-hidden group/field">
+                    <div class="flex items-center gap-4 mb-4">
+                        <div class="w-10 h-10 shrink-0 rounded-xl bg-villalba-blue/10 flex items-center justify-center text-villalba-blue">
+                            <span class="material-symbols-outlined text-[20px]">inventory</span>
+                        </div>
+                        <label for="cajaSerialInput" class="text-xs font-black tracking-widest text-slate-500 dark:text-slate-400 uppercase">Número de Serie de la Caja</label>
+                    </div>
+                    <input type="text" id="cajaSerialInput" placeholder="Ej: AX3001" class="w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-white/10 text-slate-800 dark:text-white text-lg font-bold rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-villalba-blue/50 focus:border-villalba-blue transition-all uppercase placeholder:normal-case placeholder:font-normal placeholder:text-slate-400">
+                </div>
+
+                <hr class="border-t-2 border-dashed border-slate-200 dark:border-white/10">
+
+                <!-- Items Container -->
+                <div id="items-container" class="space-y-4"></div>
+
+                <div class="flex justify-end mt-2 pr-2">
+                    <span id="items-count-display" class="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 transition-colors">Items llenados: 0</span>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex flex-col gap-4 mt-6">
+                    <button id="add-item-btn" class="flex items-center justify-center gap-2 w-full px-6 py-4 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold uppercase tracking-widest text-xs hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors border border-slate-200 dark:border-white/10">
+                        <span class="material-symbols-outlined text-[20px]">add</span>
+                        Agregar Ítem Adicional
+                    </button>
+                    
+                    <button id="save-caja-btn" class="flex items-center justify-center gap-2 w-full px-6 py-4 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-black uppercase tracking-widest text-sm shadow-lg shadow-emerald-500/20 transition-all hover:-translate-y-1">
+                        <span class="material-symbols-outlined text-[22px]">save</span>
+                        Guardar Caja
+                    </button>
+                </div>
+                
+                <div id="message" class="mt-4 font-bold text-center text-sm uppercase tracking-wide"></div>
+            </div>
+        </div>
+    </main>
+
+    <div id="notification-toast" class="fixed bottom-8 left-1/2 -translate-x-1/2 z-[200] max-w-xs w-full transition-all duration-500 opacity-0 translate-y-10">
+        <div class="toast-content flex items-center gap-3 p-4 rounded-2xl shadow-2xl glass-card border-none">
+            <span id="toast-icon" class="material-symbols-outlined"></span>
+            <span id="toast-message" class="text-xs font-bold uppercase tracking-wide"></span>
+        </div>
+    </div>
+
+    <!-- Global Sidebar Initializer -->
+    <div id="sidebar-container"></div>
+    <script type="module" src="js/agregar-caja.js"></script>
+    <script type="module">
+        import { initGlobalSidebar } from '../js/global-sidebar.js'; 
+        initGlobalSidebar();
+    </script>
+    <script type="module">import "../js/theme.js";</script>
+</body>
+</html>

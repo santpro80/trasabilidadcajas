@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, viewport-fit=cover" />
+    <meta name="theme-color" content="#0a0f16" />
+    <title>Configuración - Pedidos Internos</title>
+    <link rel="icon" type="image/png" href="/favicon.png" />
+
+    <!-- Google Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap"
+        rel="stylesheet" />
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        'villalba-blue': '#2563eb',
+                        'background-dark': '#0a0f16',
+                        'surface-dark': '#161e2a'
+                    },
+                    fontFamily: {
+                        sans: ['"Public Sans"', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            min-width: 320px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+    
+        body {
+            opacity: 0;
+            animation: fadeInMenu 0.4s ease forwards;
+            animation-delay: 0.15s;
+        }
+
+        @keyframes fadeInMenu {
+            to { opacity: 1; }
+        }
+    </style>
+</head>
+
+<body
+    class="bg-gradient-to-br from-[#6e8efb] to-[#a777e3] dark:from-[#0a0f16] dark:to-[#0a0f16] text-slate-900 dark:text-[#f1f5f9] antialiased font-sans transition-colors duration-300">
+    <div id="app-container" class="flex h-screen overflow-hidden">
+        <!-- Sidebar Global se inyecta vía global-sidebar.js -->
+
+        <main class="flex-1 overflow-y-auto relative" id="main-content">
+
+            <!-- Loading indicator -->
+            <div id="loading-state"
+                class="h-full w-full flex flex-col items-center justify-center text-slate-400 gap-4 mt-20">
+                <span class="material-symbols-outlined text-4xl animate-spin text-villalba-blue">sync</span>
+            </div>
+
+            <div id="settings-content" class="hidden">
+                <header
+                    class="sticky top-0 z-50 bg-white dark:bg-background-dark border-b border-slate-200 dark:border-slate-800">
+                    <div class="flex items-center justify-between px-6 py-4">
+                        <div class="flex items-center gap-3">
+                            <button
+                                id="global-hamburger-btn"
+                                onclick="toggleGlobalSidebar()"
+                                class="size-10 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                                <span class="material-symbols-outlined text-slate-600 dark:text-slate-400">menu</span>
+                            </button>
+                            <button onclick="window.location.href='menu.html'"
+                                class="size-10 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 transition-colors ml-[-4px]">
+                                <span class="material-symbols-outlined">arrow_back</span>
+                            </button>
+                            <div
+                                class="size-8 rounded-xl bg-gradient-to-br from-villalba-blue to-blue-800 flex items-center justify-center text-white font-black text-sm shadow-lg shadow-blue-500/30">
+                                <span class="material-symbols-outlined text-[16px]">settings</span>
+                            </div>
+                            <h1 class="text-xl font-bold tracking-tight uppercase text-slate-900 dark:text-white mt-1">
+                                Configuración</h1>
+                        </div>
+                    </div>
+                </header>
+
+                <div class="max-w-2xl mx-auto px-4 lg:px-8 py-8 lg:py-12 flex flex-col items-center">
+
+                    <!-- Apariencia Section -->
+                    <section class="w-full max-w-md mb-10 animate-in slide-in-from-bottom-4 duration-500 delay-100 fill-mode-both">
+                        <div class="p-6 lg:p-7 rounded-[2rem] bg-white/95 dark:bg-surface-dark border border-slate-200/50 dark:border-white/5 shadow-xl shadow-blue-500/5 backdrop-blur-md">
+                            <h2 class="text-xl font-black mb-8 flex items-center gap-3 text-slate-900 dark:text-white uppercase tracking-tight leading-none">
+                                <div class="size-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-villalba-blue">
+                                    <span class="material-symbols-outlined text-[20px]">palette</span>
+                                </div>
+                                Apariencia
+                            </h2>
+                            <div class="grid grid-cols-1 gap-4">
+                                <button onclick="toggleGlobalTheme()"
+                                    class="w-full flex flex-col items-center justify-center p-6 rounded-[2rem] bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 hover:border-villalba-blue/30 transition-all group cursor-pointer shadow-sm">
+                                    <div
+                                        class="size-12 rounded-full bg-slate-50 dark:bg-slate-800 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                                        <span class="material-symbols-outlined text-villalba-blue text-2xl">contrast</span>
+                                    </div>
+                                    <span class="font-bold tracking-tight text-slate-900 dark:text-white">Alternar Tema</span>
+                                    <span class="text-xs text-slate-500 mt-1 uppercase font-black tracking-widest text-[9px]">Claro / Oscuro</span>
+                                </button>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Administración Section -->
+                    <section class="w-full max-w-2xl mb-10 animate-in slide-in-from-bottom-4 duration-500 delay-200 fill-mode-both">
+                        <div class="p-6 lg:p-7 rounded-[2rem] bg-white/95 dark:bg-surface-dark border border-slate-200/50 dark:border-white/5 shadow-xl shadow-blue-500/5 backdrop-blur-md">
+                            <h2 class="text-xl font-black mb-8 flex items-center gap-3 text-slate-900 dark:text-white uppercase tracking-tight leading-none">
+                                <div class="size-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-villalba-blue">
+                                    <span class="material-symbols-outlined text-[20px]">admin_panel_settings</span>
+                                </div>
+                                Administración
+                            </h2>
+
+                            <!-- Password Reset Content -->
+                            <div class="flex items-center gap-4 mb-6">
+                                <div
+                                    class="size-10 rounded-xl bg-blue-600/10 flex items-center justify-center text-villalba-blue shrink-0">
+                                    <span class="material-symbols-outlined">lock_reset</span>
+                                </div>
+                                <div>
+                                    <p class="font-bold tracking-tight text-slate-900 dark:text-white leading-tight">Cambiar contraseña</p>
+                                    <p class="text-[9px] text-slate-500 uppercase font-black tracking-[0.15em] mt-0.5">Seguridad de la cuenta</p>
+                                </div>
+                            </div>
+
+                            <form id="form-password" class="flex flex-col gap-4">
+                                <div class="relative">
+                                    <input type="password" id="input-current-pass" placeholder="Contraseña actual"
+                                        required
+                                        class="w-full h-12 pl-4 pr-10 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm font-bold text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-villalba-blue/30 transition-all shadow-sm" />
+                                </div>
+                                <div class="relative">
+                                    <input type="password" id="input-new-pass"
+                                        placeholder="Nueva contraseña (mín. 6 caracteres)" required minlength="6"
+                                        class="w-full h-12 pl-4 pr-10 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm font-bold text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-villalba-blue/30 transition-all shadow-sm" />
+                                </div>
+                                <div class="relative">
+                                    <input type="password" id="input-confirm-pass" placeholder="Confirmar contraseña"
+                                        required minlength="6"
+                                        class="w-full h-12 pl-4 pr-10 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm font-bold text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-villalba-blue/30 transition-all shadow-sm" />
+                                </div>
+                                <p id="password-feedback" class="text-xs font-bold text-rose-500 hidden"></p>
+                                <button type="submit" id="btn-save-password"
+                                    class="mt-2 w-full h-14 bg-villalba-blue hover:bg-blue-700 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] transition-all shadow-lg shadow-blue-500/20 active:scale-[0.98] flex justify-center items-center gap-2">
+                                    Actualizar Contraseña
+                                </button>
+                            </form>
+                        </div>
+                    </section>
+
+                    <!-- Danger Zone Section -->
+                    <section
+                        class="w-full max-w-md animate-in slide-in-from-bottom-4 duration-500 delay-300 fill-mode-both border-t border-slate-200 dark:border-slate-800 pt-10">
+                        <button id="btn-logout"
+                            class="w-full flex items-center justify-center gap-3 p-4 rounded-2xl border border-rose-500/20 bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-500 font-black uppercase tracking-widest text-xs hover:bg-rose-500 hover:text-white dark:hover:bg-rose-600 dark:hover:text-white transition-colors cursor-pointer active:scale-[0.98]">
+                            <span class="material-symbols-outlined text-[18px]">logout</span>
+                            Cerrar Sesión
+                        </button>
+                    </section>
+
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="./js/configuracion.js" type="module"></script>
+    <script type="module">import '../js/theme.js';</script>
+</body>
+
+</html>

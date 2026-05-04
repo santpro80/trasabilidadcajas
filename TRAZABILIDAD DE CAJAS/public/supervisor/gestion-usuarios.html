@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Usuarios | Sistema de Trazabilidad</title>
+    <link rel="icon" href="assets/logo.png" type="image/png">
+    <!-- Agregamos Tailwind CSS para los estilos del buscador y formulario -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        'villalba-blue': '#2563eb',
+                        'background-dark': '#0a0f16',
+                        'surface-dark': '#161e2a'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Inter', Arial, sans-serif;
+            background: linear-gradient(135deg, #6e8efb, #a777e3);
+            color: #2c3e50;
+            transition: background 0.3s ease;
+        }
+
+        .dark body {
+            background: #0a0f16;
+            color: #f1f5f9;
+        }
+
+        .app-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 25px;
+            background-color: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(5px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+
+        .dark .app-header {
+            background-color: rgba(10, 15, 22, 0.9);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+            color: white;
+        }
+
+        .header-left,
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .user-display-name {
+            font-weight: 500;
+        }
+
+        .btn-back {
+            background-color: #f0f4f8;
+            color: #4285F4;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .dark .btn-back {
+            background-color: #1e293b;
+            color: #60a5fa;
+        }
+
+        .logout-btn {
+            background-color: #dc3545;
+            color: white;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .main-content {
+            padding: 40px 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Estilos para mensajes de feedback */
+        .message-success {
+            background-color: #d4edda;
+            color: #155724;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 15px;
+            text-align: center;
+        }
+
+        .dark .message-success {
+            background-color: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .message-error {
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 15px;
+            text-align: center;
+        }
+
+        .dark .message-error {
+            background-color: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+    
+        body {
+            opacity: 0;
+            animation: fadeInMenu 0.4s ease forwards;
+            animation-delay: 0.15s;
+        }
+
+        @keyframes fadeInMenu {
+            to { opacity: 1; }
+        }
+    
+</style>
+<script type="module" src="../js/theme.js"></script>
+</head>
+
+<body class="bg-gradient-to-br from-[#6e8efb] to-[#a777e3] dark:from-[#0a0f16] dark:to-[#0a0f16] text-slate-900 dark:text-[#f1f5f9] antialiased">
+    <header class="app-header dark:bg-background-dark/90 transition-colors duration-300">
+        <div class="header-left"><button id="back-btn" class="btn-back transition-all">Menú</button></div>
+        <div class="user-info flex items-center gap-4">
+            <span id="user-display-name" class="font-bold"></span>
+            <button id="logout-btn" class="logout-btn transition-transform active:scale-95 shadow-lg">Cerrar sesión</button>
+        </div>
+    </header>
+    <main class="main-content">
+        <!-- Contenedor Principal con estilos de Tailwind -->
+        <div class="bg-white/95 dark:bg-surface-dark/95 backdrop-blur rounded-xl shadow-2xl p-8 border border-white/20 dark:border-white/5 transition-colors duration-300">
+
+            <h1 class="text-2xl font-bold text-blue-600 dark:text-blue-400 text-center mb-2">Gestión de Usuarios</h1>
+            <p class="text-gray-500 dark:text-slate-400 text-center mb-8">Busca y edita los roles del personal.</p>
+
+            <!-- 1. Buscador con Autocompletado -->
+            <div class="relative mb-8">
+                <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Buscar Usuario</label>
+                <div class="relative">
+                    <input type="text" id="search-input" placeholder="Escribe el nombre o usuario (ej. Santi...)"
+                        class="w-full p-3 pl-10 border border-gray-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-background-dark text-slate-900 dark:text-white outline-none transition-all placeholder:text-slate-400"
+                        autocomplete="off">
+                    <svg class="w-5 h-5 text-gray-400 absolute left-3 top-3.5" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                </div>
+
+                <!-- Lista de Sugerencias (Oculta por defecto) -->
+                <ul id="suggestions-list"
+                    class="absolute z-50 w-full bg-white dark:bg-surface-dark border border-gray-200 dark:border-slate-800 rounded-lg shadow-xl mt-1 max-h-60 overflow-y-auto hidden">
+                    <!-- Las opciones se inyectarán aquí con JS -->
+                </ul>
+            </div>
+
+            <!-- 2. Formulario de Edición (Oculto hasta seleccionar) -->
+            <div id="edit-form-container" class="hidden transition-all duration-300 ease-in-out">
+                <div class="grid grid-cols-1 gap-5">
+
+                    <!-- Nombre Completo (Readonly) -->
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Nombre
+                            Completo</label>
+                        <input type="text" id="edit-name"
+                            class="w-full mt-1 p-2 bg-gray-50 dark:bg-background-dark/50 border border-gray-200 dark:border-slate-800 rounded text-gray-700 dark:text-slate-300 cursor-not-allowed"
+                            readonly>
+                    </div>
+
+                    <!-- Usuario y Email (Grid) -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Usuario</label>
+                            <input type="text" id="edit-username"
+                                class="w-full mt-1 p-2 bg-gray-50 dark:bg-background-dark/50 border border-gray-200 dark:border-slate-800 rounded text-gray-700 dark:text-slate-300 cursor-not-allowed"
+                                readonly>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Email</label>
+                            <input type="text" id="edit-email"
+                                class="w-full mt-1 p-2 bg-gray-50 dark:bg-background-dark/50 border border-gray-200 dark:border-slate-800 rounded text-gray-700 dark:text-slate-300 cursor-not-allowed"
+                                readonly>
+                        </div>
+                    </div>
+
+                    <!-- Rol (Editable) -->
+                    <div class="bg-blue-50 dark:bg-blue-900/10 p-4 rounded-lg border border-blue-100 dark:border-blue-900/20">
+                        <label class="block text-sm font-bold text-blue-800 dark:text-blue-300 mb-2">Rol Asignado (Trazabilidad)</label>
+                        <select id="edit-role"
+                            class="w-full p-2 border border-blue-300 dark:border-blue-800 rounded focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-background-dark text-slate-900 dark:text-white">
+                            <option value="operario">Operario</option>
+                            <option value="supervisor">Supervisor</option>
+                            <option value="mantenimiento">Mantenimiento</option>
+                        </select>
+                    </div>
+
+                    <!-- Apps Habilitadas (Editable) -->
+                    <div class="bg-blue-50 dark:bg-blue-900/10 p-4 rounded-lg border border-blue-100 dark:border-blue-900/20">
+                        <label class="block text-sm font-bold text-blue-800 dark:text-blue-300 mb-2">Aplicaciones Habilitadas</label>
+                        <div class="flex flex-col gap-3">
+                            <div class="flex items-center gap-2">
+                                <input type="checkbox" id="edit-app-trazabilidad"
+                                    class="w-5 h-5 text-blue-600 border-blue-300 dark:border-blue-800 rounded focus:ring-blue-500 cursor-pointer bg-white dark:bg-background-dark">
+                                <label for="edit-app-trazabilidad"
+                                    class="text-sm font-medium text-blue-900 dark:text-blue-200 cursor-pointer">Acceso a Trazabilidad de Cajas</label>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <input type="checkbox" id="edit-app-pedidos"
+                                    class="w-5 h-5 text-blue-600 border-blue-300 dark:border-blue-800 rounded focus:ring-blue-500 cursor-pointer bg-white dark:bg-background-dark">
+                                <label for="edit-app-pedidos"
+                                    class="text-sm font-medium text-blue-900 dark:text-blue-200 cursor-pointer">Acceso a Pedidos
+                                    Internos</label>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <input type="checkbox" id="edit-app-deposito"
+                                    class="w-5 h-5 text-blue-600 border-blue-300 dark:border-blue-800 rounded focus:ring-blue-500 cursor-pointer bg-white dark:bg-background-dark">
+                                <label for="edit-app-deposito"
+                                    class="text-sm font-medium text-blue-900 dark:text-blue-200 cursor-pointer">Acceso a Depósito</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Rol Depósito (Editable) -->
+                    <div id="deposito-role-container" class="bg-blue-50 dark:bg-blue-900/10 p-4 rounded-lg border border-blue-100 dark:border-blue-900/20">
+                        <label class="block text-sm font-bold text-blue-800 dark:text-blue-300 mb-2">Rol Asignado (Depósito)</label>
+                        <select id="edit-role-deposito"
+                            class="w-full p-2 border border-blue-300 dark:border-blue-800 rounded focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-background-dark text-slate-900 dark:text-white">
+                            <option value="operario">Operario</option>
+                            <option value="supervisor">Supervisor</option>
+                        </select>
+                    </div>
+
+                    <!-- Sector (Editable) -->
+                    <div class="bg-blue-50 dark:bg-blue-900/10 p-4 rounded-lg border border-blue-100 dark:border-blue-900/20">
+                        <label class="block text-sm font-bold text-blue-800 dark:text-blue-300 mb-2">Sector Asignado</label>
+                        <select id="edit-sector"
+                            class="w-full p-2 border border-blue-300 dark:border-blue-800 rounded focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-background-dark text-slate-900 dark:text-white">
+                            <option value="" disabled selected>Cargando sectores...</option>
+                        </select>
+                    </div>
+
+                    <!-- Botón de Acción -->
+                    <button id="update-user-btn"
+                        class="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold py-3 px-4 rounded-lg shadow-md transform transition hover:-translate-y-0.5">
+                        Actualizar Usuario
+                    </button>
+                </div>
+            </div>
+
+            <!-- Mensajes -->
+            <div id="message"></div>
+        </div>
+    </main>
+    <script type="module" src="js/gestion-usuarios.js"></script>
+
+    <script type="module">import { initGlobalSidebar } from '../js/global-sidebar.js'; initGlobalSidebar();</script>
+</body>
+
+</html>

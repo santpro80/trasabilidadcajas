@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, viewport-fit=cover" />
+    <meta name="theme-color" content="#0a0f16" />
+    <title>Nuevo Pedido - Pedidos Internos</title>
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap"
+        rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: { extend: { colors: { 'villalba-blue': '#2563eb', 'background-dark': '#0a0f16', 'surface-dark': '#161e2a' }, fontFamily: { sans: ['"Public Sans"', 'sans-serif'] } } }
+        }
+    </script>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            min-width: 320px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .glass-card {
+            background: rgba(15, 23, 42, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+
+        html:not(.dark) .glass-card {
+            background: rgba(255, 255, 255, 0.6);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+
+        body {
+            opacity: 0;
+            animation: fadeInMenu 0.4s ease forwards;
+            animation-delay: 0.15s;
+        }
+
+        @keyframes fadeInMenu {
+            to {
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+
+<body
+    class="bg-gradient-to-br from-[#6e8efb] to-[#a777e3] dark:from-[#0a0f16] dark:to-[#0a0f16] text-slate-900 dark:text-slate-100 antialiased font-sans transition-colors duration-300">
+    <div id="app-container" class="flex h-screen overflow-hidden">
+    <!-- App container -->
+
+        <main class="flex-1 overflow-y-auto relative flex flex-col" id="main-content">
+            <header class="bg-white/80 dark:bg-background-dark/80 backdrop-blur-md shadow-sm dark:shadow-none border-b border-slate-200 dark:border-slate-800/80 px-6 lg:px-10 py-4 flex items-center sticky top-0 z-50 shrink-0 w-full transition-colors">
+                <div class="flex items-center gap-3 flex-1">
+                    <button
+                        id="global-hamburger-btn"
+                        onclick="toggleGlobalSidebar()"
+                        class="size-10 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                        <span class="material-symbols-outlined text-slate-600 dark:text-slate-400">menu</span>
+                    </button>
+                    <button onclick="window.history.back()"
+                        class="size-10 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 transition-colors ml-[-4px]">
+                        <span class="material-symbols-outlined">arrow_back</span>
+                    </button>
+                    <div class="flex flex-col ml-2">
+                        <span class="text-lg font-black tracking-tighter uppercase text-slate-900 dark:text-white leading-none">NUEVO PEDIDO</span>
+                        <span class="text-[10px] font-medium tracking-[0.2em] uppercase text-villalba-blue mt-1 leading-none">Carga de Datos</span>
+                    </div>
+                </div>
+            </header>
+
+            <div id="loading-state"
+                class="h-full w-full flex flex-col items-center justify-center text-slate-400 gap-4 mt-20">
+                <span class="material-symbols-outlined text-4xl animate-spin text-villalba-blue">sync</span>
+            </div>
+
+            <div id="new-order-content" class="hidden px-4 lg:px-8 py-8 lg:py-12 flex-1 w-full max-w-4xl mx-auto flex flex-col">
+                <div class="glass-card rounded-[2.5rem] shadow-2xl relative w-full border border-white/40 dark:border-slate-800/80 flex flex-col">
+                    <div class="flex-1 w-full max-w-[480px] mx-auto px-6 py-10">
+                        <form id="new-order-form" class="space-y-6"> <input type="hidden" id="no-entity"
+                                value="Cargando..." />
+                            <div class="flex flex-col gap-1.5">
+                                <label
+                                    class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400 ml-1">Producto
+                                    / Insumo</label>
+                                <div class="relative group">
+                                    <span
+                                        class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-villalba-blue transition-colors text-xl">inventory_2</span>
+                                    <input
+                                        class="w-full pl-12 pr-4 h-14 bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-villalba-blue/40 focus:border-villalba-blue outline-none transition-all"
+                                        id="no-item" placeholder="Nombre del material" required type="text" />
+                                </div>
+                            </div>
+
+                            <!-- Proveedor recomendado -->
+                            <div class="flex flex-col gap-1.5">
+                                <label
+                                    class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400 ml-1 flex justify-between items-center">
+                                    <span>Proveedor Recomendado</span>
+                                    <span class="text-[8px] opacity-60 font-medium tracking-normal">(OPCIONAL)</span>
+                                </label>
+                                <div class="relative group">
+                                    <span
+                                        class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-villalba-blue transition-colors text-xl">storefront</span>
+                                    <input
+                                        class="w-full pl-12 pr-4 h-14 bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-villalba-blue/40 focus:border-villalba-blue outline-none transition-all"
+                                        id="no-supplier" placeholder="Nombre del proveedor (si aplica)" type="text" />
+                                </div>
+                            </div>
+
+                            <!-- Cantidad + Unidad -->
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="flex flex-col gap-1.5">
+                                    <label
+                                        class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400 ml-1">Cantidad</label>
+                                    <div class="relative group">
+                                        <span
+                                            class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-villalba-blue transition-colors text-xl">tag</span>
+                                        <input
+                                            class="w-full pl-10 pr-4 h-14 bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-xl text-base font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-villalba-blue/40 outline-none"
+                                            id="no-quantity" placeholder="0" required type="number" min="0.01"
+                                            step="any" />
+                                    </div>
+                                </div>
+                                <div class="flex flex-col gap-1.5">
+                                    <label
+                                        class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400 ml-1">Unidad</label>
+                                    <div class="relative">
+                                        <span
+                                            class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xl pointer-events-none">straighten</span>
+                                        <select
+                                            class="w-full pl-10 pr-4 h-14 bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-xl text-base font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-villalba-blue/40 outline-none appearance-none"
+                                            id="no-unit">
+                                            <option value="UDS">Unidades (UDS)</option>
+                                            <option value="MTS">Metros (MTS)</option>
+                                            <option value="KG">Kilogramos (KG)</option>
+                                            <option value="LTS">Litros (LTS)</option>
+                                            <option value="BLT">Bultos (BLT)</option>
+                                            <option value="PQTE">Paquetes (PQTE)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Prioridad -->
+                            <div class="flex flex-col gap-1.5">
+                                <label
+                                    class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400 ml-1">Prioridad</label>
+                                <div class="relative group/field">
+                                    <span
+                                        class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xl pointer-events-none">flag</span>
+                                    <select
+                                        class="w-full pl-12 pr-12 h-14 bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-xl text-base font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-villalba-blue/40 outline-none appearance-none"
+                                        id="no-priority">
+                                        <option>Baja</option>
+                                        <option selected>Media</option>
+                                        <option>Alta</option>
+                                    </select>
+
+                                    <!-- Icono y Tooltip integrados en la celda -->
+                                    <div
+                                        class="absolute right-0 top-0 h-full px-4 flex items-center group/info cursor-help border-l border-slate-100 dark:border-white/5">
+                                        <span
+                                            class="material-symbols-outlined text-[24px] text-slate-400 group-hover/info:text-villalba-blue transition-colors">info</span>
+
+                                        <!-- Tooltip (Más grande para accesibilidad) -->
+                                        <div class="absolute top-full right-0 mt-3 md:top-1/2 md:-translate-y-1/2 md:right-auto md:left-full md:ml-4 md:mt-0 invisible group-hover/info:visible opacity-0 group-hover/info:opacity-100 transition-all duration-200 w-[280px] sm:w-80 bg-white dark:bg-slate-900 text-slate-800 dark:text-white p-5 rounded-2xl shadow-2xl z-50 pointer-events-none border border-slate-200 dark:border-white/20 backdrop-blur-xl origin-top-right md:origin-left">
+                                            <p class="font-black border-b border-slate-200 dark:border-white/20 pb-3 mb-4 uppercase tracking-[0.2em] text-[11px] text-villalba-blue">
+                                                Criterios de Prioridad
+                                            </p>
+
+                                            <div class="space-y-3">
+                                                <div class="flex justify-between items-center bg-slate-50 dark:bg-white/5 p-3 rounded-xl px-4 border border-slate-100 dark:border-white/5 shadow-sm">
+                                                    <span class="text-rose-500 font-black text-xs tracking-wider">ALTA:</span>
+                                                    <span class="text-sm font-bold text-slate-700 dark:text-slate-200">1 a 7 días</span>
+                                                </div>
+                                                <div class="flex justify-between items-center bg-slate-50 dark:bg-white/5 p-3 rounded-xl px-4 border border-slate-100 dark:border-white/5 shadow-sm">
+                                                    <span class="text-amber-500 font-black text-xs tracking-wider">MEDIA:</span>
+                                                    <span class="text-sm font-bold text-slate-700 dark:text-slate-200">7 a 30 días</span>
+                                                </div>
+                                                <div class="flex justify-between items-center bg-slate-50 dark:bg-white/5 p-3 rounded-xl px-4 border border-slate-100 dark:border-white/5 shadow-sm">
+                                                    <span class="text-emerald-500 font-black text-xs tracking-wider">BAJA:</span>
+                                                    <span class="text-sm font-bold text-slate-700 dark:text-slate-200">30+ días</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Actions -->
+                            <div class="flex flex-col gap-3 pt-4 pb-20">
+                                <button type="submit" id="submit-order-btn"
+                                    class="w-full bg-villalba-blue hover:bg-blue-700 text-white h-14 rounded-xl font-black tracking-widest shadow-lg flex items-center justify-center gap-3 transition-all active:scale-[0.98] text-sm uppercase">
+                                    <span class="btn-text">CONFIRMAR PEDIDO</span>
+                                    <span class="material-symbols-outlined text-lg">check_circle</span>
+                                </button>
+                                <button type="button" onclick="window.history.back()"
+                                    class="w-full bg-transparent text-slate-500 h-12 rounded-xl font-bold text-xs uppercase tracking-widest hover:text-slate-700 dark:hover:text-slate-300 transition-colors">
+                                    Cancelar
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script src="./js/nuevo-pedido.js" type="module"></script>
+    <script type="module">import '../js/theme.js';</script>
+</body>
+
+</html>

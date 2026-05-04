@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="es" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Tickets</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+    <link rel="stylesheet" href="../css/dark-theme.css">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: { 'villalba-blue': '#2E5BFF', 'villalba-dark': '#0B0F19' }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { opacity: 0; animation: fadeInBody 0.4s ease forwards 0.1s; }
+        @keyframes fadeInBody { to { opacity: 1; } }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-[#6e8efb] to-[#a777e3] dark:from-[#0B0F19] dark:to-[#0B0F19] text-slate-800 dark:text-slate-200 min-h-screen font-sans selection:bg-villalba-blue/30 selection:text-villalba-blue m-0 flex flex-col pt-24 pb-8 transition-colors duration-300">
+
+    <header class="fixed top-0 z-50 bg-white/80 dark:bg-[#0B0F19]/80 backdrop-blur-xl border-b border-slate-200 dark:border-white/10 h-20 w-full flex items-center justify-between px-4 lg:px-8 transition-all">
+        <div class="header-left flex items-center gap-4">
+            <h1 class="text-xl lg:text-3xl font-black text-villalba-blue dark:text-white tracking-tight uppercase truncate">Gestión de Tickets</h1>
+        </div>
+        <button id="menu-btn" class="px-5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs tracking-widest uppercase hover:bg-slate-200 dark:hover:bg-slate-700 transition-all border border-slate-200 dark:border-white/10 flex items-center justify-center gap-2 shadow-sm">
+            <span class="material-symbols-outlined text-[18px]">menu</span>
+            <span class="hidden md:inline">Menú</span>
+        </button>
+    </header>
+
+    <main class="px-4 lg:px-8 max-w-[1400px] w-full mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <button id="crear-ticket-btn" class="w-full md:w-auto px-8 py-4 rounded-full bg-villalba-blue text-white font-black text-xs uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20 hover:-translate-y-1 flex items-center justify-center gap-2">
+                <span class="material-symbols-outlined text-[20px]">add</span>
+                Crear Nuevo Ticket
+            </button>
+            <div class="w-full md:w-auto flex items-center bg-white dark:bg-slate-800/80 p-1.5 rounded-xl border border-slate-200 dark:border-white/5 shadow-sm">
+                <div class="w-10 h-10 shrink-0 rounded-lg bg-villalba-blue/10 dark:bg-villalba-blue/20 flex items-center justify-center text-villalba-blue">
+                    <span class="material-symbols-outlined text-[20px]">filter_list</span>
+                </div>
+                <!-- select styling modernizado -->
+                <select id="filtro-estado" class="bg-transparent border-none outline-none font-bold text-sm text-slate-700 dark:text-slate-300 px-4 w-full md:w-48 cursor-pointer h-10 appearance-none focus:ring-0">
+                    <option value="todos" class="text-slate-800 dark:bg-slate-800 dark:text-white">Todos los estados</option>
+                    <option value="abierto" class="text-slate-800 dark:bg-slate-800 dark:text-white">Abiertos</option>
+                    <option value="cerrado" class="text-slate-800 dark:bg-slate-800 dark:text-white">Cerrados</option>
+                </select>
+                <div class="px-2 pointer-events-none text-slate-400">
+                    <span class="material-symbols-outlined text-[20px]">expand_more</span>
+                </div>
+            </div>
+        </div>
+
+        <div id="tickets-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <!-- JS Injection -->
+        </div>
+
+    </main>
+
+    <div id="sidebar-container"></div>
+    <script type="module" src="js/tickets-supervisor.js"></script>
+    <script type="module">
+        import { initGlobalSidebar } from '../js/global-sidebar.js'; 
+        initGlobalSidebar();
+    </script>
+    <script type="module">import "../js/theme.js";</script>
+</body>
+</html>

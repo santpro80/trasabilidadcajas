@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movimientos Operativos | Depósito</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: { extend: { colors: { 'villalba-blue': '#2563eb', 'background-dark': '#0a0f16', 'surface-dark': '#161e2a' } } }
+        }
+    </script>
+    <link rel="stylesheet" href="../css/dark-theme.css">
+    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    <style>
+        body { font-family: 'Public Sans', sans-serif; opacity: 0; animation: fadeInMenu 0.4s ease forwards; animation-delay: 0.1s; }
+        @keyframes fadeInMenu { to { opacity: 1; } }
+        .glass-card { background: rgba(255, 255, 255, 0.9); border: 1px solid rgba(0,0,0,0.1); backdrop-filter: blur(12px); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        html.dark .glass-card { background: rgba(22, 30, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.05); box-shadow: none; }
+        
+        /* Ocultar flechas del input number */
+        input[type="number"]::-webkit-inner-spin-button, 
+        input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-[#6e8efb] to-[#a777e3] dark:from-[#0a0f16] dark:to-[#0a0f16] text-slate-900 dark:text-[#f1f5f9] antialiased min-h-screen flex flex-col relative overflow-x-hidden transition-colors duration-300">
+    
+    <!-- Navbar Premium -->
+    <header class="bg-[#f8fafc]/90 dark:bg-background-dark/90 backdrop-blur-md shadow-sm dark:shadow-none border-b border-indigo-100 dark:border-slate-800 px-4 lg:px-6 py-3 flex items-center justify-between sticky top-0 z-40 w-full transition-colors relative">
+        <div class="header-left flex items-center gap-3">
+            <button onclick="window.location.href='menu.html'" class="flex items-center justify-center size-9 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 transition-colors mr-1 group" title="Volver al Menú">
+                <span class="material-symbols-outlined text-[18px] group-hover:-translate-x-1 transition-transform">arrow_back</span>
+            </button>
+            <div class="h-9 w-9 rounded-xl bg-gradient-to-br from-indigo-500 to-villalba-blue flex items-center justify-center text-white shadow-lg shadow-blue-500/20">
+                <span class="material-symbols-outlined text-[18px]">inventory</span>
+            </div>
+            <h1 class="text-lg font-black tracking-tight uppercase text-slate-900 dark:text-white mt-0.5 hidden sm:block">Movimientos Operativos</h1>
+        </div>
+        
+        <div class="flex items-center gap-4">
+            <span id="user-display-name" class="text-xs font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest hidden md:inline-block">Cargando...</span>
+            <button id="logout-btn" class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-500 hover:bg-rose-500 hover:text-white transition-all border border-rose-500/20 group hidden">
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 w-full max-w-7xl mx-auto px-4 py-6 md:py-10 grid grid-cols-1 lg:grid-cols-3 gap-6 relative z-10 pb-28">
+        
+        <div class="lg:col-span-2 glass-card rounded-[2rem] p-6 lg:p-10 text-left w-full shadow-2xl relative flex flex-col h-full">
+            <h2 class="text-xl md:text-2xl font-black text-slate-800 dark:text-white uppercase tracking-tight mb-8 border-b border-slate-200 dark:border-slate-700/50 pb-4">Registrar Movimiento</h2>
+            
+            <form id="movimiento-form" autocomplete="off" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Tipo de Movimiento -->
+                <div class="flex flex-col gap-2 lg:col-span-1">
+                    <label class="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Tipo de Operación</label>
+                    <div class="relative">
+                        <select id="tipo-movimiento" required class="w-full appearance-none bg-slate-50 dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3.5 text-sm font-bold text-slate-800 dark:text-white outline-none focus:border-villalba-blue dark:focus:border-villalba-blue transition-colors cursor-pointer shadow-inner">
+                            <option value="Ingreso">ingreso (ENTRAN)</option>
+                            <option value="Egreso">egreso (SALEN)</option>
+                        </select>
+                        <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">keyboard_arrow_down</span>
+                    </div>
+                </div>
+
+                <!-- Código -->
+                <div class="flex flex-col gap-2 lg:col-span-1 relative">
+                    <label class="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Código de Pieza</label>
+                    <input type="text" id="codigo-pieza" autocomplete="off" required placeholder="Ej: 4211801" class="w-full bg-white dark:bg-black/20 border-2 border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3.5 text-sm font-bold text-slate-800 dark:text-white uppercase outline-none focus:border-villalba-blue focus:ring-4 focus:ring-villalba-blue/10 transition-all shadow-inner placeholder-slate-300 dark:placeholder-slate-600">
+                    <!-- Dropdown autocompletar -->
+                    <div id="autocomplete-list" class="absolute top-[100%] left-0 w-full bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl mt-1 z-50 max-h-48 overflow-y-auto hidden divide-y divide-slate-100 dark:divide-slate-800"></div>
+                </div>
+
+                <!-- Cantidad -->
+                <div class="flex flex-col gap-2 lg:col-span-1">
+                    <label class="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Cantidad</label>
+                    <input type="number" id="cantidad-pieza" autocomplete="off" required min="1" step="1" value="" placeholder="Ej: 5" oninput="this.value = this.value.replace(/[^0-9]/g, '');" class="w-full bg-white dark:bg-black/20 border-2 border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3.5 text-base font-black text-slate-800 dark:text-white outline-none focus:border-villalba-blue focus:ring-4 focus:ring-villalba-blue/10 transition-all shadow-inner text-center">
+                </div>
+
+                <!-- Descripción Automática e Imagen -->
+                <div class="flex flex-col gap-2 md:col-span-2 lg:col-span-3">
+                    <label class="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Detalle de Producto (Automático)</label>
+                    <div class="flex items-center gap-3 md:gap-4 bg-slate-50 dark:bg-slate-800/50 border-2 border-slate-200 dark:border-slate-700 rounded-xl p-2 md:p-3 shadow-inner">
+                        <div id="img-container" class="relative w-14 h-14 md:w-16 md:h-16 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hidden items-center justify-center shrink-0 overflow-hidden shadow-sm cursor-pointer group hover:border-villalba-blue transition-colors">
+                            <span id="img-placeholder-icon" class="material-symbols-outlined text-slate-300 dark:text-slate-600 text-2xl absolute z-0 transition-opacity duration-300">inventory_2</span>
+                            <img id="preview-pieza" src="" alt="Preview" class="w-[90%] h-[90%] object-contain relative z-10 transition-transform duration-300 group-hover:scale-110 opacity-0" onload="this.style.opacity='1'; document.getElementById('img-placeholder-icon').style.opacity='0';" onerror="this.style.opacity='0'; document.getElementById('img-placeholder-icon').style.opacity='1';">
+                        </div>
+                        <input type="text" id="detalle-pieza" readonly tabindex="-1" placeholder="Esperando código..." class="flex-1 w-full appearance-none bg-transparent border-0 focus:ring-0 focus:outline-none px-2 py-2 md:py-3 text-sm md:text-base font-bold text-slate-700 dark:text-slate-200 outline-none select-none cursor-default truncate" style="box-shadow: none;">
+                    </div>
+                </div>
+
+                <!-- Contenedor del Botón (Full width) -->
+                <div class="md:col-span-2 lg:col-span-3 mt-4">
+                    <button type="submit" id="btn-registrar" class="w-full py-4 bg-villalba-blue text-white rounded-2xl font-black uppercase tracking-widest text-[13px] hover:bg-blue-700 hover:-translate-y-1 active:scale-[0.98] transition-all duration-300 shadow-xl shadow-blue-500/30 flex items-center justify-center gap-2">
+                        <span class="material-symbols-outlined text-[20px]">how_to_reg</span>
+                        Registrar Movimiento
+                    </button>
+                    <!-- Loading Status -->
+                    <div id="status-msg" class="w-full mt-4 text-center text-[11px] font-black uppercase tracking-widest hidden rounded-xl p-3 border"></div>
+                </div>
+            </form>
+
+        </div>
+
+        <!-- Buscador por Descripción (Columna Derecha) -->
+        <div class="lg:col-span-1 glass-card rounded-[2rem] p-6 lg:p-8 shadow-xl flex flex-col gap-6 h-full">
+            <div>
+                <h3 class="text-lg md:text-xl font-black text-slate-800 dark:text-white uppercase tracking-tight flex items-center gap-2">
+                    <span class="material-symbols-outlined text-villalba-blue">search</span>
+                    Buscador de Código
+                </h3>
+                <p class="text-[10px] uppercase tracking-widest text-slate-500 font-bold mt-1">Busca por descripción de pieza</p>
+            </div>
+
+            <div class="flex flex-col gap-3 relative flex-1">
+                <input type="text" id="desc-search-input" placeholder="Ej: PLACA RECTA..." class="w-full bg-white dark:bg-black/20 border-2 border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-xs font-bold text-slate-800 dark:text-white uppercase outline-none focus:border-villalba-blue transition-all shadow-inner placeholder-slate-300 dark:placeholder-slate-600">
+                <div id="desc-search-results" class="flex-1 w-full bg-slate-50/50 dark:bg-surface-dark/50 border border-slate-200 dark:border-slate-700 rounded-xl shadow-inner overflow-y-auto max-h-[350px] divide-y divide-slate-100 dark:divide-slate-800">
+                    <div class="p-6 text-center text-slate-400 dark:text-slate-500 text-[10px] uppercase font-bold tracking-widest flex flex-col items-center gap-2">
+                        <span class="material-symbols-outlined text-3xl">manage_search</span>
+                        Escribe para buscar...
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-auto border-t border-slate-100 dark:border-slate-800 pt-5">
+                <p class="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-3 text-center leading-relaxed">
+                    ¿Todavía no encuentras tu código? <br>
+                    <span class="text-slate-800 dark:text-slate-300">Comunícate con nosotros</span>
+                </p>
+                <a href="https://wa.me/5491164518402?text=Hola,%20necesito%20ayuda%20para%20encontrar%20un%20código%20en%20el%20depósito." target="_blank" class="w-full py-3.5 bg-[#25D366]/10 text-[#128C7E] dark:text-[#25D366] hover:bg-[#25D366] hover:text-white border border-[#25D366]/30 rounded-xl font-black uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-2 shadow-sm">
+                    <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.274.072.376-.043c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.1.824zm-3.423-14.416c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm.029 18.88c-1.161 0-2.305-.292-3.318-.844l-3.677.964.984-3.595c-.607-1.052-.927-2.246-.926-3.468.001-5.824 4.737-10.56 10.56-10.56 5.824 0 10.559 4.736 10.559 10.559 0 5.824-4.735 10.56-10.559 10.56z"/></svg>
+                    Contactar Soporte
+                </a>
+            </div>
+        </div>
+    </main>
+
+    <!-- Barra Inferior Fija: Último Movimiento -->
+    <div class="fixed bottom-0 left-0 w-full bg-white/95 dark:bg-background-dark/95 backdrop-blur-xl border-t border-slate-200 dark:border-slate-800 shadow-[0_-10px_40px_-5px_rgba(0,0,0,0.1)] dark:shadow-none z-30 transition-transform transform translate-y-0 p-4 pb-4 md:pb-6" id="last-movement-bar">
+        <div class="max-w-5xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <div class="size-10 rounded-xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center"><span class="material-symbols-outlined">history</span></div>
+                <div>
+                    <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-0.5">Último Movimiento Registrado</span>
+                    <p id="lm-tipo-cant" class="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                        <span class="size-2 rounded-full bg-slate-300 animate-pulse"></span> Cargando...
+                    </p>
+                </div>
+            </div>
+            
+            <div class="flex-1 w-full md:w-auto md:text-right overflow-hidden">
+                <p id="lm-codigo" class="text-xs font-black text-villalba-blue tracking-widest uppercase mb-0.5 w-full truncate">--</p>
+                <p id="lm-desc" class="text-[11px] font-medium text-slate-500 dark:text-slate-400 truncate w-full">--</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modales Globales de Confirmación / Alertas -->
+    <div id="toast-notification" class="fixed top-20 right-4 md:right-8 transform translate-x-12 opacity-0 bg-emerald-500 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 z-[100] transition-all duration-300 pointer-events-none">
+        <span class="material-symbols-outlined">check_circle</span>
+        <span class="text-xs font-black uppercase tracking-widest pt-0.5">Movimiento Exitoso</span>
+    </div>
+
+    <!-- Modal para agrandar Imagen -->
+    <div id="imageModal" class="fixed inset-0 bg-slate-900/90 backdrop-blur-md z-[100] hidden items-center justify-center p-4 transition-opacity opacity-0 flex">
+        <div class="relative w-auto max-w-3xl flex flex-col items-center">
+            <button id="closeImageModal" class="absolute -top-12 right-0 md:-right-12 w-10 h-10 bg-white/10 hover:bg-white/20 text-white rounded-full flex items-center justify-center transition-colors">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+            <img id="enlargedImage" src="" alt="Zoom" class="max-w-full max-h-[80vh] object-contain rounded-2xl shadow-2xl bg-white dark:bg-slate-800 p-2 border border-slate-200 dark:border-slate-700">
+        </div>
+    </div>
+
+    <script type="module" src="js/carga-datos.js"></script>
+    <script type="module" src="../js/global-sidebar.js"></script>
+    <script type="module">import "../js/theme.js";</script>
+</body>
+</html>

@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="es">
+<script src="js/onedrive-upload.js"></script>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Items de Caja | Sistema de Trazabilidad</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    <link rel="icon" href="assets/logo.png" type="image/png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: { 'villalba-blue': '#2563eb' },
+                    fontFamily: { sans: ['"Public Sans"', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            min-height: 100vh;
+            opacity: 0;
+            animation: fadeInMenu 0.4s ease forwards;
+            animation-delay: 0.15s;
+        }
+
+        @keyframes fadeInMenu { to { opacity: 1; } }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(12px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        html.dark .glass-card {
+            background: rgba(22, 30, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: none;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.2); border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(148, 163, 184, 0.4); }
+
+        /* Modal Styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(8px);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 2rem;
+            padding: 2.5rem;
+            width: 100%;
+            max-width: 450px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            border: 1px solid rgba(0,0,0,0.05);
+            text-align: center;
+        }
+
+        html.dark .modal-content {
+            background: rgba(30, 41, 59, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .modal-content h2 {
+            font-size: 1.5rem;
+            font-weight: 900;
+            color: #1e293b;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        html.dark .modal-content h2 { color: white; }
+
+        .modal-content p {
+            color: #64748b;
+            margin-bottom: 2rem;
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
+
+        html.dark .modal-content p { color: #94a3b8; }
+
+        .modal-content input {
+            width: 100%;
+            padding: 1rem 1.25rem;
+            border-radius: 1rem;
+            border: 1px solid #e2e8f0;
+            margin-bottom: 1.5rem;
+            background: #f8fafc;
+            outline: none;
+            transition: all 0.2s;
+            font-weight: 600;
+        }
+
+        .modal-content input:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            background: white;
+        }
+
+        html.dark .modal-content input {
+            background: rgba(15, 23, 42, 0.6);
+            border-color: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        html.dark .modal-content input:focus {
+            background: rgba(15, 23, 42, 0.9);
+            border-color: #3b82f6;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+
+        .btn-modal {
+            padding: 1rem 1.5rem;
+            border-radius: 1rem;
+            font-weight: 800;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            cursor: pointer;
+            transition: all 0.2s;
+            flex: 1;
+            border: none;
+        }
+
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+            box-shadow: 0 4px 14px 0 rgba(59, 130, 246, 0.39);
+        }
+
+        .btn-primary:hover { transform: translateY(-2px); background: #2563eb; }
+
+        .btn-secondary {
+            background: #f1f5f9;
+            color: #475569;
+        }
+
+        .btn-secondary:hover { background: #e2e8f0; color: #1e293b; }
+
+        html.dark .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: #cbd5e1;
+        }
+        
+        html.dark .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+        }
+
+        .btn-danger {
+            background: #f43f5e;
+            color: white;
+            box-shadow: 0 4px 14px 0 rgba(244, 63, 94, 0.39);
+        }
+
+        .btn-danger:hover { transform: translateY(-2px); background: #e11d48; }
+    
+</style>
+
+
+    <link rel="stylesheet" href="../css/dark-theme.css">
+</head>
+
+<body class="bg-gradient-to-br from-[#6e8efb] to-[#a777e3] dark:from-[#0a0f16] dark:to-[#0a0f16] text-slate-900 dark:text-[#f1f5f9] antialiased">
+    <header class="bg-[#f8fafc] dark:bg-transparent backdrop-blur-md shadow-sm dark:shadow-none border-b border-white/20 dark:border-white/10 px-4 lg:px-8 py-3 flex items-center justify-between gap-4 sticky top-0 z-40 w-full hover:bg-white/95 transition-colors">
+        <div class="header-left flex items-center gap-4">
+            <button id="back-btn" class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-villalba-blue/10 text-villalba-blue hover:bg-villalba-blue hover:text-white transition-all border border-villalba-blue/20 group">
+                <span class="material-symbols-outlined text-[20px] group-hover:-translate-x-1 transition-transform">arrow_back</span>
+                <span class="text-xs font-bold uppercase tracking-wide">Volver</span>
+            </button>
+        </div>
+        <div class="user-info flex items-center gap-4">
+            <span id="user-display-name" class="hidden md:inline-block text-sm font-bold text-slate-700 dark:text-slate-300">Cargando...</span>
+            <button id="logout-btn" class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white transition-all border border-rose-500/20">
+                <span class="material-symbols-outlined text-[18px]">logout</span>
+                <span class="text-xs font-bold uppercase tracking-wide hidden sm:inline-block">Salir</span>
+            </button>
+        </div>
+    </header>
+
+    <main class="px-4 lg:px-8 py-8 lg:py-12 max-w-5xl mx-auto w-full">
+        <div class="glass-card rounded-[2.5rem] p-6 lg:p-10 mb-8 border border-white/20 dark:border-white/5 shadow-xl relative overflow-hidden z-10 w-full">
+            <div class="mb-8 text-left relative z-20">
+                <h1 id="box-serial-number-display" class="text-3xl lg:text-4xl font-black text-villalba-blue dark:text-white tracking-tight mb-2 uppercase">Cargando...</h1>
+                <p class="text-sm tracking-widest uppercase text-slate-500 dark:text-slate-400 font-bold">Listado de Ítems en Caja</p>
+            </div>
+
+            <div class="flex flex-col md:flex-row items-center gap-6 relative z-20 w-full">
+                <div class="relative flex-1 w-full">
+                    <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">search</span>
+                    <input type="text" id="searchInput" class="w-full pl-12 pr-4 py-4 rounded-2xl bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-white/5 focus:border-villalba-blue dark:focus:border-villalba-blue outline-none transition-colors text-sm font-medium" placeholder="Buscar por código, descripción o N° de serie...">
+                </div>
+                <div class="flex items-center gap-3 w-full md:w-auto">
+                    <button id="add-item-btn" class="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-4 rounded-2xl bg-emerald-500 text-white font-black uppercase tracking-widest text-[11px] shadow-lg shadow-emerald-500/20 hover:bg-emerald-600 hover:-translate-y-1 transition-all">
+                        <span class="material-symbols-outlined text-[20px]">add_circle</span>
+                        Agregar
+                    </button>
+                    <button id="download-pdf-btn" class="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-4 rounded-2xl bg-villalba-blue text-white font-black uppercase tracking-widest text-[11px] shadow-lg shadow-villalba-blue/20 hover:bg-blue-700 hover:-translate-y-1 transition-all">
+                        <span class="material-symbols-outlined text-[20px]">description</span>
+                        Reporte
+                    </button>
+                </div>
+            </div>
+            <div class="absolute inset-0 bg-gradient-to-r from-villalba-blue/0 to-villalba-blue/5 opacity-10 transition-opacity"></div>
+        </div>
+
+        <div class="glass-card rounded-[2rem] p-6 lg:p-10 min-h-[400px]">
+            <div id="loading-state" class="flex flex-col items-center justify-center p-12">
+                <div class="w-12 h-12 border-4 border-villalba-blue/20 border-t-villalba-blue rounded-full animate-spin mb-4"></div>
+                <p class="text-slate-500 font-bold uppercase tracking-widest text-xs">Cargando ítems...</p>
+            </div>
+            <div id="empty-state" class="hidden flex flex-col items-center justify-center p-12 text-slate-500">
+                <span class="material-symbols-outlined text-5xl mb-4">move_to_inbox</span>
+                <p class="font-bold uppercase tracking-widest text-xs">Caja vacía</p>
+            </div>
+            <div id="error-state" class="hidden flex flex-col items-center justify-center p-12 text-rose-500">
+                <span class="material-symbols-outlined text-5xl mb-4">error</span>
+                <p class="font-bold uppercase tracking-widest text-xs">Error al cargar ítems</p>
+            </div>
+            <ul id="itemsList" class="hidden flex flex-col gap-3"></ul>
+        </div>
+    </main>
+
+    <div id="editSerialModal" class="modal-overlay">
+        <div class="modal-content">
+            <h2>Editar Número de Serie</h2>
+            <p id="modalItemCodeDescription" style="margin-bottom: 20px; font-style: italic;"></p>
+            <input type="text" id="newSerialNumberInput" placeholder="Nuevo N° de Serie">
+            <div class="modal-actions">
+                <button id="cancelEditBtn" class="btn-modal btn-secondary">Cancelar</button>
+                <button id="confirmEditBtn" class="btn-modal btn-primary">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Image View Modal -->
+    <div id="imageModal" class="modal-overlay" style="z-index: 10000; flex-direction: column;">
+        <div class="relative w-auto max-w-3xl max-h-[80vh] bg-transparent flex flex-col items-center justify-center p-4">
+            <button id="closeImageModal" class="absolute top-0 right-4 md:-top-10 md:-right-10 w-10 h-10 bg-black/50 hover:bg-black/80 text-white rounded-full flex items-center justify-center transition-colors shadow-lg backdrop-blur-md z-50">
+                <span class="material-symbols-outlined font-bold">close</span>
+            </button>
+            <img id="enlargedImage" src="" alt="Vista ampliada" class="max-w-full max-h-[80vh] object-contain rounded-2xl shadow-2xl bg-white/90 dark:bg-slate-900/90 p-2">
+        </div>
+    </div>
+
+    <div id="deleteConfirmModal" class="modal-overlay">
+        <div class="modal-content">
+            <h2>Confirmar Eliminación</h2>
+            <p id="delete-modal-text" style="font-size: 1.1em; margin: 20px 0;"></p>
+            <div class="modal-actions">
+                <button id="cancel-delete-btn" class="btn-modal btn-secondary">Cancelar</button>
+                <button id="confirm-delete-btn" class="btn-modal btn-danger">Eliminar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="tipoReporteModal" class="modal-overlay">
+        <div class="modal-content">
+            <h2>Tipo de Reporte</h2>
+            <p>¿El reporte es para una Entrada o una Salida de material?</p>
+            <div class="modal-actions">
+                <button id="btn-entrada" class="btn-modal btn-primary">Entrada</button>
+                <button id="btn-salida" class="btn-modal btn-secondary">Salida</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="prestamoModal" class="modal-overlay">
+        <div class="modal-content">
+            <h2>Número de Préstamo</h2>
+            <p>Por favor, ingresa el número de préstamo para este reporte de Salida.</p>
+            <input type="text" id="prestamo-input" placeholder="Ej: 12345">
+            <div class="modal-actions">
+                <button id="cancel-prestamo-btn" class="btn-modal btn-secondary">Cancelar</button>
+                <button id="confirm-prestamo-btn" class="btn-modal btn-primary">Generar PDF</button>
+            </div>
+        </div>
+    </div>
+    <div id="observationModal" class="modal-overlay">
+        <div class="modal-content">
+            <h2>Observaciones de la Caja</h2>
+            <p>¿La caja tiene alguna observación para declarar?</p>
+            <div class="modal-actions">
+                <button id="no-observation-btn" class="btn-modal btn-secondary">No</button>
+                <button id="yes-observation-btn" class="btn-modal btn-primary">Sí</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="notification-toast" class="fixed bottom-8 left-1/2 -translate-x-1/2 z-[200] max-w-xs w-full transition-all duration-500 opacity-0 translate-y-10">
+        <div class="toast-content flex items-center gap-3 p-4 rounded-2xl shadow-2xl glass-card border-none">
+            <span id="toast-icon" class="material-symbols-outlined"></span>
+            <span id="toast-message" class="text-xs font-bold uppercase tracking-wide"></span>
+        </div>
+    </div>
+    <div id="pdf-template"
+        style="position: absolute; left: -9999px; width: 800px; padding: 20px; background-color: white; color: black;">
+        <h2 id="pdf-report-title" style="font-size: 18px; text-align: center;">REPORTE</h2>
+        <h3 id="pdf-box-serial" style="font-size: 16px;">Caja: </h3>
+        <h4 id="pdf-tipo" style="font-size: 14px;">Tipo: </h4>
+        <h4 id="pdf-prestamo-num" style="display: none; font-size: 14px;"></h4>
+        <table style="width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px;">
+            <thead>
+                <tr>
+                    <th style="border: 1px solid black; padding: 6px; text-align: left; white-space: nowrap;">Código
+                    </th>
+                    <th style="border: 1px solid black; padding: 6px; text-align: left;">Descripción</th>
+                    <th style="border: 1px solid black; padding: 6px; text-align: left; white-space: nowrap;">N° de
+                        Serie</th>
+                </tr>
+            </thead>
+            <tbody id="pdf-table-body"></tbody>
+        </table>
+    </div>
+
+    <script type="module" src="js/lista-items-por-caja.js"></script>
+
+    <script type="module">import '../js/theme.js';</script>
+</body>
+
+</html>
