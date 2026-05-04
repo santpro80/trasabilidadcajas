@@ -209,6 +209,27 @@ export function initGlobalSidebar() {
 
     document.body.insertAdjacentHTML('beforeend', sidebarHtml);
 
+    // Hamburger button injection
+    const headerLeft = document.querySelector('.header-left');
+    if (headerLeft && !document.getElementById('global-hamburger-btn')) {
+        const hamburgerHtml = `
+            <button id="global-hamburger-btn" onclick="toggleGlobalSidebar()" style="background:transparent; border:none; color:inherit; cursor:pointer; padding:5px; margin-right:12px; display:inline-flex; align-items:center; border-radius: 8px; flex-shrink: 0;">
+                <svg viewBox="0 0 24 24" fill="none" class="w-7 h-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 26px; height: 26px;">
+                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+            </button>
+        `;
+        headerLeft.insertAdjacentHTML('afterbegin', hamburgerHtml);
+    }
+
+    // Logout handler
+    window.handleGlobalLogout = () => {
+        localStorage.clear();
+        window.location.href = baseRoot + 'login.html';
+    };
+
     // 6. Sidebar Logic (Fixed navigation)
     window.toggleGlobalSidebar = () => {
         const overlay = document.getElementById('global-sidebar-overlay');
