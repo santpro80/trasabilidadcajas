@@ -42,10 +42,18 @@ export function initGlobalSidebar() {
     const baseRoot = getBase();
 
     const userRoleTrazabilidad = localStorage.getItem('userRole') || 'operario';
-    const userRolePedidos = localStorage.getItem('rolePedidos') || 'operario';
-    const userRoleDeposito = localStorage.getItem('roleDeposito') || 'operario';
+    const rawRolePedidos = localStorage.getItem('rolePedidos');
+    const rawRoleDeposito = localStorage.getItem('roleDeposito');
+    
+    const userRolePedidos = rawRolePedidos || 'operario';
+    const userRoleDeposito = rawRoleDeposito || 'operario';
+    
     const userName = localStorage.getItem('userName') || 'Usuario';
-    const userApps = JSON.parse(localStorage.getItem('userApps') || '["trazabilidad"]');
+    
+    // Auto-detect apps: include them if the user has an explicit role saved
+    let userApps = JSON.parse(localStorage.getItem('userApps') || '["trazabilidad"]');
+    if (rawRolePedidos && !userApps.includes('pedidos')) userApps.push('pedidos');
+    if (rawRoleDeposito && !userApps.includes('deposito')) userApps.push('deposito');
     
     // Detect current app context
     const path = window.location.pathname;
