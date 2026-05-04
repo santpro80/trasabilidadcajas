@@ -44,7 +44,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: './public' # ¡Esta es la clave! Le dice que suba el contenido de la carpeta 'public'
+          path: './TRAZABILIDAD DE CAJAS/public' # ¡Esta es la clave! Le dice que suba el contenido de la carpeta 'public'
 
       # Paso 5: Desplegar el sitio en GitHub Pages
       - name: Deploy to GitHub Pages

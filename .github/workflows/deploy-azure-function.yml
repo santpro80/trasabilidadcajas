@@ -20,7 +20,7 @@ jobs:
 
       - name: 'Install dependencies in Azure Function folder'
         run: npm install
-        working-directory: ./uploadPdf
+        working-directory: './TRAZABILIDAD DE CAJAS/uploadPdf'
 
       - name: 'Azure Login'
         uses: azure/login@v1
@@ -37,4 +37,4 @@ jobs:
         id: fa
         with:
           app-name: 'pdfupload-func-santi'
-          package: '.'
+          package: './TRAZABILIDAD DE CAJAS/uploadPdf'
