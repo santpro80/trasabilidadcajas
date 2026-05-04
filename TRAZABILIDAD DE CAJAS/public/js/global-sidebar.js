@@ -68,17 +68,17 @@ export function initGlobalSidebar() {
                 <div class="size-10 rounded-xl bg-gradient-to-br from-[#6e8efb] to-[#a777e3] flex items-center justify-center">
                     <span class="text-white font-black text-xs">TZ</span>
                 </div>
-                <span class="text-[9px] font-black ${!isPedidosContext && !isDepositoContext ? 'text-blue-500' : 'text-slate-500'} uppercase tracking-widest text-center">Trazabilidad</span>
+                <span class="text-[8px] font-black ${!isPedidosContext && !isDepositoContext ? 'text-blue-500' : 'text-slate-500'} uppercase tracking-widest text-center">Trazabilidad</span>
             </button>
         `;
     }
     if (userApps.includes('pedidos')) {
         appsHtml += `
             <button onclick="window.location.href='${baseRoot}pedidos-internos/menu.html'" class="flex flex-col items-center gap-2 p-3 rounded-xl ${isPedidosContext ? 'bg-blue-500/20 border-blue-500/40 shadow-lg shadow-blue-500/10' : 'bg-slate-200/50 dark:bg-slate-800/40 border-slate-300 dark:border-slate-800'} border cursor-pointer lg:hover:-translate-y-1 transition-all">
-                <div class="size-10 rounded-xl bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center">
+                <div class="size-10 rounded-xl bg-blue-600 flex items-center justify-center">
                     <span class="text-white font-black text-xs">PD</span>
                 </div>
-                <span class="text-[9px] font-black ${isPedidosContext ? 'text-blue-500' : 'text-slate-500'} uppercase tracking-widest text-center">Pedidos</span>
+                <span class="text-[8px] font-black ${isPedidosContext ? 'text-blue-500' : 'text-slate-500'} uppercase tracking-widest text-center">Pedidos</span>
             </button>
         `;
     }
@@ -86,10 +86,10 @@ export function initGlobalSidebar() {
     if (userApps.includes('deposito')) {
         appsHtml += `
             <button onclick="window.location.href='${baseRoot}deposito/menu.html'" class="flex flex-col items-center gap-2 p-3 rounded-xl ${isDepositoContext ? 'bg-indigo-500/20 border-indigo-500/40 shadow-lg shadow-indigo-500/10' : 'bg-slate-200/50 dark:bg-slate-800/40 border-slate-300 dark:border-slate-800'} border cursor-pointer lg:hover:-translate-y-1 transition-all">
-                <div class="size-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
+                <div class="size-10 rounded-xl bg-indigo-500 flex items-center justify-center">
                     <span class="text-white font-black text-xs">DP</span>
                 </div>
-                <span class="text-[9px] font-black ${isDepositoContext ? 'text-indigo-500' : 'text-slate-500'} uppercase tracking-widest text-center">Depósito</span>
+                <span class="text-[8px] font-black ${isDepositoContext ? 'text-indigo-500' : 'text-slate-500'} uppercase tracking-widest text-center">Depósito</span>
             </button>
         `;
     }
@@ -98,7 +98,6 @@ export function initGlobalSidebar() {
     const menuItems = [];
 
     if (isPedidosContext) {
-        // --- PEDIDOS INTERNOS LINKS ---
         const base = `${baseRoot}pedidos-internos/`;
         menuItems.push({ label: 'Mis Pedidos', icon: 'receipt_long', link: base + 'mis-pedidos.html' });
         menuItems.push({ label: 'Gestión Pedidos', icon: 'inventory_2', link: base + 'gestion-pedidos.html' });
@@ -106,7 +105,6 @@ export function initGlobalSidebar() {
         menuItems.push({ label: 'Reportes', icon: 'bar_chart', link: base + 'reportes.html' });
         menuItems.push({ label: 'Configuración', icon: 'settings', link: base + 'configuracion.html' });
     } else if (isDepositoContext) {
-        // --- DEPOSITO LINKS ---
         const base = `${baseRoot}deposito/`;
         menuItems.push({ label: 'Carga de Datos', icon: 'add_box', link: base + 'carga-datos.html' });
         if (isSupervisor) {
@@ -117,7 +115,6 @@ export function initGlobalSidebar() {
             menuItems.push({ label: 'Gestión Usuarios', icon: 'group', link: base + 'gestion-usuarios.html' });
         }
     } else {
-        // --- TRAZABILIDAD LINKS ---
         const base = `${baseRoot}${userRoleTrazabilidad}/`;
         if (!isMantenimiento) menuItems.push({ label: 'Modelos de Cajas', icon: 'inventory_2', link: base + 'modelos-de-cajas.html' });
         const ticketLink = isSupervisor ? base + 'tickets-supervisor.html' : base + 'tickets-operador.html';
@@ -146,7 +143,7 @@ export function initGlobalSidebar() {
         `;
     });
 
-    // 5. Drawer HTML (FIXED Z-INDEX)
+    // 5. Drawer HTML (MATCHING SCREENSHOT)
     const sidebarHtml = `
         <div id="global-sidebar-overlay" style="display: none;" class="fixed inset-0 bg-black/60 z-[99998] hidden backdrop-blur-sm transition-opacity" onclick="toggleGlobalSidebar()"></div>
         <aside id="global-side-drawer" style="display: none; font-family: 'Inter', sans-serif;" class="fixed inset-y-0 left-0 z-[99999] w-72 bg-slate-50 dark:bg-[#161e2a] border-r border-slate-200 dark:border-slate-800 transform -translate-x-full transition-transform duration-300 flex flex-col p-6 shadow-2xl text-slate-900 dark:text-slate-100 h-full overflow-hidden">
@@ -160,45 +157,51 @@ export function initGlobalSidebar() {
                 </button>
             </div>
 
-
-
             <!-- App Switcher -->
-            <div class="mb-8 shrink-0">
-                <h3 class="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400 mb-4 px-1">Aplicaciones</h3>
-                <div class="grid grid-cols-3 gap-3">
+            <div class="mb-6 shrink-0">
+                <h3 class="text-[10px] font-black tracking-[0.2em] text-slate-400 uppercase mb-3 px-2">Mis Aplicaciones</h3>
+                <div class="grid grid-cols-3 gap-2">
                     ${appsHtml}
                 </div>
             </div>
 
-            <!-- Menu Content -->
-            <div class="flex-1 overflow-y-auto pr-2 custom-scrollbar">
-                <h3 class="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400 mb-4 px-1">Menú Principal</h3>
-                <div class="flex flex-col gap-1">
-                    <button onclick="window.location.href='${isPedidosContext ? baseRoot + 'pedidos-internos/menu.html' : isDepositoContext ? baseRoot + 'deposito/menu.html' : baseRoot + userRoleTrazabilidad + '/menu.html'}'" class="flex items-center w-full gap-4 p-3 rounded-xl bg-villalba-blue text-white shadow-lg shadow-blue-500/20 border-none cursor-pointer group">
-                        <span class="material-symbols-outlined text-[20px]">home</span>
-                        <span class="text-[11px] font-bold uppercase tracking-wide flex-1 text-left">Inicio App</span>
-                    </button>
-                    ${menuHtml}
-                </div>
+            <!-- Main Buttons -->
+            <div class="flex flex-col gap-2 mb-6 shrink-0">
+                <button onclick="window.location.href='${isPedidosContext ? baseRoot + 'pedidos-internos/menu.html' : isDepositoContext ? baseRoot + 'deposito/menu.html' : baseRoot + userRoleTrazabilidad + '/menu.html'}'" class="flex items-center w-full gap-4 p-3 rounded-xl bg-villalba-blue text-white shadow-lg shadow-blue-500/20 border-none cursor-pointer group">
+                    <span class="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">grid_view</span>
+                    <span class="text-[11px] font-black uppercase tracking-widest flex-1 text-left">Menú Principal</span>
+                </button>
+                <button onclick="toggleGlobalTheme()" class="flex items-center w-full gap-4 p-3 rounded-xl bg-slate-200 dark:bg-slate-800/50 border border-slate-300 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-800 transition-colors cursor-pointer group">
+                    <span class="material-symbols-outlined text-[20px] theme-icon-global group-hover:rotate-12 transition-transform">dark_mode</span>
+                    <span class="text-[11px] font-bold uppercase tracking-wide flex-1 text-left theme-text-global">Modo Oscuro</span>
+                </button>
             </div>
 
-            <!-- Bottom Actions -->
-            <div class="mt-auto pt-6 border-t border-slate-200 dark:border-slate-800 shrink-0 flex flex-col gap-4">
+            <!-- Quick Access -->
+            <div class="flex-1 overflow-y-auto pr-1 custom-scrollbar">
+                <h3 class="text-[10px] font-black tracking-[0.2em] text-slate-400 uppercase mb-3 px-2">Acceso Directo</h3>
+                <nav class="flex flex-col gap-1">
+                    ${menuHtml}
+                </nav>
+            </div>
+
+            <!-- Bottom Section -->
+            <div class="mt-auto pt-6 shrink-0 flex flex-col gap-4 border-t border-slate-200 dark:border-slate-800">
+                <button onclick="handleGlobalLogout()" class="flex items-center w-full gap-4 p-3 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors text-rose-500 border-none bg-transparent cursor-pointer group font-bold">
+                    <span class="material-symbols-outlined text-[20px] group-hover:-translate-x-1 transition-transform">logout</span>
+                    <span class="text-xs uppercase tracking-wide">Cerrar Sesión</span>
+                </button>
+                
                 <!-- Profile Section -->
-                <div class="flex items-center gap-3 p-3 rounded-xl bg-slate-200/50 dark:bg-slate-800/30 border border-slate-300/50 dark:border-slate-800/50">
-                    <div class="size-10 rounded-full bg-villalba-blue flex items-center justify-center text-white font-black shadow-lg shadow-blue-500/20">
+                <div class="flex items-center gap-3 p-3 bg-slate-200/50 dark:bg-slate-800/40 rounded-xl border border-slate-300 dark:border-slate-800">
+                    <div class="size-10 rounded-full bg-villalba-blue flex items-center justify-center text-white shrink-0 font-black shadow-inner">
                         ${userName.charAt(0).toUpperCase()}
                     </div>
                     <div class="flex flex-col overflow-hidden">
-                        <span class="text-[11px] font-black uppercase text-slate-900 dark:text-white truncate">${userName}</span>
-                        <span class="text-[9px] font-bold uppercase text-slate-500 dark:text-slate-400 truncate">${currentRole}</span>
+                        <span class="text-xs font-bold text-slate-900 dark:text-white truncate uppercase">${userName}</span>
+                        <span class="text-[10px] text-slate-500 uppercase tracking-widest truncate">${currentRole}</span>
                     </div>
                 </div>
-
-                <button onclick="handleGlobalLogout()" class="flex items-center w-full gap-4 p-3 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors text-rose-500 border-none bg-transparent cursor-pointer group">
-                    <span class="material-symbols-outlined text-[20px] group-hover:rotate-12 transition-transform">logout</span>
-                    <span class="text-[11px] font-bold uppercase tracking-wide flex-1 text-left">Cerrar Sesión</span>
-                </button>
             </div>
         </aside>
         <style>
@@ -232,7 +235,7 @@ export function initGlobalSidebar() {
         window.location.href = baseRoot + 'login.html';
     };
 
-    // 6. Sidebar Logic (Fixed navigation)
+    // 6. Sidebar Logic
     window.toggleGlobalSidebar = () => {
         const overlay = document.getElementById('global-sidebar-overlay');
         const drawer = document.getElementById('global-side-drawer');
@@ -271,24 +274,20 @@ export function initGlobalSidebar() {
         }
     });
 
-    // 7. NEW: Persistent "What's New" Modal v2.1
+    // 7. Persistent "What's New" Modal v2.1
     const currentVersion = 'v2_1';
     if (!localStorage.getItem(`update_seen_${currentVersion}`)) {
         const updateModalHtml = `
             <div id="update-modal-overlay" class="fixed inset-0 bg-slate-900/60 dark:bg-black/80 backdrop-blur-md z-[100000] flex items-center justify-center p-4 opacity-0 transition-opacity duration-500">
                 <div class="glass-card bg-white dark:bg-[#161e2a] w-full max-w-lg rounded-[2rem] p-8 shadow-2xl transform scale-95 transition-transform duration-500 relative overflow-hidden border border-slate-200 dark:border-slate-700">
-                    <!-- Decoración superior -->
                     <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-[#6e8efb] to-[#a777e3]"></div>
-                    
                     <div class="flex items-center justify-center mb-6">
                         <div class="size-16 rounded-2xl bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center text-indigo-500 shadow-inner">
                             <span class="material-symbols-outlined text-4xl">rocket_launch</span>
                         </div>
                     </div>
-                    
                     <h2 class="text-2xl font-black text-center text-slate-800 dark:text-white uppercase tracking-tight mb-2">¡Bienvenido a TERIAN Systems!</h2>
                     <p class="text-xs text-center text-slate-500 font-bold uppercase tracking-widest mb-8">Versión 2.1 - Mejoras de Trazabilidad</p>
-                    
                     <ul class="space-y-4 mb-8">
                         <li class="flex items-start gap-3">
                             <span class="material-symbols-outlined text-emerald-500 mt-0.5 text-[20px]">palette</span>
@@ -312,7 +311,6 @@ export function initGlobalSidebar() {
                             </div>
                         </li>
                     </ul>
-                    
                     <button id="close-update-btn" class="w-full py-4 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-xl font-black uppercase tracking-widest text-[11px] hover:-translate-y-1 hover:shadow-lg transition-all active:scale-95">
                         Entendido
                     </button>
@@ -320,8 +318,6 @@ export function initGlobalSidebar() {
             </div>
         `;
         document.body.insertAdjacentHTML('beforeend', updateModalHtml);
-        
-        // Animación de entrada
         setTimeout(() => {
             const overlay = document.getElementById('update-modal-overlay');
             if (overlay) {
@@ -329,8 +325,6 @@ export function initGlobalSidebar() {
                 overlay.firstElementChild.classList.remove('scale-95');
             }
         }, 100);
-
-        // Lógica de cierre
         document.getElementById('close-update-btn').addEventListener('click', () => {
             const overlay = document.getElementById('update-modal-overlay');
             overlay.classList.add('opacity-0');
@@ -342,5 +336,4 @@ export function initGlobalSidebar() {
         });
     }
 }
-// Auto-run on load
 initGlobalSidebar();
