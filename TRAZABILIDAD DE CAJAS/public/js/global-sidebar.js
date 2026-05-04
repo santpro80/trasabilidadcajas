@@ -31,6 +31,16 @@ export function initGlobalSidebar() {
     }
 
     // 2. Apps and Context Information
+    const getBase = () => {
+        const path = window.location.pathname;
+        if (window.location.hostname.includes('github.io')) {
+            const repo = path.split('/')[1];
+            return `/${repo}/`;
+        }
+        return '/';
+    };
+    const baseRoot = getBase();
+
     const userRoleTrazabilidad = localStorage.getItem('userRole') || 'operario';
     const userRolePedidos = localStorage.getItem('rolePedidos') || 'operario';
     const userRoleDeposito = localStorage.getItem('roleDeposito') || 'operario';
@@ -38,8 +48,9 @@ export function initGlobalSidebar() {
     const userApps = JSON.parse(localStorage.getItem('userApps') || '["trazabilidad"]');
     
     // Detect current app context
-    const isPedidosContext = window.location.pathname.includes('pedidos-internos');
-    const isDepositoContext = window.location.pathname.includes('deposito');
+    const path = window.location.pathname;
+    const isPedidosContext = path.includes('pedidos-internos');
+    const isDepositoContext = path.includes('deposito');
     
     let currentRole;
     if (isPedidosContext) currentRole = userRolePedidos;
@@ -53,7 +64,7 @@ export function initGlobalSidebar() {
     let appsHtml = '';
     if (userApps.includes('trazabilidad')) {
         appsHtml += `
-            <button onclick="window.location.href='/supervisor/menu.html'" class="flex flex-col items-center gap-2 p-3 rounded-xl ${!isPedidosContext && !isDepositoContext ? 'bg-blue-500/20 border-blue-500/40 shadow-lg shadow-blue-500/10' : 'bg-slate-200/50 dark:bg-slate-800/40 border-slate-300 dark:border-slate-800'} border cursor-pointer lg:hover:-translate-y-1 transition-all">
+            <button onclick="window.location.href='${baseRoot}supervisor/menu.html'" class="flex flex-col items-center gap-2 p-3 rounded-xl ${!isPedidosContext && !isDepositoContext ? 'bg-blue-500/20 border-blue-500/40 shadow-lg shadow-blue-500/10' : 'bg-slate-200/50 dark:bg-slate-800/40 border-slate-300 dark:border-slate-800'} border cursor-pointer lg:hover:-translate-y-1 transition-all">
                 <div class="size-10 rounded-xl bg-gradient-to-br from-[#6e8efb] to-[#a777e3] flex items-center justify-center">
                     <span class="text-white font-black text-xs">TZ</span>
                 </div>
@@ -63,7 +74,7 @@ export function initGlobalSidebar() {
     }
     if (userApps.includes('pedidos')) {
         appsHtml += `
-            <button onclick="window.location.href='/pedidos-internos/menu.html'" class="flex flex-col items-center gap-2 p-3 rounded-xl ${isPedidosContext ? 'bg-blue-500/20 border-blue-500/40 shadow-lg shadow-blue-500/10' : 'bg-slate-200/50 dark:bg-slate-800/40 border-slate-300 dark:border-slate-800'} border cursor-pointer lg:hover:-translate-y-1 transition-all">
+            <button onclick="window.location.href='${baseRoot}pedidos-internos/menu.html'" class="flex flex-col items-center gap-2 p-3 rounded-xl ${isPedidosContext ? 'bg-blue-500/20 border-blue-500/40 shadow-lg shadow-blue-500/10' : 'bg-slate-200/50 dark:bg-slate-800/40 border-slate-300 dark:border-slate-800'} border cursor-pointer lg:hover:-translate-y-1 transition-all">
                 <div class="size-10 rounded-xl bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center">
                     <span class="text-white font-black text-xs">PD</span>
                 </div>
@@ -74,7 +85,7 @@ export function initGlobalSidebar() {
     
     if (userApps.includes('deposito')) {
         appsHtml += `
-            <button onclick="window.location.href='/deposito/menu.html'" class="flex flex-col items-center gap-2 p-3 rounded-xl ${isDepositoContext ? 'bg-indigo-500/20 border-indigo-500/40 shadow-lg shadow-indigo-500/10' : 'bg-slate-200/50 dark:bg-slate-800/40 border-slate-300 dark:border-slate-800'} border cursor-pointer lg:hover:-translate-y-1 transition-all">
+            <button onclick="window.location.href='${baseRoot}deposito/menu.html'" class="flex flex-col items-center gap-2 p-3 rounded-xl ${isDepositoContext ? 'bg-indigo-500/20 border-indigo-500/40 shadow-lg shadow-indigo-500/10' : 'bg-slate-200/50 dark:bg-slate-800/40 border-slate-300 dark:border-slate-800'} border cursor-pointer lg:hover:-translate-y-1 transition-all">
                 <div class="size-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
                     <span class="text-white font-black text-xs">DP</span>
                 </div>
@@ -88,7 +99,7 @@ export function initGlobalSidebar() {
 
     if (isPedidosContext) {
         // --- PEDIDOS INTERNOS LINKS ---
-        const base = '/pedidos-internos/';
+        const base = `${baseRoot}pedidos-internos/`;
         menuItems.push({ label: 'Mis Pedidos', icon: 'receipt_long', link: base + 'mis-pedidos.html' });
         menuItems.push({ label: 'Gestión Pedidos', icon: 'inventory_2', link: base + 'gestion-pedidos.html' });
         menuItems.push({ label: 'Panel Admin', icon: 'admin_panel_settings', link: base + 'panel-admin.html' });
@@ -96,7 +107,7 @@ export function initGlobalSidebar() {
         menuItems.push({ label: 'Configuración', icon: 'settings', link: base + 'configuracion.html' });
     } else if (isDepositoContext) {
         // --- DEPOSITO LINKS ---
-        const base = '/deposito/';
+        const base = `${baseRoot}deposito/`;
         menuItems.push({ label: 'Carga de Datos', icon: 'add_box', link: base + 'carga-datos.html' });
         if (isSupervisor) {
             menuItems.push({ label: 'Historial', icon: 'history', link: base + 'historial.html' });
@@ -107,7 +118,7 @@ export function initGlobalSidebar() {
         }
     } else {
         // --- TRAZABILIDAD LINKS ---
-        const base = `/${userRoleTrazabilidad}/`;
+        const base = `${baseRoot}${userRoleTrazabilidad}/`;
         if (!isMantenimiento) menuItems.push({ label: 'Modelos de Cajas', icon: 'inventory_2', link: base + 'modelos-de-cajas.html' });
         const ticketLink = isSupervisor ? base + 'tickets-supervisor.html' : base + 'tickets-operador.html';
         menuItems.push({ label: 'Tickets', icon: 'confirmation_number', link: ticketLink });
@@ -149,46 +160,43 @@ export function initGlobalSidebar() {
                 </button>
             </div>
 
-            <div class="mb-6 shrink-0">
-                <h3 class="text-[10px] font-black tracking-[0.2em] text-slate-400 uppercase mb-3 px-2">Mis Aplicaciones</h3>
-                <div class="grid grid-cols-3 gap-2">
+            <!-- Profile Section -->
+            <div class="flex items-center gap-4 mb-8 p-4 rounded-2xl bg-slate-200/50 dark:bg-slate-800/30 border border-slate-300/50 dark:border-slate-800/50 shrink-0">
+                <div class="size-10 rounded-full bg-villalba-blue flex items-center justify-center text-white font-black shadow-lg shadow-blue-500/20">
+                    ${userName.charAt(0).toUpperCase()}
+                </div>
+                <div class="flex flex-col overflow-hidden">
+                    <span class="text-[11px] font-black uppercase text-slate-900 dark:text-white truncate">${userName}</span>
+                    <span class="text-[9px] font-bold uppercase text-slate-500 dark:text-slate-400 truncate">${currentRole}</span>
+                </div>
+            </div>
+
+            <!-- App Switcher -->
+            <div class="mb-8 shrink-0">
+                <h3 class="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400 mb-4 px-1">Aplicaciones</h3>
+                <div class="grid grid-cols-3 gap-3">
                     ${appsHtml}
                 </div>
             </div>
 
-            <div class="flex flex-col gap-2 mb-6 shrink-0">
-                <button onclick="window.location.href='${isPedidosContext ? '/pedidos-internos/menu.html' : isDepositoContext ? '/deposito/menu.html' : '/' + userRoleTrazabilidad + '/menu.html'}'" class="flex items-center w-full gap-4 p-3 rounded-xl bg-villalba-blue text-white shadow-lg shadow-blue-500/20 border-none cursor-pointer group">
-                    <span class="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">grid_view</span>
-                    <span class="text-[11px] font-black uppercase tracking-widest flex-1 text-left">Menú Principal</span>
-                </button>
-                <button onclick="toggleGlobalTheme()" class="flex items-center w-full gap-4 p-3 rounded-xl bg-slate-200 dark:bg-slate-800/50 border border-slate-300 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-800 transition-colors cursor-pointer group">
-                    <span class="material-symbols-outlined text-[20px] theme-icon-global group-hover:rotate-12 transition-transform">light_mode</span>
-                    <span class="text-[11px] font-bold uppercase tracking-wide flex-1 text-left theme-text-global">Cambiar Tema</span>
-                </button>
-            </div>
-
-            <div class="flex-1 overflow-y-auto pr-1 custom-scrollbar">
-                <h3 class="text-[10px] font-black tracking-[0.2em] text-slate-400 uppercase mb-3 px-2">Acceso Directo</h3>
-                <nav class="flex flex-col gap-1">
+            <!-- Menu Content -->
+            <div class="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+                <h3 class="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400 mb-4 px-1">Menú Principal</h3>
+                <div class="flex flex-col gap-1">
+                    <button onclick="window.location.href='${isPedidosContext ? baseRoot + 'pedidos-internos/menu.html' : isDepositoContext ? baseRoot + 'deposito/menu.html' : baseRoot + userRoleTrazabilidad + '/menu.html'}'" class="flex items-center w-full gap-4 p-3 rounded-xl bg-villalba-blue text-white shadow-lg shadow-blue-500/20 border-none cursor-pointer group">
+                        <span class="material-symbols-outlined text-[20px]">home</span>
+                        <span class="text-[11px] font-bold uppercase tracking-wide flex-1 text-left">Inicio App</span>
+                    </button>
                     ${menuHtml}
-                </nav>
+                </div>
             </div>
 
-            <div class="mt-auto pt-6 shrink-0 flex flex-col gap-4 border-t border-slate-200 dark:border-slate-800">
-                <button onclick="handleGlobalLogout()" class="flex items-center w-full gap-3 p-3 rounded-[12px] text-rose-500 hover:bg-rose-500/10 transition-colors border-none bg-transparent cursor-pointer font-bold group">
-                    <span class="material-symbols-outlined text-[20px] group-hover:-translate-x-1 transition-transform">logout</span>
-                    <span class="text-xs uppercase tracking-wide">Cerrar Sesión</span>
+            <!-- Bottom Actions -->
+            <div class="mt-auto pt-6 border-t border-slate-200 dark:border-slate-800 shrink-0">
+                <button onclick="window.location.href='${baseRoot}login.html'" class="flex items-center w-full gap-4 p-3 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors text-rose-500 border-none bg-transparent cursor-pointer group">
+                    <span class="material-symbols-outlined text-[20px] group-hover:rotate-12 transition-transform">logout</span>
+                    <span class="text-[11px] font-bold uppercase tracking-wide flex-1 text-left">Cerrar Sesión</span>
                 </button>
-                
-                <div class="flex items-center gap-3 p-3 bg-slate-200/50 dark:bg-slate-800/40 rounded-xl border border-slate-300 dark:border-slate-800">
-                    <div class="size-10 rounded-full bg-villalba-blue/20 flex items-center justify-center text-villalba-blue shrink-0">
-                        <span class="material-symbols-outlined">person</span>
-                    </div>
-                    <div class="flex flex-col overflow-hidden">
-                        <span class="text-xs font-bold text-slate-900 dark:text-white truncate">${userName}</span>
-                        <span class="text-[10px] text-slate-500 uppercase tracking-widest truncate">${currentRole}</span>
-                    </div>
-                </div>
             </div>
         </aside>
         <style>
@@ -201,82 +209,46 @@ export function initGlobalSidebar() {
 
     document.body.insertAdjacentHTML('beforeend', sidebarHtml);
 
-    // Hamburger search logic
-    const headerLeft = document.querySelector('.header-left');
-    if (headerLeft && !document.getElementById('global-hamburger-btn')) {
-        const hamburgerHtml = `
-            <button id="global-hamburger-btn" onclick="toggleGlobalSidebar()" style="background:transparent; border:none; color:inherit; cursor:pointer; padding:5px; margin-right:12px; display:inline-flex; align-items:center; border-radius: 8px; flex-shrink: 0;">
-                <svg viewBox="0 0 24 24" fill="none" class="w-7 h-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 26px; height: 26px;">
-                    <line x1="3" y1="12" x2="21" y2="12"></line>
-                    <line x1="3" y1="6" x2="21" y2="6"></line>
-                    <line x1="3" y1="18" x2="21" y2="18"></line>
-                </svg>
-            </button>
-        `;
-        headerLeft.insertAdjacentHTML('afterbegin', hamburgerHtml);
-    }
-
-    // Toggle logic
+    // 6. Sidebar Logic (Fixed navigation)
     window.toggleGlobalSidebar = () => {
-        const drawer = document.getElementById('global-side-drawer');
         const overlay = document.getElementById('global-sidebar-overlay');
-        const isClosed = drawer.classList.contains('-translate-x-full');
+        const drawer = document.getElementById('global-side-drawer');
+        const isOpen = drawer.style.display === 'flex';
 
-        if (drawer.style.display === 'none') {
-            drawer.style.display = '';
-            overlay.style.display = '';
-            requestAnimationFrame(() => {
-                drawer.classList.remove('-translate-x-full');
+        if (!isOpen) {
+            overlay.style.display = 'block';
+            drawer.style.display = 'flex';
+            setTimeout(() => {
                 overlay.classList.remove('hidden');
-            });
-            return;
-        }
-
-        if (isClosed) {
-            drawer.classList.remove('-translate-x-full');
-            overlay.classList.remove('hidden');
+                overlay.classList.add('opacity-100');
+                drawer.classList.remove('-translate-x-full');
+            }, 10);
         } else {
+            overlay.classList.remove('opacity-100');
             drawer.classList.add('-translate-x-full');
-            overlay.classList.add('hidden');
+            setTimeout(() => {
+                overlay.style.display = 'none';
+                drawer.style.display = 'none';
+            }, 300);
         }
     };
 
-    // Logout handler
-    window.handleGlobalLogout = async () => {
-        localStorage.clear();
-        window.location.href = '/login.html';
-    };
-
-    // Global ESC key to "Volver al Menú"
+    // Keyboard ESC shortcut
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
-            // Si el sidebar está abierto, cerrarlo en lugar de salir
             const drawer = document.getElementById('global-side-drawer');
-            if (drawer && !drawer.classList.contains('-translate-x-full')) {
-                window.toggleGlobalSidebar();
-                return;
-            }
-
-            // Si hay un modal abierto (como el de imágenes), no volver
-            const modals = document.querySelectorAll('[id*="modal"], [id*="Modal"]');
-            for (let i = 0; i < modals.length; i++) {
-                if (window.getComputedStyle(modals[i]).display !== 'none' && !modals[i].classList.contains('hidden')) {
-                    return; // Hay un modal visible, dejamos que se cierre solo
+            if (drawer && drawer.style.display === 'flex') {
+                toggleGlobalSidebar();
+            } else {
+                const targetUrl = isPedidosContext ? baseRoot + 'pedidos-internos/menu.html' : isDepositoContext ? baseRoot + 'deposito/menu.html' : baseRoot + userRoleTrazabilidad + '/menu.html';
+                if (!window.location.pathname.endsWith('menu.html')) {
+                    window.location.href = targetUrl;
                 }
             }
-
-            // Si ya estamos en un menú, no hacemos nada
-            if (window.location.pathname.endsWith('menu.html') || window.location.pathname.endsWith('login.html')) {
-                return;
-            }
-
-            // Ejecutar el "volver" al menú correspondiente
-            const targetUrl = isPedidosContext ? '/pedidos-internos/menu.html' : isDepositoContext ? '/deposito/menu.html' : '/' + userRoleTrazabilidad + '/menu.html';
-            window.location.href = targetUrl;
         }
     });
 
-    // 6. What's New Modal (Version 2.1)
+    // 7. NEW: Persistent "What's New" Modal v2.1
     const currentVersion = 'v2_1';
     if (!localStorage.getItem(`update_seen_${currentVersion}`)) {
         const updateModalHtml = `
