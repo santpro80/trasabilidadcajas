@@ -337,9 +337,11 @@ console.log('Hello, world!');
         window.location.href = `modelado-caja.html?zonaName=${encodeURIComponent(currentZonaName)}`;
     });
 
-    menuBtn.addEventListener('click', () => {
-        window.location.href = 'menu.html';
-    });
+    if (menuBtn) {
+        menuBtn.addEventListener('click', () => {
+            window.location.href = 'menu.html';
+        });
+    }
     logoutBtn.addEventListener('click', async () => {
         await signOut(auth);
         window.location.href = '../login.html';

@@ -532,7 +532,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         } catch (error) {
             console.error("⚠️ Falló la generación de PDF, subida o registro:", error);
-            sessionStorage.setItem('reportNotification', JSON.stringify({ type: 'error', message: 'Error al generar o subir el reporte.' }));
+            const errorMessage = error.message || 'Error al generar o subir el reporte.';
+            sessionStorage.setItem('reportNotification', JSON.stringify({ 
+                type: 'error', 
+                message: errorMessage 
+            }));
             window.location.href = `numeros-de-serie.html?modelName=${encodeURIComponent(modelName)}&zonaName=${encodeURIComponent(zonaName)}`;
         } finally {
             if (tipoReporteModal) tipoReporteModal.style.display = 'none';
