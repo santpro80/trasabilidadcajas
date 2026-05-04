@@ -1,10 +1,12 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Items de Caja | Sistema de Trazabilidad</title>
-    <link rel="icon" href="assets/logo.png" type="image/png">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    <link rel="icon" href="../assets/logo.png" type="image/png">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -21,11 +23,35 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
     <style>
-        body { margin: 0; min-height: 100vh; opacity: 0; animation: fadeInMenu 0.4s ease forwards; animation-delay: 0.15s; }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            opacity: 0;
+            animation: fadeInMenu 0.4s ease forwards;
+            animation-delay: 0.15s;
+        }
+
         @keyframes fadeInMenu { to { opacity: 1; } }
-        .glass-card { background: rgba(255, 255, 255, 0.9); border: 1px solid rgba(0, 0, 0, 0.1); backdrop-filter: blur(12px); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
-        html.dark .glass-card { background: rgba(22, 30, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.05); box-shadow: none; }
-        
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(12px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        html.dark .glass-card {
+            background: rgba(22, 30, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: none;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.2); border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(148, 163, 184, 0.4); }
+
+        /* Modal Styles */
         .modal-overlay {
             display: none;
             position: fixed;
@@ -87,8 +113,8 @@
         }
 
         .modal-content input:focus {
-            border-color: #2563eb;
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
             background: white;
         }
 
@@ -96,6 +122,11 @@
             background: rgba(15, 23, 42, 0.6);
             border-color: rgba(255, 255, 255, 0.1);
             color: white;
+        }
+
+        html.dark .modal-content input:focus {
+            background: rgba(15, 23, 42, 0.9);
+            border-color: #3b82f6;
         }
 
         .modal-actions {
@@ -112,36 +143,25 @@
             text-transform: uppercase;
             letter-spacing: 0.1em;
             cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.2s;
             flex: 1;
             border: none;
         }
 
-        .btn-modal:hover {
-            transform: translateY(-4px) scale(1.05);
-            box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.2);
-        }
-
         .btn-primary {
-            background: #2563eb;
+            background: #3b82f6;
             color: white;
-            box-shadow: 0 4px 14px 0 rgba(37, 99, 235, 0.39);
+            box-shadow: 0 4px 14px 0 rgba(59, 130, 246, 0.39);
         }
 
-        .btn-primary:hover {
-            background: #1d4ed8;
-            box-shadow: 0 8px 25px -5px rgba(37, 99, 235, 0.5);
-        }
+        .btn-primary:hover { transform: translateY(-2px); background: #2563eb; }
 
         .btn-secondary {
             background: #f1f5f9;
             color: #475569;
         }
 
-        .btn-secondary:hover {
-            background: #e2e8f0;
-            color: #1e293b;
-        }
+        .btn-secondary:hover { background: #e2e8f0; color: #1e293b; }
 
         html.dark .btn-secondary {
             background: rgba(255, 255, 255, 0.1);
@@ -159,14 +179,11 @@
             box-shadow: 0 4px 14px 0 rgba(244, 63, 94, 0.39);
         }
 
-        .btn-danger:hover {
-            background: #e11d48;
-            box-shadow: 0 8px 25px -5px rgba(244, 63, 94, 0.5);
-        }
+        .btn-danger:hover { transform: translateY(-2px); background: #e11d48; }
     </style>
     <link rel="stylesheet" href="../css/dark-theme.css">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
 </head>
+
 <body class="bg-gradient-to-br from-[#6e8efb] to-[#a777e3] dark:from-[#0a0f16] dark:to-[#0a0f16] text-slate-900 dark:text-[#f1f5f9] antialiased">
     <header class="bg-[#f8fafc] dark:bg-transparent backdrop-blur-md shadow-sm dark:shadow-none border-b border-white/20 dark:border-white/10 px-4 lg:px-8 py-3 flex items-center justify-between gap-4 sticky top-0 z-40 w-full hover:bg-white/95 transition-colors">
         <div class="header-left flex items-center gap-4">
@@ -176,7 +193,7 @@
             </button>
         </div>
         <div class="user-info flex items-center gap-4">
-            <span id="user-display-name" class="hidden md:inline-block text-sm font-bold text-slate-700 dark:text-slate-300 uppercase">Cargando...</span>
+            <span id="user-display-name" class="hidden md:inline-block text-sm font-bold text-slate-700 dark:text-slate-300">Cargando...</span>
             <button id="logout-btn" class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white transition-all border border-rose-500/20">
                 <span class="material-symbols-outlined text-[18px]">logout</span>
                 <span class="text-xs font-bold uppercase tracking-wide hidden sm:inline-block">Salir</span>
@@ -266,8 +283,8 @@
             <p>¿El reporte es para una Entrada o una Salida de material?</p>
             <div class="modal-actions">
                 <button id="btn-entrada" class="btn-modal btn-primary">Entrada</button>
-                <button id="btn-salida" class="btn-modal btn-primary">Salida</button>
-                <button id="cancel-report-btn" class="btn-modal btn-secondary">Cancelar</button>
+                <button id="btn-salida" class="btn-modal btn-secondary">Salida</button>
+                <button id="cancel-report-btn" class="btn-modal btn-secondary" style="margin-top: 10px;">Cancelar</button>
             </div>
         </div>
     </div>
@@ -284,7 +301,18 @@
         </div>
     </div>
 
-    <div id="notification-toast" class="fixed bottom-8 left-1/2 -translate-x-1/2 z-[200] max-w-sm w-full transition-all duration-500 opacity-0 translate-y-10">
+    <div id="observationModal" class="modal-overlay">
+        <div class="modal-content">
+            <h2>Observaciones de la Caja</h2>
+            <p>¿La caja tiene alguna observación para declarar?</p>
+            <div class="modal-actions">
+                <button id="no-observation-btn" class="btn-modal btn-secondary">No</button>
+                <button id="yes-observation-btn" class="btn-modal btn-primary">Sí</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="notification-toast" class="fixed bottom-8 left-1/2 -translate-x-1/2 z-[200] max-w-xs w-full transition-all duration-500 opacity-0 translate-y-10">
         <div class="toast-content flex items-center gap-3 p-4 rounded-2xl shadow-2xl glass-card border-none">
             <span id="toast-icon" class="material-symbols-outlined"></span>
             <span id="toast-message" class="text-xs font-bold uppercase tracking-wide"></span>
@@ -312,4 +340,5 @@
     <script type="module" src="js/lista-items-por-caja.js"></script>
     <script type="module">import "../js/theme.js";</script>
 </body>
+
 </html>
