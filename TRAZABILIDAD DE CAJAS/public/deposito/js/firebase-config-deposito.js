@@ -1,5 +1,5 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
-import { getFirestore, doc, getDoc, setDoc, getDocs, collection, query, where, addDoc, serverTimestamp, onSnapshot, orderBy, limit, deleteDoc, startAfter } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+import { getFirestore, doc, getDoc, setDoc, getDocs, collection, query, where, addDoc, serverTimestamp, onSnapshot, orderBy, limit, deleteDoc, startAfter, writeBatch } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
 // Import auth and helpers from the existing Principal App for single sign-on
 import { auth, onAuthStateChanged, signOut, db as principalDb } from '../../supervisor/js/firebase-config.js';
@@ -80,5 +80,6 @@ export {
     orderBy,
     limit,
     deleteDoc,
-    startAfter
+    startAfter,
+    writeBatch
 };

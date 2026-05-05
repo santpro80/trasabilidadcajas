@@ -1,4 +1,4 @@
-import { db, requireDepositoAuth, doc, setDoc } from './firebase-config-deposito.js';
+import { db, requireDepositoAuth, doc, setDoc, getDocs, collection, writeBatch } from './firebase-config-deposito.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
     try {
@@ -138,6 +138,35 @@ document.addEventListener('DOMContentLoaded', async () => {
             };
 
             reader.readAsText(file);
+        });
+
+        // Lógica para resetear todo el stock a 0
+        const resetBtn = document.getElementById('reset-stock-btn');
+        resetBtn.addEventListener('click', async () => {
+            const confirmed = confirm("⚠️ ATENCIÓN: Esto pondrá el stock de TODOS los ítems del catálogo en 0. Esta acción no se puede deshacer. ¿Continuar?");
+            if (!confirmed) return;
+
+            resetBtn.disabled = true;
+            resetBtn.innerHTML = `<span class="material-symbols-outlined animate-spin">sync</span> RESETEANDO...`;
+            
+            try {
+                const querySnapshot = await getDocs(collection(db, "deposito_catalogo"));
+                const batch = writeBatch(db);
+                
+                querySnapshot.forEach((documento) => {
+                    const itemRef = doc(db, "deposito_catalogo", documento.id);
+                    batch.update(itemRef, { stock: 0 });
+                });
+
+                await batch.commit();
+                alert("✅ Éxito: Se ha reseteado el stock de todos los ítems a 0.");
+            } catch (error) {
+                console.error("Error al resetear stock:", error);
+                alert("❌ Error al intentar resetear el stock.");
+            } finally {
+                resetBtn.disabled = false;
+                resetBtn.innerHTML = `<span class="material-symbols-outlined">restart_alt</span> RESETEAR TODO EL STOCK A 0`;
+            }
         });
 
     } catch (error) {
