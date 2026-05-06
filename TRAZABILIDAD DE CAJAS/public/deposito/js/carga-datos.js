@@ -248,7 +248,8 @@ const initForm = () => {
                 descripcion,
                 cantidad,
                 timestamp: serverTimestamp(),
-                userEmail: currentUser?.user?.email || 'Desconocido',
+                usuarioNombre: currentUser?.userData?.name || currentUser?.user?.email || 'Desconocido',
+                usuario: currentUser?.user?.email || 'Desconocido',
                 userId: currentUser?.user?.uid || 'Anónimo'
             });
 
