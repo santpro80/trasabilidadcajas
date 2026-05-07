@@ -120,6 +120,9 @@ const initAutocomplete = () => {
                     previewPieza.style.opacity = '0';
                     imgContainer.classList.remove('hidden');
                     imgContainer.classList.add('flex');
+
+                    const cantInput = document.getElementById('cantidad-pieza');
+                    if (cantInput) cantInput.value = 1;
                 });
                 autocompleteList.appendChild(div);
             });
@@ -344,6 +347,10 @@ const initDescSearch = () => {
                         mainInput.dispatchEvent(event);
                         // Also trigger blur to close the main autocomplete
                         mainInput.dispatchEvent(new Event('blur'));
+
+                        // Set quantity to 1
+                        const cantInput = document.getElementById('cantidad-pieza');
+                        if (cantInput) cantInput.value = 1;
                     }
                 });
                 searchResults.appendChild(div);
