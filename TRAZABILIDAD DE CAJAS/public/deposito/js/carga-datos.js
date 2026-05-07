@@ -99,7 +99,7 @@ const initAutocomplete = () => {
             const desc = (item.descripcion || '').toUpperCase();
             const codigoAlfanumerico = codigo.replace(/[^A-Z0-9]/g, '');
             return codigo.includes(val) || desc.includes(val) || (valAlfanumerico.length > 0 && codigoAlfanumerico.includes(valAlfanumerico));
-        }).slice(0, 10); // max 10
+        });
 
         if (matches.length > 0) {
             autocompleteList.classList.remove('hidden');
@@ -324,7 +324,7 @@ const initDescSearch = () => {
         const matches = depositoItemsCache.filter(item => {
             const desc = (item.descripcion || '').toUpperCase();
             return desc.includes(val);
-        }).slice(0, 15);
+        });
 
         if (matches.length > 0) {
             matches.forEach(item => {
