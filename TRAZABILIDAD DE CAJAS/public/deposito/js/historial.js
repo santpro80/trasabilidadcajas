@@ -98,7 +98,7 @@ const setupListeners = () => {
 
 document.addEventListener('DOMContentLoaded', async () => {
     try {
-        await requireDepositoAuth(['supervisor']); // Only Supervisor!
+        await requireDepositoAuth(['supervisor', 'operario']);
         setupListeners();
     } catch (e) {
         console.error(e);

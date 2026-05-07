@@ -36,7 +36,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 link: 'historial.html',
                 bg: 'bg-slate-100 dark:bg-slate-500/10',
                 text: 'text-slate-600 dark:text-slate-400',
-                roles: ['supervisor'],
+                roles: ['supervisor', 'operario'],
                 col: 'administracion'
             },
             {
