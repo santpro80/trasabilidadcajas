@@ -123,7 +123,11 @@ const initAutocomplete = () => {
                     imgContainer.classList.add('flex');
 
                     const cantInput = document.getElementById('cantidad-pieza');
-                    if (cantInput) cantInput.value = 1;
+                    if (cantInput) {
+                        cantInput.value = 1;
+                        cantInput.focus();
+                        cantInput.select();
+                    }
                 });
                 autocompleteList.appendChild(div);
             });
@@ -371,6 +375,15 @@ const initDescSearch = () => {
 
     if (!searchInput || !searchResults) return;
 
+    searchInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            // Si hay resultados, podríamos elegir el primero, 
+            // pero por ahora solo pasamos el foco al formulario
+            document.getElementById('codigo-pieza').focus();
+        }
+    });
+
     searchInput.addEventListener('input', (e) => {
         let val = e.target.value.toUpperCase().trim();
         searchResults.innerHTML = '';
@@ -409,9 +422,13 @@ const initDescSearch = () => {
                         // Also trigger blur to close the main autocomplete
                         mainInput.dispatchEvent(new Event('blur'));
 
-                        // Set quantity to 1
+                        // Set quantity to 1 and FOCUS
                         const cantInput = document.getElementById('cantidad-pieza');
-                        if (cantInput) cantInput.value = 1;
+                        if (cantInput) {
+                            cantInput.value = 1;
+                            cantInput.focus();
+                            cantInput.select();
+                        }
                     }
                 });
                 searchResults.appendChild(div);
