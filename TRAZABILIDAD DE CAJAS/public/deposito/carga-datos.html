@@ -91,16 +91,50 @@
                     </div>
                 </div>
 
-                <!-- Contenedor del Botón (Full width) -->
+                <!-- Contenedor del Botón (Añadir a la lista) -->
                 <div class="md:col-span-2 lg:col-span-3 mt-4">
-                    <button type="submit" id="btn-registrar" class="w-full py-4 bg-villalba-blue text-white rounded-2xl font-black uppercase tracking-widest text-[13px] hover:bg-blue-700 hover:-translate-y-1 active:scale-[0.98] transition-all duration-300 shadow-xl shadow-blue-500/30 flex items-center justify-center gap-2">
+                    <button type="submit" id="btn-add-list" class="w-full py-4 bg-slate-800 dark:bg-slate-700 text-white rounded-2xl font-black uppercase tracking-widest text-[13px] hover:bg-slate-900 hover:-translate-y-1 active:scale-[0.98] transition-all duration-300 shadow-xl flex items-center justify-center gap-2">
+                        <span class="material-symbols-outlined text-[20px]">playlist_add</span>
+                        Añadir a la Lista (ENTER)
+                    </button>
+                </div>
+            </form>
+
+            <!-- Sección de Lista de Movimientos (Nueva) -->
+            <div id="staged-section" class="mt-10 flex-1 flex flex-col hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div class="flex items-center justify-between mb-4 px-1">
+                    <h3 class="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">Ítems pendientes de registro</h3>
+                    <span id="staged-count" class="bg-villalba-blue text-white text-[10px] font-black px-2 py-0.5 rounded-full">0 ÍTEMS</span>
+                </div>
+                
+                <div class="flex-1 overflow-hidden border border-slate-200 dark:border-slate-800 rounded-2xl bg-slate-50/30 dark:bg-black/10 shadow-inner">
+                    <div class="max-h-[300px] overflow-y-auto">
+                        <table class="w-full border-collapse">
+                            <thead class="sticky top-0 bg-slate-100 dark:bg-slate-800 z-10">
+                                <tr>
+                                    <th class="text-[9px] font-black uppercase tracking-widest text-slate-500 py-3 px-4 text-left">Tipo</th>
+                                    <th class="text-[9px] font-black uppercase tracking-widest text-slate-500 py-3 px-4 text-left">Código</th>
+                                    <th class="text-[9px] font-black uppercase tracking-widest text-slate-500 py-3 px-4 text-left">Descripción</th>
+                                    <th class="text-[9px] font-black uppercase tracking-widest text-slate-500 py-3 px-4 text-center">Cant</th>
+                                    <th class="text-[9px] font-black uppercase tracking-widest text-slate-500 py-3 px-4 text-right"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="staged-tbody" class="divide-y divide-slate-100 dark:divide-slate-800/50">
+                                <!-- Filas dinámicas -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="mt-6">
+                    <button id="btn-confirmar-todos" class="w-full py-4 bg-villalba-blue text-white rounded-2xl font-black uppercase tracking-widest text-[13px] hover:bg-blue-700 hover:-translate-y-1 active:scale-[0.98] transition-all duration-300 shadow-xl shadow-blue-500/30 flex items-center justify-center gap-2">
                         <span class="material-symbols-outlined text-[20px]">how_to_reg</span>
-                        Registrar Movimiento
+                        Confirmar Todos los Movimientos
                     </button>
                     <!-- Loading Status -->
                     <div id="status-msg" class="w-full mt-4 text-center text-[11px] font-black uppercase tracking-widest hidden rounded-xl p-3 border"></div>
                 </div>
-            </form>
+            </div>
 
         </div>
 

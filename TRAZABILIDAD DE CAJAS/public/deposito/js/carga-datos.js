@@ -1,6 +1,7 @@
 import { db, doc, getDoc, getDocs, collection, query, serverTimestamp, addDoc, setDoc, onSnapshot, orderBy, limit, requireDepositoAuth } from './firebase-config-deposito.js';
 
 let depositoItemsCache = [];
+let stagedMovements = [];
 let currentUser = null;
 
 const initAutocomplete = () => {
@@ -222,12 +223,64 @@ const showToast = () => {
     }, 3000);
 };
 
+const renderStagedItems = () => {
+    const stagedSection = document.getElementById('staged-section');
+    const stagedTbody = document.getElementById('staged-tbody');
+    const stagedCount = document.getElementById('staged-count');
+
+    if (stagedMovements.length === 0) {
+        stagedSection.classList.add('hidden');
+        return;
+    }
+
+    stagedSection.classList.remove('hidden');
+    stagedCount.textContent = `${stagedMovements.length} ÍTEMS`;
+
+    stagedTbody.innerHTML = stagedMovements.map((m, index) => {
+        const esIngreso = m.tipo === 'Ingreso';
+        const color = esIngreso ? 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20' : 'text-rose-500 bg-rose-500/10 border-rose-500/20';
+        
+        return `
+            <tr class="hover:bg-slate-100/50 dark:hover:bg-white/5 transition-colors">
+                <td class="py-3 px-4">
+                    <span class="px-2 py-0.5 rounded text-[9px] font-black uppercase border ${color}">${m.tipo}</span>
+                </td>
+                <td class="py-3 px-4 text-xs font-black text-villalba-blue dark:text-blue-400 tracking-widest">${m.codigo}</td>
+                <td class="py-3 px-4 text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase truncate max-w-[150px] md:max-w-xs" title="${m.descripcion}">${m.descripcion}</td>
+                <td class="py-3 px-4 text-center text-xs font-black text-slate-800 dark:text-white">${m.cantidad}</td>
+                <td class="py-3 px-4 text-right">
+                    <button onclick="removeStagedItem(${index})" class="size-7 rounded-lg bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white transition-all flex items-center justify-center">
+                        <span class="material-symbols-outlined text-[16px]">delete</span>
+                    </button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+};
+
+window.removeStagedItem = (index) => {
+    stagedMovements.splice(index, 1);
+    renderStagedItems();
+};
+
 const initForm = () => {
     const form = document.getElementById('movimiento-form');
     const statusMsg = document.getElementById('status-msg');
-    const btnRegistrar = document.getElementById('btn-registrar');
+    const btnConfirmar = document.getElementById('btn-confirmar-todos');
+    const inputs = form.querySelectorAll('input');
 
-    form.addEventListener('submit', async (e) => {
+    // Manejar ENTER en los inputs
+    inputs.forEach(input => {
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                form.requestSubmit();
+            }
+        });
+    });
+
+    // Añadir a la lista (STAGING)
+    form.addEventListener('submit', (e) => {
         e.preventDefault();
         
         const tipo = document.getElementById('tipo-movimiento').value;
@@ -236,70 +289,78 @@ const initForm = () => {
         const cantidad = parseInt(document.getElementById('cantidad-pieza').value, 10);
 
         if (!codigo || isNaN(cantidad) || cantidad <= 0) {
-            alert('Campos inválidos.');
+            alert('Por favor, completa código y cantidad válida.');
             return;
         }
 
-        btnRegistrar.disabled = true;
-        btnRegistrar.innerHTML = '<span class="material-symbols-outlined animate-spin text-[20px]">sync</span> REGISTRANDO...';
+        // Añadir al array de pendientes
+        stagedMovements.push({ tipo, codigo, descripcion, cantidad });
+        
+        // Reset parcial: Mantener el TIPO DE MOVIMIENTO
+        const currentTipo = document.getElementById('tipo-movimiento').value;
+        form.reset();
+        document.getElementById('tipo-movimiento').value = currentTipo;
+        
+        document.getElementById('detalle-pieza').value = '';
+        document.getElementById('cantidad-pieza').value = '';
+        const imgC = document.getElementById('img-container');
+        if (imgC) { imgC.classList.add('hidden'); imgC.classList.remove('flex'); }
+
+        renderStagedItems();
+        document.getElementById('codigo-pieza').focus();
+    });
+
+    // Confirmación final (BATCH)
+    btnConfirmar.addEventListener('click', async () => {
+        if (stagedMovements.length === 0) return;
+
+        const confirmed = confirm(`¿Confirmar el registro de los ${stagedMovements.length} movimientos en la base de datos?`);
+        if (!confirmed) return;
+
+        btnConfirmar.disabled = true;
+        btnConfirmar.innerHTML = '<span class="material-symbols-outlined animate-spin text-[20px]">sync</span> REGISTRANDO TODO...';
         
         try {
-            // Guardar el registro de movimiento
-            await addDoc(collection(db, 'deposito_movimientos'), {
-                tipo,
-                codigo,
-                descripcion,
-                cantidad,
-                timestamp: serverTimestamp(),
-                usuarioNombre: currentUser?.userData?.name || currentUser?.user?.email || 'Desconocido',
-                usuario: currentUser?.user?.email || 'Desconocido',
-                userId: currentUser?.user?.uid || 'Anónimo'
-            });
+            for (const mov of stagedMovements) {
+                // 1. Guardar Movimiento
+                await addDoc(collection(db, 'deposito_movimientos'), {
+                    ...mov,
+                    timestamp: serverTimestamp(),
+                    usuarioNombre: currentUser?.userData?.name || currentUser?.user?.email || 'Desconocido',
+                    usuario: currentUser?.user?.email || 'Desconocido',
+                    userId: currentUser?.user?.uid || 'Anónimo'
+                });
 
-            // Actualizar stock total en el Catálogo
-            try {
-                const itemRef = doc(db, 'deposito_catalogo', codigo);
+                // 2. Actualizar Stock Catálogo
+                const itemRef = doc(db, 'deposito_catalogo', mov.codigo);
                 const itemSnap = await getDoc(itemRef);
                 
                 if (itemSnap.exists()) {
                     const currentStock = itemSnap.data().stock || 0;
-                    const val = tipo === 'Ingreso' ? cantidad : -cantidad;
-                    const stockResultante = currentStock + val;
-                    
-                    await setDoc(itemRef, { stock: stockResultante }, { merge: true });
+                    const val = mov.tipo === 'Ingreso' ? mov.cantidad : -mov.cantidad;
+                    await setDoc(itemRef, { stock: currentStock + val }, { merge: true });
                 } else {
-                    // Si el item sale de la nada (no catalogado formalmente pero ingresado manual)
-                    // lo creamos con stock inicial
-                    const val = tipo === 'Ingreso' ? cantidad : -cantidad;
+                    const val = mov.tipo === 'Ingreso' ? mov.cantidad : -mov.cantidad;
                     await setDoc(itemRef, {
-                        codigo: codigo,
-                        descripcion: descripcion,
+                        codigo: mov.codigo,
+                        descripcion: mov.descripcion,
                         stock: val
                     }, { merge: true });
                 }
-            } catch (err) {
-                console.error("No se pudo actualizar el stock total del ítem: ", err);
             }
 
-            form.reset();
-            document.getElementById('detalle-pieza').value = '';
-            document.getElementById('cantidad-pieza').value = '';
-            
-            const imgC = document.getElementById('img-container');
-            if (imgC) {
-                imgC.classList.add('hidden');
-                imgC.classList.remove('flex');
-            }
-            
+            // Limpiar todo al finalizar éxito
+            stagedMovements = [];
+            renderStagedItems();
             showToast();
         } catch (error) {
-            console.error("Error guardando movimiento: ", error);
+            console.error("Error en registro masivo: ", error);
             statusMsg.textContent = "Error al conectar. Verifica tu internet.";
             statusMsg.classList.remove('hidden');
             statusMsg.classList.add('text-rose-500', 'bg-rose-50', 'border-rose-200');
         } finally {
-            btnRegistrar.disabled = false;
-            btnRegistrar.innerHTML = '<span class="material-symbols-outlined text-[20px]">how_to_reg</span> Registrar Movimiento';
+            btnConfirmar.disabled = false;
+            btnConfirmar.innerHTML = '<span class="material-symbols-outlined text-[20px]">how_to_reg</span> Confirmar Todos los Movimientos';
         }
     });
 };
