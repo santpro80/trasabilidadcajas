@@ -139,6 +139,68 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             reader.readAsText(file);
         });
+
+        // NUEVA LÓGICA: CARGA MANUAL
+        const manualInput = document.getElementById('manual-input');
+        const manualBtn = document.getElementById('manual-import-btn');
+
+        manualBtn.addEventListener('click', async () => {
+            const text = manualInput.value.trim();
+            if (!text) {
+                alert("Por favor, ingresá al menos un ítem.");
+                return;
+            }
+
+            const rows = text.split(/\r?\n/).filter(row => row.trim() !== '');
+            
+            manualBtn.disabled = true;
+            manualBtn.innerHTML = '<span class="material-symbols-outlined animate-spin text-[18px]">sync</span> PROCESANDO...';
+            
+            statusLog.classList.remove('hidden');
+            statusLog.innerHTML = `<div class="mb-1 text-indigo-500 uppercase font-black">--- INICIANDO CARGA MANUAL ---</div>`;
+
+            let added = 0;
+            let errors = 0;
+
+            for (let i = 0; i < rows.length; i++) {
+                try {
+                    const columns = rows[i].split(';');
+                    if (columns.length < 2) {
+                        throw new Error("Formato inválido. Usá CODIGO ; DESCRIPCIÓN");
+                    }
+                    
+                    const codigo = columns[0]?.trim() || '';
+                    const descripcion = columns[1]?.trim() || '';
+
+                    if (!codigo) throw new Error("Código faltante.");
+
+                    const itemRef = doc(db, "deposito_catalogo", codigo);
+                    
+                    await setDoc(itemRef, {
+                        codigo: codigo,
+                        descripcion: descripcion,
+                        estado: 'ACTIVO',
+                        stock: 0, 
+                        ultimaActualizacion: new Date(),
+                        migrado: false,
+                        manual: true
+                    }, { merge: true });
+
+                    added++;
+                    statusLog.innerHTML += `<div>[${added}] OK: [${codigo}] ${descripcion}</div>`;
+                } catch (err) {
+                    errors++;
+                    statusLog.innerHTML += `<div class="bg-rose-500 text-white p-1 rounded mb-1">ERROR [Línea ${i+1}]: ${err.message}</div>`;
+                }
+                statusLog.scrollTop = statusLog.scrollHeight;
+            }
+
+            manualBtn.disabled = false;
+            manualBtn.innerHTML = '<span class="material-symbols-outlined text-[18px]">add_circle</span> AGREGAR ÍTEMS MANUALMENTE';
+            manualInput.value = '';
+            
+            alert(`Carga manual finalizada: ${added} items registrados.`);
+        });
     } catch (error) {
         console.error("Error en módulo de migración", error);
     }
