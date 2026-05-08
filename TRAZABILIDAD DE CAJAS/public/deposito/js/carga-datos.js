@@ -21,26 +21,35 @@ const initAutocomplete = () => {
     // Cachear lista de ítems en el navegador para ahorrar lecturas a Firebase (Válido por 12 hs)
     const fetchListaItems = async () => {
         try {
+            isFetching = true;
             input.disabled = true;
             input.placeholder = "Cargando ítems...";
+            console.log("Iniciando fetchListaItems...");
             
             const CACHE_KEY = 'villalba_items_cache';
-            const CACHE_EXPIRY = 1000 * 60 * 60 * 2; // 2 horas (bajado de 12 para mayor frescura)
+            const CACHE_EXPIRY = 1000 * 60 * 60 * 2; // 2 horas
             const cached = localStorage.getItem(CACHE_KEY);
             
             if (cached) {
                 const { timestamp, data } = JSON.parse(cached);
                 if (Date.now() - timestamp < CACHE_EXPIRY) {
+                    console.log(`Cargando ${data.length} ítems desde caché local.`);
                     depositoItemsCache = data;
                     input.disabled = false;
                     input.placeholder = "Ej: 4211800";
-                    return; // Retornamos temprano sin gastar lecturas
+                    isFetching = false;
+                    
+                    // Si el input ya tiene valor, forzamos un evento input para buscar
+                    if (input.value) input.dispatchEvent(new Event('input', { bubbles: true }));
+                    return;
                 }
             }
 
-            // Si no hay caché o expiró, descargamos y guardamos
+            console.log("Descargando ítems desde Firestore...");
             const q = query(collection(db, 'deposito_catalogo'));
             const snap = await getDocs(q);
+            console.log(`Se descargaron ${snap.size} ítems de Firestore.`);
+            
             depositoItemsCache = [];
             snap.forEach(doc => {
                 depositoItemsCache.push({ id: doc.id, codigo: doc.id, ...doc.data() });
@@ -53,12 +62,17 @@ const initAutocomplete = () => {
 
             input.disabled = false;
             input.placeholder = "Ej: 4211800";
+            isFetching = false;
+            
+            // Si el input ya tiene valor, forzamos un evento input para buscar
+            if (input.value) input.dispatchEvent(new Event('input', { bubbles: true }));
         } catch (e) {
             console.error("No se pudo cargar la lista de ítems", e);
             input.disabled = false;
             input.placeholder = "Error al cargar base maestra";
             const detalleInput = document.getElementById('detalle-pieza');
             if (detalleInput) detalleInput.value = "ERROR: No se pudo conectar con la base maestra.";
+            isFetching = false;
         }
     };
     
@@ -99,7 +113,11 @@ const initAutocomplete = () => {
         const valAlfanumerico = val.replace(/[^A-Z0-9]/g, '');
 
         if (depositoItemsCache.length === 0) {
-            detalleInput.value = "Cargando base maestra, por favor espera...";
+            if (isFetching) {
+                detalleInput.value = "Cargando base maestra, por favor espera...";
+            } else {
+                detalleInput.value = "La base maestra de ítems está vacía.";
+            }
             return;
         }
 
