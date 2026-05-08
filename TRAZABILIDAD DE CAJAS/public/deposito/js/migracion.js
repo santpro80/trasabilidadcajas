@@ -164,9 +164,15 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             for (let i = 0; i < rows.length; i++) {
                 try {
-                    const columns = rows[i].split(';');
+                    // Detectar separador: Tabulador (Excel paste) o Punto y Coma
+                    let separator = ';';
+                    if (rows[i].includes('\t')) {
+                        separator = '\t';
+                    }
+                    
+                    const columns = rows[i].split(separator);
                     if (columns.length < 2) {
-                        throw new Error("Formato inválido. Usá CODIGO ; DESCRIPCIÓN");
+                        throw new Error("Formato inválido. Usá CODIGO ; DESCRIPCIÓN o pegá desde Excel");
                     }
                     
                     const codigo = columns[0]?.trim() || '';
