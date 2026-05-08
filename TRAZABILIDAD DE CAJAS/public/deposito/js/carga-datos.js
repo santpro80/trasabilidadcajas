@@ -32,14 +32,13 @@ const initAutocomplete = () => {
             
             if (cached) {
                 const { timestamp, data } = JSON.parse(cached);
-                if (Date.now() - timestamp < CACHE_EXPIRY) {
+                if (Date.now() - timestamp < CACHE_EXPIRY && data && data.length > 0) {
                     console.log(`Cargando ${data.length} ítems desde caché local.`);
                     depositoItemsCache = data;
                     input.disabled = false;
                     input.placeholder = "Ej: 4211800";
                     isFetching = false;
                     
-                    // Si el input ya tiene valor, forzamos un evento input para buscar
                     if (input.value) input.dispatchEvent(new Event('input', { bubbles: true }));
                     return;
                 }
@@ -55,10 +54,15 @@ const initAutocomplete = () => {
                 depositoItemsCache.push({ id: doc.id, codigo: doc.id, ...doc.data() });
             });
             
-            localStorage.setItem(CACHE_KEY, JSON.stringify({
-                timestamp: Date.now(),
-                data: depositoItemsCache
-            }));
+            if (depositoItemsCache.length > 0) {
+                localStorage.setItem(CACHE_KEY, JSON.stringify({
+                    timestamp: Date.now(),
+                    data: depositoItemsCache
+                }));
+            } else {
+                console.warn("El catálogo de Firestore está vacío, no se guardará en caché.");
+                localStorage.removeItem(CACHE_KEY);
+            }
 
             input.disabled = false;
             input.placeholder = "Ej: 4211800";
