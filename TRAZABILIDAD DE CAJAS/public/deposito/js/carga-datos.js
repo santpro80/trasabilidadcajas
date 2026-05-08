@@ -56,7 +56,9 @@ const initAutocomplete = () => {
         } catch (e) {
             console.error("No se pudo cargar la lista de ítems", e);
             input.disabled = false;
-            input.placeholder = "Error de conexión";
+            input.placeholder = "Error al cargar base maestra";
+            const detalleInput = document.getElementById('detalle-pieza');
+            if (detalleInput) detalleInput.value = "ERROR: No se pudo conectar con la base maestra.";
         }
     };
     
@@ -95,6 +97,12 @@ const initAutocomplete = () => {
         }
 
         const valAlfanumerico = val.replace(/[^A-Z0-9]/g, '');
+
+        if (depositoItemsCache.length === 0) {
+            detalleInput.value = "Cargando base maestra, por favor espera...";
+            return;
+        }
+
         const matches = depositoItemsCache.filter(item => {
             const codigo = item.codigo.toUpperCase();
             const desc = (item.descripcion || '').toUpperCase();
@@ -461,15 +469,22 @@ const initDescSearch = () => {
     });
 };
 
-document.addEventListener('DOMContentLoaded', async () => {
-    try {
-        currentUser = await requireDepositoAuth(['operario', 'supervisor']);
-        initAutocomplete();
-        initDescSearch();
-        initForm();
-        loadStagedFromLocal();
-        setupLastMovementListener();
-    } catch (e) {
-        console.error("Autenticación fallida o carga abortada", e);
-    }
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. Inicializar UI de inmediato (No bloqueante)
+    initAutocomplete();
+    initDescSearch();
+    initForm();
+    loadStagedFromLocal();
+    setupLastMovementListener();
+
+    // 2. Manejar Auth en segundo plano
+    requireDepositoAuth(['operario', 'supervisor'])
+        .then(authData => {
+            currentUser = authData;
+            const nameSpan = document.getElementById('user-display-name');
+            if (nameSpan) nameSpan.textContent = authData.userData.name || authData.user.email;
+        })
+        .catch(e => {
+            console.error("Autenticación fallida o carga abortada", e);
+        });
 });
