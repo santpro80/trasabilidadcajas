@@ -127,6 +127,25 @@ const loadCatalog = async (reset = true) => {
     }
 
     try {
+        const CACHE_KEY = 'villalba_items_cache';
+        const CACHE_EXPIRY = 1000 * 60 * 60 * 2; // 2 horas
+        const cached = localStorage.getItem(CACHE_KEY);
+        
+        if (cached) {
+            const { timestamp, data } = JSON.parse(cached);
+            // Reusar caché si es válido y no está vacío
+            if (Date.now() - timestamp < CACHE_EXPIRY && data && data.length > 0) {
+                console.log(`Cargando ${data.length} ítems desde caché local.`);
+                // Asegurar ordenamiento
+                allItems = data.sort((a, b) => (a.codigo || '').localeCompare(b.codigo || ''));
+                allLoaded = true;
+                applyFilters(reset);
+                isFetching = false;
+                return;
+            }
+        }
+
+        console.log("Descargando catálogo desde Firestore...");
         const catalogRef = collection(db, 'deposito_catalogo');
         const q = query(catalogRef, orderBy("codigo", "asc"));
 
@@ -136,6 +155,13 @@ const loadCatalog = async (reset = true) => {
             if (reset) emptyState.classList.remove('hidden');
         } else {
             allItems = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            
+            // Guardar en caché compartido
+            localStorage.setItem(CACHE_KEY, JSON.stringify({
+                timestamp: Date.now(),
+                data: allItems
+            }));
+            
             allLoaded = true;
             applyFilters(reset);
         }
