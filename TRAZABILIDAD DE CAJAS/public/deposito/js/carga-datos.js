@@ -337,9 +337,6 @@ const initForm = () => {
     btnConfirmar.addEventListener('click', async () => {
         if (stagedMovements.length === 0) return;
 
-        const confirmed = confirm(`¿Confirmar el registro de los ${stagedMovements.length} movimientos en la base de datos?`);
-        if (!confirmed) return;
-
         btnConfirmar.disabled = true;
         btnConfirmar.innerHTML = '<span class="material-symbols-outlined animate-spin text-[20px]">sync</span> REGISTRANDO TODO...';
         
