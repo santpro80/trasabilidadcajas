@@ -145,16 +145,16 @@ const loadCatalog = async (reset = true) => {
             }
         }
 
-        console.log("Descargando catálogo desde Firestore...");
-        const catalogRef = collection(db, 'deposito_catalogo');
-        const q = query(catalogRef, orderBy("codigo", "asc"));
+        console.log("Descargando catálogo desde Firestore (Master Document)...");
+        const masterRef = doc(db, 'system', 'master_catalog');
+        const snap = await getDoc(masterRef);
 
-        const snap = await getDocs(q);
-        if (snap.empty) {
+        if (!snap.exists()) {
             allLoaded = true;
             if (reset) emptyState.classList.remove('hidden');
         } else {
-            allItems = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            const masterData = snap.data().items || [];
+            allItems = masterData.sort((a, b) => (a.codigo || '').localeCompare(b.codigo || ''));
             
             // Guardar en caché compartido
             localStorage.setItem(CACHE_KEY, JSON.stringify({

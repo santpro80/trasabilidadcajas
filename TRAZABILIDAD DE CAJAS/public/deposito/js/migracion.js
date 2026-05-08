@@ -128,8 +128,17 @@ document.addEventListener('DOMContentLoaded', async () => {
                     ${added} items registrados con éxito
                 </div>`;
                 
+                statusLog.innerHTML += `<div class="text-indigo-400 italic">Optimizando base maestra (creando Master Document)...</div>`;
+                const catalogSnap = await getDocs(collection(db, 'deposito_catalogo'));
+                const allItems = catalogSnap.docs.map(d => ({ 
+                    codigo: d.id, 
+                    descripcion: d.data().descripcion || 'S/N', 
+                    stock: d.data().stock || 0 
+                }));
+                await setDoc(doc(db, 'system', 'master_catalog'), { items: allItems });
+
                 localStorage.removeItem('villalba_items_cache');
-                alert(`Migración terminada: ${added} items cargados con éxito.`);
+                alert(`Migración terminada: ${added} items cargados con éxito y optimizados.`);
             };
             
             reader.onerror = (err) => {
@@ -202,11 +211,20 @@ document.addEventListener('DOMContentLoaded', async () => {
                 statusLog.scrollTop = statusLog.scrollHeight;
             }
 
+            statusLog.innerHTML += `<div class="text-indigo-400 italic mt-2">Optimizando base maestra (creando Master Document)...</div>`;
+            const catalogSnap = await getDocs(collection(db, 'deposito_catalogo'));
+            const allItems = catalogSnap.docs.map(d => ({ 
+                codigo: d.id, 
+                descripcion: d.data().descripcion || 'S/N', 
+                stock: d.data().stock || 0 
+            }));
+            await setDoc(doc(db, 'system', 'master_catalog'), { items: allItems });
+
             manualBtn.innerHTML = '<span class="material-symbols-outlined text-[18px]">add_circle</span> AGREGAR ÍTEMS MANUALMENTE';
             manualInput.value = '';
             
             localStorage.removeItem('villalba_items_cache');
-            alert(`Carga manual finalizada: ${added} items registrados.`);
+            alert(`Carga manual finalizada: ${added} items registrados y optimizados.`);
         });
     } catch (error) {
         console.error("Error en módulo de migración", error);

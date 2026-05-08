@@ -44,15 +44,18 @@ const initAutocomplete = () => {
                 }
             }
 
-            console.log("Descargando ítems desde Firestore...");
-            const q = query(collection(db, 'deposito_catalogo'));
-            const snap = await getDocs(q);
-            console.log(`Se descargaron ${snap.size} ítems de Firestore.`);
+            console.log("Descargando ítems desde Firestore (Master Document)...");
+            const masterRef = doc(db, 'system', 'master_catalog');
+            const snap = await getDoc(masterRef);
             
             depositoItemsCache = [];
-            snap.forEach(doc => {
-                depositoItemsCache.push({ id: doc.id, codigo: doc.id, ...doc.data() });
-            });
+            if (snap.exists()) {
+                const masterData = snap.data().items || [];
+                console.log(`Se descargaron ${masterData.length} ítems del Master Document.`);
+                depositoItemsCache = masterData;
+            } else {
+                console.warn("Master Document no encontrado.");
+            }
             
             if (depositoItemsCache.length > 0) {
                 localStorage.setItem(CACHE_KEY, JSON.stringify({
@@ -381,22 +384,44 @@ const initForm = () => {
                     userId: currentUser?.user?.uid || 'Anónimo'
                 });
 
-                // 2. Actualizar Stock Catálogo
+                // 2. Actualizar Stock Catálogo Individual
                 const itemRef = doc(db, 'deposito_catalogo', mov.codigo);
                 const itemSnap = await getDoc(itemRef);
+                const val = mov.tipo === 'Ingreso' ? mov.cantidad : -mov.cantidad;
                 
                 if (itemSnap.exists()) {
                     const currentStock = itemSnap.data().stock || 0;
-                    const val = mov.tipo === 'Ingreso' ? mov.cantidad : -mov.cantidad;
                     await setDoc(itemRef, { stock: currentStock + val }, { merge: true });
                 } else {
-                    const val = mov.tipo === 'Ingreso' ? mov.cantidad : -mov.cantidad;
                     await setDoc(itemRef, {
                         codigo: mov.codigo,
                         descripcion: mov.descripcion,
                         stock: val
                     }, { merge: true });
                 }
+            }
+
+            // 3. Actualizar Master Document para mantener stock sincronizado en 1 escritura
+            try {
+                const masterRef = doc(db, 'system', 'master_catalog');
+                const masterSnap = await getDoc(masterRef);
+                let masterItems = masterSnap.exists() ? (masterSnap.data().items || []) : [];
+                
+                stagedMovements.forEach(mov => {
+                    const val = mov.tipo === 'Ingreso' ? mov.cantidad : -mov.cantidad;
+                    const idx = masterItems.findIndex(i => i.codigo === mov.codigo);
+                    if (idx >= 0) {
+                        masterItems[idx].stock = (masterItems[idx].stock || 0) + val;
+                    } else {
+                        masterItems.push({ codigo: mov.codigo, descripcion: mov.descripcion, stock: val });
+                    }
+                });
+                
+                await setDoc(masterRef, { items: masterItems });
+                // Limpiar caché local para forzar actualización del master
+                localStorage.removeItem('villalba_items_cache');
+            } catch (e) {
+                console.error("Error actualizando Master Document", e);
             }
 
             // Limpiar todo al finalizar éxito
