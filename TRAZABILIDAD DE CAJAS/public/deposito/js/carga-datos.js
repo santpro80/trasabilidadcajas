@@ -262,8 +262,26 @@ const renderStagedItems = () => {
     }).join('');
 };
 
+const saveStagedToLocal = () => {
+    localStorage.setItem('deposito_staged_movements', JSON.stringify(stagedMovements));
+};
+
+const loadStagedFromLocal = () => {
+    const cached = localStorage.getItem('deposito_staged_movements');
+    if (cached) {
+        try {
+            stagedMovements = JSON.parse(cached);
+            renderStagedItems();
+        } catch (e) {
+            console.error("Error al cargar movimientos cacheados", e);
+            stagedMovements = [];
+        }
+    }
+};
+
 window.removeStagedItem = (index) => {
     stagedMovements.splice(index, 1);
+    saveStagedToLocal();
     renderStagedItems();
 };
 
@@ -299,6 +317,7 @@ const initForm = () => {
 
         // Añadir al array de pendientes
         stagedMovements.push({ tipo, codigo, descripcion, cantidad });
+        saveStagedToLocal();
         
         // Reset parcial: Mantener el TIPO DE MOVIMIENTO
         const currentTipo = document.getElementById('tipo-movimiento').value;
@@ -355,6 +374,7 @@ const initForm = () => {
 
             // Limpiar todo al finalizar éxito
             stagedMovements = [];
+            saveStagedToLocal();
             renderStagedItems();
             showToast();
         } catch (error) {
@@ -450,6 +470,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         initAutocomplete();
         initDescSearch();
         initForm();
+        loadStagedFromLocal();
         setupLastMovementListener();
     } catch (e) {
         console.error("Autenticación fallida o carga abortada", e);
