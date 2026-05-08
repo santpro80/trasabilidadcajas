@@ -128,6 +128,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     ${added} items registrados con éxito
                 </div>`;
                 
+                localStorage.removeItem('villalba_items_cache');
                 alert(`Migración terminada: ${added} items cargados con éxito.`);
             };
             
@@ -201,10 +202,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                 statusLog.scrollTop = statusLog.scrollHeight;
             }
 
-            manualBtn.disabled = false;
             manualBtn.innerHTML = '<span class="material-symbols-outlined text-[18px]">add_circle</span> AGREGAR ÍTEMS MANUALMENTE';
             manualInput.value = '';
             
+            localStorage.removeItem('villalba_items_cache');
             alert(`Carga manual finalizada: ${added} items registrados.`);
         });
     } catch (error) {

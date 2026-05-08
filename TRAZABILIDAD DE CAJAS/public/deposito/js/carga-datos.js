@@ -25,7 +25,7 @@ const initAutocomplete = () => {
             input.placeholder = "Cargando ítems...";
             
             const CACHE_KEY = 'villalba_items_cache';
-            const CACHE_EXPIRY = 1000 * 60 * 60 * 12; // 12 horas
+            const CACHE_EXPIRY = 1000 * 60 * 60 * 2; // 2 horas (bajado de 12 para mayor frescura)
             const cached = localStorage.getItem(CACHE_KEY);
             
             if (cached) {
