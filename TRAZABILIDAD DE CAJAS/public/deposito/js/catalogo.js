@@ -1,4 +1,4 @@
-import { db, collection, query, getDocs, orderBy, limit, startAfter, requireDepositoAuth } from './firebase-config-deposito.js';
+import { db, doc, getDoc, collection, query, getDocs, orderBy, limit, startAfter, requireDepositoAuth } from './firebase-config-deposito.js';
 
 let allItems = [];
 let filteredItems = [];
