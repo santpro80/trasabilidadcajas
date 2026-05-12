@@ -271,7 +271,8 @@ const renderStagedItems = () => {
     }
 
     stagedSection.classList.remove('hidden');
-    stagedCount.textContent = `${stagedMovements.length} ÍTEMS`;
+    const totalUnidades = stagedMovements.reduce((acc, m) => acc + (m.cantidad || 0), 0);
+    stagedCount.textContent = `${stagedMovements.length} ÍTEMS | ${totalUnidades} UNIDADES`;
 
     stagedTbody.innerHTML = stagedMovements.map((m, index) => {
         const esIngreso = m.tipo === 'Ingreso';
