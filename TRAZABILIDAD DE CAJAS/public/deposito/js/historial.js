@@ -1,4 +1,4 @@
-import { db, collection, query, onSnapshot, orderBy, requireDepositoAuth } from './firebase-config-deposito.js';
+import { db, collection, query, onSnapshot, orderBy, limit, requireDepositoAuth } from './firebase-config-deposito.js';
 
 let todosLosMovimientos = [];
 let filtroTexto = '';
@@ -86,7 +86,8 @@ const setupListeners = () => {
         renderTabla();
     });
 
-    const q = query(collection(db, 'deposito_movimientos'), orderBy('timestamp', 'desc'));
+    // Limitar a 200 movimientos para evitar consumo excesivo de lecturas en Firestore
+    const q = query(collection(db, 'deposito_movimientos'), orderBy('timestamp', 'desc'), limit(200));
     onSnapshot(q, (snap) => {
         todosLosMovimientos = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         renderTabla();

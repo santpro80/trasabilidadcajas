@@ -1,4 +1,4 @@
-import { db, collection, getDocs, query, where, requireDepositoAuth } from './firebase-config-deposito.js';
+import { db, doc, getDoc, collection, getDocs, query, where, requireDepositoAuth } from './firebase-config-deposito.js';
 
 let depositoItemsCache = [];
 let currentUser = null;
@@ -63,18 +63,25 @@ const fetchListaItems = async () => {
             }
         }
 
-        const q = query(collection(db, 'deposito_catalogo'));
-        const querySnapshot = await getDocs(q);
-        depositoItemsCache = querySnapshot.docs.map(doc => ({
-            codigo: doc.id,
-            descripcion: doc.data().descripcion,
-            stock: doc.data().stock
-        }));
-
-        localStorage.setItem(CACHE_KEY, JSON.stringify({
-            timestamp: Date.now(),
-            data: depositoItemsCache
-        }));
+        const masterRef = doc(db, 'system', 'master_catalog');
+        const snap = await getDoc(masterRef);
+        
+        depositoItemsCache = [];
+        if (snap.exists()) {
+            const masterData = snap.data().items || [];
+            depositoItemsCache = masterData.map(item => ({
+                codigo: item.codigo,
+                descripcion: item.descripcion,
+                stock: item.stock
+            }));
+            
+            if (depositoItemsCache.length > 0) {
+                localStorage.setItem(CACHE_KEY, JSON.stringify({
+                    timestamp: Date.now(),
+                    data: depositoItemsCache
+                }));
+            }
+        }
 
         if(input) {
             input.disabled = false;
