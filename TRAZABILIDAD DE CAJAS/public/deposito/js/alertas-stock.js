@@ -52,15 +52,6 @@ const initSearch = () => {
     input.addEventListener('input', (e) => {
         let val = e.target.value.toUpperCase();
         
-        let stripped = val.replace(/[^A-Z0-9]/g, '');
-        let formatted = '';
-        if (stripped.length > 0) formatted += stripped.substring(0, 2);
-        if (stripped.length > 2) formatted += '-' + stripped.substring(2, 5);
-        if (stripped.length > 5) formatted += '-' + stripped.substring(5, 7);
-        
-        if (input.value !== formatted) input.value = formatted;
-        val = formatted;
-        
         autocompleteList.innerHTML = '';
         itemSeleccionado = null;
         panelSeleccionado.classList.add('hidden');
