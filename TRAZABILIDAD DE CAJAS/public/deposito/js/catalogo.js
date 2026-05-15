@@ -38,10 +38,22 @@ const closeImageModalObj = document.getElementById('closeImageModal');
         if (stockActual > 0) stockColor = 'text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20';
         else if (stockActual < 0) stockColor = 'text-rose-600 bg-rose-50 dark:bg-rose-500/10 border-rose-200 dark:border-rose-500/20';
 
+        let alertBadge = '';
+        let rowStyle = 'hover:bg-slate-50 dark:hover:bg-white/5 border-slate-100 dark:border-slate-800/50';
+        
+        if (item.alertaStock === 'amarilla') {
+            rowStyle = 'bg-yellow-500/5 hover:bg-yellow-500/10 border-yellow-500/20';
+            alertBadge = '<span class="absolute -top-1 -right-1 flex size-5 items-center justify-center rounded-full bg-yellow-500 text-white shadow-sm z-20" title="Alerta Amarilla (Media)"><span class="material-symbols-outlined text-[12px]">warning</span></span>';
+        } else if (item.alertaStock === 'roja') {
+            rowStyle = 'bg-rose-500/5 hover:bg-rose-500/10 border-rose-500/20';
+            alertBadge = '<span class="absolute -top-1 -right-1 flex size-5 items-center justify-center rounded-full bg-rose-500 text-white shadow-sm z-20" title="Alerta Roja (Alta)"><span class="material-symbols-outlined text-[12px]">error</span></span>';
+        }
+
         return `
-            <tr style="height: ${ROW_HEIGHT}px" class="group hover:bg-slate-50 dark:hover:bg-white/5 transition-colors border-b border-slate-100 dark:border-slate-800/50">
+            <tr style="height: ${ROW_HEIGHT}px" class="group transition-colors border-b ${rowStyle}">
                 <td class="py-2 px-6">
-                    <div class="relative w-16 h-16 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 overflow-hidden flex items-center justify-center cursor-pointer item-img-clickable">
+                    <div class="relative w-16 h-16 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center cursor-pointer item-img-clickable">
+                        ${alertBadge}
                         <span class="material-symbols-outlined absolute text-2xl text-slate-300 dark:text-slate-700 transition-transform group-hover:scale-110">inventory_2</span>
                         <img src="../assets/items/${item.codigo}.webp" alt="${item.codigo}" 
                              class="max-h-full max-w-full object-contain relative z-10 transition-transform group-hover:scale-110" 

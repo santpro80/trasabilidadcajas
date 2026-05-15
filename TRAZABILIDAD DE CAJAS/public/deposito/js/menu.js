@@ -62,6 +62,17 @@ document.addEventListener('DOMContentLoaded', async () => {
                 col: 'administracion'
             },
             {
+                id: 'alertas',
+                title: 'Alertas de Stock',
+                desc: 'Configurar alertas y reposición',
+                icon: 'warning',
+                link: 'alertas-stock.html',
+                bg: 'bg-orange-50 dark:bg-orange-500/10',
+                text: 'text-orange-600 dark:text-orange-400',
+                roles: ['supervisor'],
+                col: 'administracion'
+            },
+            {
                 id: 'migracion',
                 title: 'Migración CSV',
                 desc: 'Carga masiva de base de datos',

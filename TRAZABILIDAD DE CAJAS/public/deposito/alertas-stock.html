@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="es" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alertas de Stock - Terian Systems</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet" />
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="../css/output.css">
+</head>
+<body class="bg-slate-50 dark:bg-[#0b0f19] text-slate-900 dark:text-slate-200 antialiased min-h-screen flex selection:bg-villalba-blue selection:text-white transition-colors duration-300 relative">
+
+    <div id="sidebar-container"></div>
+
+    <main class="flex-1 flex flex-col min-w-0 transition-all duration-300">
+        <!-- Topbar -->
+        <header class="sticky top-0 z-30 bg-white/80 dark:bg-[#0b0f19]/80 backdrop-blur-xl border-b border-slate-200 dark:border-white/5 h-16 flex items-center justify-between px-4 sm:px-8">
+            <div class="flex items-center gap-4">
+                <button id="mobile-menu-btn" class="lg:hidden p-2 -ml-2 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 transition-colors">
+                    <span class="material-symbols-outlined">menu</span>
+                </button>
+                <a href="menu.html" class="p-2 -ml-2 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 transition-colors flex items-center justify-center">
+                    <span class="material-symbols-outlined">arrow_back</span>
+                </a>
+                <div class="flex items-center gap-3">
+                    <div class="size-8 rounded-lg bg-orange-500/10 flex items-center justify-center text-orange-500 hidden sm:flex">
+                        <span class="material-symbols-outlined text-[20px]">warning</span>
+                    </div>
+                    <h1 class="text-sm font-black uppercase tracking-widest text-slate-900 dark:text-white">Alertas de Stock</h1>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-4">
+                <div class="hidden sm:flex items-center gap-3">
+                    <span id="user-display-name" class="text-xs font-black text-slate-500 uppercase tracking-widest">Cargando...</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="flex-1 p-4 sm:p-8 max-w-5xl mx-auto w-full grid grid-cols-1 lg:grid-cols-2 gap-8">
+            
+            <!-- Columna Izquierda: Configurar Alerta -->
+            <div class="glass-card rounded-[2rem] p-6 lg:p-8 shadow-xl flex flex-col h-fit sticky top-24">
+                <div>
+                    <h2 class="text-xl font-black text-slate-800 dark:text-white uppercase tracking-tight flex items-center gap-2 mb-2">
+                        <span class="material-symbols-outlined text-villalba-blue">edit_notifications</span>
+                        Configurar Alerta
+                    </h2>
+                    <p class="text-[10px] uppercase tracking-widest text-slate-500 font-bold mb-8">Selecciona una pieza para asignarle una alerta y generar un pedido de reposición automáticamente.</p>
+                </div>
+
+                <div class="space-y-6">
+                    <!-- Buscador -->
+                    <div class="space-y-2 relative">
+                        <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Código o Descripción</label>
+                        <div class="relative group">
+                            <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-villalba-blue transition-colors">search</span>
+                            <input type="text" id="buscador-input" placeholder="Ej: PLACA Ø4..." autocomplete="off" class="w-full h-14 pl-12 pr-4 bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-2xl text-sm font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-villalba-blue/50 focus:border-villalba-blue transition-all uppercase placeholder:normal-case placeholder:font-medium">
+                        </div>
+                        
+                        <!-- Resultados Autocompletado -->
+                        <div id="autocomplete-list" class="absolute left-0 right-0 top-full mt-2 bg-white dark:bg-[#151a27] border border-slate-200 dark:border-slate-800/80 rounded-2xl shadow-2xl z-50 max-h-[300px] overflow-y-auto hidden divide-y divide-slate-100 dark:divide-slate-800/50">
+                            <!-- Resultados aquí -->
+                        </div>
+                    </div>
+
+                    <!-- Detalles del ítem seleccionado -->
+                    <div id="item-seleccionado" class="hidden p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-white/5 space-y-4">
+                        <div>
+                            <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Ítem Seleccionado</span>
+                            <h3 id="item-codigo" class="text-lg font-black text-villalba-blue tracking-wider mt-1"></h3>
+                            <p id="item-desc" class="text-xs font-bold text-slate-600 dark:text-slate-300 mt-1"></p>
+                        </div>
+                        
+                        <div class="space-y-2">
+                            <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Cantidad a reponer (Opcional)</label>
+                            <input type="number" id="cantidad-reposicion" min="1" placeholder="Ej: 10" class="w-full h-12 px-4 bg-white dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-xl text-sm font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-villalba-blue/50 transition-all">
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3 pt-2">
+                            <button id="btn-alerta-amarilla" class="flex flex-col items-center justify-center p-4 rounded-xl border border-yellow-500/20 bg-yellow-500/10 text-yellow-600 hover:bg-yellow-500 hover:text-white transition-all group">
+                                <span class="material-symbols-outlined mb-1 group-hover:scale-110 transition-transform">warning</span>
+                                <span class="text-[10px] font-black uppercase tracking-widest text-center">Amarilla<br>(Prioridad Media)</span>
+                            </button>
+                            <button id="btn-alerta-roja" class="flex flex-col items-center justify-center p-4 rounded-xl border border-rose-500/20 bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white transition-all group">
+                                <span class="material-symbols-outlined mb-1 group-hover:scale-110 transition-transform">error</span>
+                                <span class="text-[10px] font-black uppercase tracking-widest text-center">Roja<br>(Prioridad Alta)</span>
+                            </button>
+                        </div>
+                        <button id="btn-quitar-alerta" class="w-full py-3 mt-2 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-400 font-bold text-[10px] uppercase tracking-widest hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors hidden">
+                            Quitar Alerta
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Columna Derecha: Lista de Alertas Activas -->
+            <div class="glass-card rounded-[2rem] p-6 lg:p-8 shadow-xl flex flex-col h-full min-h-[500px]">
+                <div class="mb-6 flex items-center justify-between">
+                    <div>
+                        <h2 class="text-xl font-black text-slate-800 dark:text-white uppercase tracking-tight flex items-center gap-2 mb-2">
+                            <span class="material-symbols-outlined text-villalba-blue">list_alt</span>
+                            Alertas Activas
+                        </h2>
+                        <p class="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Ítems con necesidad de reposición</p>
+                    </div>
+                    <span id="contador-alertas" class="bg-villalba-blue text-white text-[10px] font-black px-3 py-1 rounded-full shadow-sm">0 ÍTEMS</span>
+                </div>
+
+                <div class="flex-1 overflow-hidden border border-slate-200 dark:border-slate-800/80 rounded-2xl bg-white/50 dark:bg-black/20 relative">
+                    <div class="absolute inset-0 overflow-y-auto">
+                        <table class="w-full border-collapse">
+                            <thead class="sticky top-0 bg-slate-100/90 dark:bg-slate-800/90 backdrop-blur-md z-10 shadow-sm">
+                                <tr>
+                                    <th class="text-[9px] font-black uppercase tracking-widest text-slate-500 py-3 px-4 text-left">Nivel</th>
+                                    <th class="text-[9px] font-black uppercase tracking-widest text-slate-500 py-3 px-4 text-left">Código / Detalle</th>
+                                </tr>
+                            </thead>
+                            <tbody id="alertas-tbody" class="divide-y divide-slate-100 dark:divide-slate-800/50">
+                                <!-- Cargando state -->
+                                <tr>
+                                    <td colspan="2" class="py-16 text-center">
+                                        <div class="flex flex-col items-center justify-center gap-3">
+                                            <span class="material-symbols-outlined animate-spin text-3xl text-villalba-blue">sync</span>
+                                            <p class="text-xs font-bold text-slate-500 uppercase tracking-widest">Cargando alertas...</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-6 right-6 bg-emerald-500 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 transform transition-all duration-300 translate-y-24 opacity-0 z-50">
+        <span class="material-symbols-outlined">check_circle</span>
+        <div>
+            <p class="text-sm font-black tracking-wide uppercase">¡Actualizado!</p>
+            <p class="text-[10px] font-medium opacity-90">Pedido generado correctamente.</p>
+        </div>
+    </div>
+
+    <script type="module" src="js/alertas-stock.js"></script>
+    <script type="module" src="../js/global-sidebar.js"></script>
+    <script type="module">import "../js/theme.js";</script>
+</body>
+</html>
