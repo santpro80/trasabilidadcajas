@@ -83,7 +83,8 @@ const initAutocomplete = () => {
         }
     };
     
-    fetchListaItems();
+    // Retornamos la función para poder llamarla más tarde
+    return fetchListaItems;
 
     input.addEventListener('input', (e) => {
         let val = e.target.value.toUpperCase();
@@ -519,11 +520,10 @@ const initDescSearch = () => {
 
 document.addEventListener('DOMContentLoaded', () => {
     // 1. Inicializar UI de inmediato (No bloqueante)
-    initAutocomplete();
+    const fetchListaItems = initAutocomplete();
     initDescSearch();
     initForm();
     loadStagedFromLocal();
-    setupLastMovementListener();
 
     // 2. Manejar Auth en segundo plano
     requireDepositoAuth(['operario', 'supervisor'])
@@ -531,6 +531,10 @@ document.addEventListener('DOMContentLoaded', () => {
             currentUser = authData;
             const nameSpan = document.getElementById('user-display-name');
             if (nameSpan) nameSpan.textContent = authData.userData.name || authData.user.email;
+
+            // 3. Ejecutar queries de Firestore DESPUÉS de que auth se resuelva
+            fetchListaItems();
+            setupLastMovementListener();
         })
         .catch(e => {
             console.error("Autenticación fallida o carga abortada", e);
