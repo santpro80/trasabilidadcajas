@@ -82,10 +82,6 @@ const initAutocomplete = () => {
             isFetching = false;
         }
     };
-    
-    // Retornamos la función para poder llamarla más tarde
-    return fetchListaItems;
-
     input.addEventListener('input', (e) => {
         let val = e.target.value.toUpperCase();
         
@@ -224,6 +220,9 @@ const initAutocomplete = () => {
             if (e.target === imageModal) closeImageModalObj.onclick();
         };
     }
+
+    // Retornamos la función para poder llamarla más tarde
+    return fetchListaItems;
 };
 
 const setupLastMovementListener = () => {
