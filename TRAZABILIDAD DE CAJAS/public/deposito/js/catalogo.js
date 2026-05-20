@@ -277,12 +277,12 @@ const setupApp = () => {
             btnExportExcel.classList.add('pointer-events-none', 'opacity-75');
 
             setTimeout(() => {
-                let csvContent = "\uFEFFCÓDIGO,DESCRIPCIÓN,CANTIDAD\n";
+                let csvContent = "\uFEFFCÓDIGO;DESCRIPCIÓN;CANTIDAD\n";
                 listToExport.forEach(item => {
                     const codigo = item.codigo ? `="${item.codigo}"` : "";
                     const desc = item.descripcion ? `"${item.descripcion.replace(/"/g, '""')}"` : "";
                     const cant = item.stock || 0;
-                    csvContent += `${codigo},${desc},${cant}\n`;
+                    csvContent += `${codigo};${desc};${cant}\n`;
                 });
                 
                 const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
