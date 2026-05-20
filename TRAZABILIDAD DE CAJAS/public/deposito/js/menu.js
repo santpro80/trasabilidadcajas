@@ -70,7 +70,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 bg: 'bg-orange-50 dark:bg-orange-500/10',
                 text: 'text-orange-600 dark:text-orange-400',
                 roles: ['supervisor'],
-                col: 'administracion'
+                col: 'operatividad'
             },
             {
                 id: 'migracion',
@@ -103,7 +103,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 bg: 'bg-violet-50 dark:bg-violet-500/10',
                 text: 'text-violet-600 dark:text-violet-400',
                 roles: ['supervisor'],
-                col: 'administracion'
+                col: 'operatividad'
             }
         ];
 
