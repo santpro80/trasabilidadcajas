@@ -1,4 +1,4 @@
-import { db, doc, getDoc, setDoc, requireDepositoAuth, collection, addDoc, getDocs, query, orderBy, limit, serverTimestamp, where } from './firebase-config-deposito.js';
+import { db, doc, getDoc, setDoc, requireDepositoAuth, collection, addDoc, serverTimestamp } from './firebase-config-deposito.js';
 
 let depositoItemsCache = [];
 let itemSeleccionado = null;
@@ -13,7 +13,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         await fetchListaItems();
         initSearch();
-        renderHistorialAjustes();
     } catch (e) {
         console.error("Autenticación fallida o carga abortada", e);
     }
@@ -110,7 +109,7 @@ const initSearch = () => {
         inputNuevoStock.focus();
     };
 
-    btnGuardar.addEventListener('click', async () => {
+    const guardarAjuste = async () => {
         if (!itemSeleccionado) return;
         
         const nuevoVal = parseInt(inputNuevoStock.value, 10);
@@ -174,9 +173,8 @@ const initSearch = () => {
             itemSeleccionado.stock = nuevoVal;
             inputNuevoStock.value = '';
 
-            // Recargar lista local e historial
+            // Recargar lista local
             await fetchListaItems();
-            await renderHistorialAjustes();
 
         } catch (error) {
             console.error("Error al guardar ajuste de stock:", error);
@@ -187,98 +185,17 @@ const initSearch = () => {
             panelSeleccionado.style.pointerEvents = 'auto';
             panelSeleccionado.style.opacity = '1';
         }
-    });
-};
+    };
 
-const renderHistorialAjustes = async () => {
-    const tbody = document.getElementById('ajustes-tbody');
-    const contador = document.getElementById('contador-ajustes');
-    
-    try {
-        const q = query(
-            collection(db, 'deposito_movimientos'), 
-            where('tipo', '==', 'Ajuste'),
-            orderBy('timestamp', 'desc'), 
-            limit(15)
-        );
-        const snap = await getDocs(q);
-        
-        tbody.innerHTML = '';
-        let count = 0;
-        
-        if (snap.empty) {
-            tbody.innerHTML = `
-                <tr>
-                    <td colspan="3" class="py-12 text-center text-xs font-bold text-slate-400 dark:text-slate-600 uppercase tracking-widest">
-                        No hay ajustes registrados recientemente
-                    </td>
-                </tr>
-            `;
-            contador.textContent = '0 AJUSTES';
-            return;
+    btnGuardar.addEventListener('click', guardarAjuste);
+
+    // Event listener to save when Enter is pressed in the new stock input
+    inputNuevoStock.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            guardarAjuste();
         }
-
-        snap.forEach(docSnap => {
-            const data = docSnap.data();
-            count++;
-            
-            const timestamp = data.timestamp;
-            let dateStr = '---';
-            if (timestamp) {
-                const date = timestamp.toDate();
-                dateStr = date.toLocaleDateString('es-AR') + ' ' + date.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
-            }
-
-            const tr = document.createElement('tr');
-            tr.className = "hover:bg-slate-50 dark:hover:bg-white/5 border-slate-100 dark:border-slate-800/50 transition-colors";
-            
-            let diffLabel = 'Modificado';
-            let diffStyle = 'text-slate-500 bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700/50';
-            if (data.detalle && data.detalle.includes('Dif: ')) {
-                const parts = data.detalle.split('Dif: ');
-                const diffValStr = parts[1].replace(')', '');
-                const diffVal = parseInt(diffValStr, 10);
-                if (diffVal > 0) {
-                    diffLabel = `+${diffVal}`;
-                    diffStyle = 'text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20';
-                } else if (diffVal < 0) {
-                    diffLabel = `${diffVal}`;
-                    diffStyle = 'text-rose-600 bg-rose-50 dark:bg-rose-500/10 border-rose-200 dark:border-rose-500/20';
-                }
-            }
-
-            tr.innerHTML = `
-                <td class="py-3 px-4 text-xs font-bold text-slate-400 dark:text-slate-500 tracking-tight leading-relaxed">
-                    ${dateStr}
-                </td>
-                <td class="py-3 px-4">
-                    <div class="flex flex-col">
-                        <span class="text-xs font-black text-slate-800 dark:text-white uppercase tracking-widest">${data.codigo}</span>
-                        <span class="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase leading-relaxed line-clamp-1">${data.descripcion}</span>
-                        <span class="text-[8px] font-bold text-slate-500 tracking-wider mt-0.5">${data.usuarioNombre || data.usuario || 'Supervisor'}</span>
-                    </div>
-                </td>
-                <td class="py-3 px-4 text-center">
-                    <span class="px-2 py-1 rounded border font-black text-[9px] uppercase tracking-widest ${diffStyle}">
-                        ${diffLabel}
-                    </span>
-                </td>
-            `;
-            tbody.appendChild(tr);
-        });
-
-        contador.textContent = `${count} AJUSTES`;
-    } catch (error) {
-        console.error("Error al renderizar historial de ajustes:", error);
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="3" class="py-12 text-center text-xs font-bold text-rose-500 bg-rose-50 dark:bg-rose-500/5 dark:text-rose-400 uppercase tracking-widest border border-rose-200 dark:border-rose-900/50 rounded-xl">
-                    Error al cargar el historial
-                </td>
-            </tr>
-        `;
-        contador.textContent = 'ERROR';
-    }
+    });
 };
 
 const showToast = () => {

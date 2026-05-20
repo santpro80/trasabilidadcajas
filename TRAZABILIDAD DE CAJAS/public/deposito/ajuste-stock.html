@@ -44,10 +44,10 @@
         </header>
 
         <!-- Main Content -->
-        <div class="flex-1 p-4 sm:p-8 max-w-5xl mx-auto w-full grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div class="flex-1 p-4 sm:p-8 max-w-xl mx-auto w-full flex flex-col justify-start">
             
-            <!-- Columna Izquierda: Modificar Stock -->
-            <div class="glass-card rounded-[2rem] p-6 lg:p-8 shadow-xl flex flex-col h-fit sticky top-24">
+            <!-- Tarjeta Central: Modificar Stock -->
+            <div class="glass-card rounded-[2rem] p-6 lg:p-8 shadow-xl flex flex-col h-fit mt-4 sm:mt-8">
                 <div>
                     <h2 class="text-xl font-black text-slate-800 dark:text-white uppercase tracking-tight flex items-center gap-2 mb-2">
                         <span class="material-symbols-outlined text-villalba-blue">edit</span>
@@ -98,45 +98,6 @@
                     </div>
                 </div>
             </div>
-
-            <!-- Columna Derecha: Últimos Ajustes de Stock -->
-            <div class="glass-card rounded-[2rem] p-6 lg:p-8 shadow-xl flex flex-col h-full min-h-[500px]">
-                <div class="mb-6 flex items-center justify-between">
-                    <div>
-                        <h2 class="text-xl font-black text-slate-800 dark:text-white uppercase tracking-tight flex items-center gap-2 mb-2">
-                            <span class="material-symbols-outlined text-villalba-blue">history</span>
-                            Historial de Ajustes
-                        </h2>
-                        <p class="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Correcciones de inventario recientes</p>
-                    </div>
-                    <span id="contador-ajustes" class="bg-villalba-blue text-white text-[10px] font-black px-3 py-1 rounded-full shadow-sm">Cargando...</span>
-                </div>
-
-                <div class="flex-1 overflow-hidden border border-slate-200 dark:border-slate-800/80 rounded-2xl bg-white/50 dark:bg-black/20 relative">
-                    <div class="absolute inset-0 overflow-y-auto">
-                        <table class="w-full border-collapse">
-                            <thead class="sticky top-0 bg-slate-100/90 dark:bg-slate-800/90 backdrop-blur-md z-10 shadow-sm">
-                                <tr>
-                                    <th class="text-[9px] font-black uppercase tracking-widest text-slate-500 py-3 px-4 text-left w-16">Fecha</th>
-                                    <th class="text-[9px] font-black uppercase tracking-widest text-slate-500 py-3 px-4 text-left">Código / Detalle</th>
-                                    <th class="text-[9px] font-black uppercase tracking-widest text-slate-500 py-3 px-4 text-center w-20">Ajuste</th>
-                                </tr>
-                            </thead>
-                            <tbody id="ajustes-tbody" class="divide-y divide-slate-100 dark:divide-slate-800/50">
-                                <tr>
-                                    <td colspan="3" class="py-16 text-center">
-                                        <div class="flex flex-col items-center justify-center gap-3">
-                                            <span class="material-symbols-outlined animate-spin text-3xl text-villalba-blue">sync</span>
-                                            <p class="text-xs font-bold text-slate-500 uppercase tracking-widest">Cargando historial...</p>
-                                        </div>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
         </div>
     </main>
 
