@@ -43,8 +43,14 @@ const renderTabla = () => {
         const fechaStr = fechaObj.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
         const horaStr = fechaObj.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
         
-        const esIngreso = m.tipo === 'Ingreso';
-        const colorBadge = esIngreso ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-rose-500/10 text-rose-500 border-rose-500/20';
+        let colorBadge = 'bg-slate-500/10 text-slate-500 border-slate-500/20';
+        if (m.tipo === 'Ingreso') {
+            colorBadge = 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20';
+        } else if (m.tipo === 'Egreso') {
+            colorBadge = 'bg-rose-500/10 text-rose-500 border-rose-500/20';
+        } else if (m.tipo === 'Ajuste') {
+            colorBadge = 'bg-orange-500/10 text-orange-500 border-orange-500/20';
+        }
 
         return `
             <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group">
@@ -59,7 +65,10 @@ const renderTabla = () => {
                     <span class="text-xs font-black text-villalba-blue dark:text-blue-400 tracking-widest">${m.codigo}</span>
                 </td>
                 <td class="px-5 py-3 border-b border-slate-100 dark:border-slate-800/80">
-                    <p class="text-xs font-bold text-slate-700 dark:text-slate-300 truncate max-w-[200px] md:max-w-md" title="${m.descripcion}">${m.descripcion || 'Sin descripción'}</p>
+                    <div class="flex flex-col">
+                        <p class="text-xs font-bold text-slate-700 dark:text-slate-300 truncate max-w-[200px] md:max-w-md" title="${m.descripcion}">${m.descripcion || 'Sin descripción'}</p>
+                        ${m.detalle ? `<p class="text-[10px] font-medium text-slate-400 dark:text-slate-500 mt-0.5" title="${m.detalle}">${m.detalle}</p>` : ''}
+                    </div>
                 </td>
                 <td class="px-5 py-3 border-b border-slate-100 dark:border-slate-800/80 text-center">
                     <span class="text-sm font-black text-slate-900 dark:text-white">${m.cantidad}</span>

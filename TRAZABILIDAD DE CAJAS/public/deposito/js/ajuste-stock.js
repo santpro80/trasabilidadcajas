@@ -137,7 +137,7 @@ const initSearch = () => {
                 codigo: itemSeleccionado.codigo,
                 descripcion: itemSeleccionado.descripcion,
                 cantidad: Math.abs(diff),
-                detalle: `Ajuste de stock de ${oldStock} a ${nuevoVal} (Dif: ${diff > 0 ? '+' : ''}${diff})`,
+                detalle: `cambio el total de ${oldStock} a ${nuevoVal}`,
                 timestamp: serverTimestamp(),
                 usuarioNombre: currentUser?.userData?.name || currentUser?.user?.email || 'Desconocido',
                 usuario: currentUser?.user?.email || 'Desconocido',
