@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="es" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ajuste de Stock - Terian Systems</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet" />
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="../css/output.css">
+</head>
+<body class="bg-slate-50 dark:bg-[#0b0f19] text-slate-900 dark:text-slate-200 antialiased min-h-screen flex selection:bg-villalba-blue selection:text-white transition-colors duration-300 relative">
+
+    <div id="sidebar-container"></div>
+
+    <main class="flex-1 flex flex-col min-w-0 transition-all duration-300">
+        <!-- Topbar -->
+        <header class="sticky top-0 z-30 bg-white/80 dark:bg-[#0b0f19]/80 backdrop-blur-xl border-b border-slate-200 dark:border-white/5 h-16 flex items-center justify-between px-4 sm:px-8">
+            <div class="flex items-center gap-4">
+                <button id="mobile-menu-btn" class="lg:hidden p-2 -ml-2 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 transition-colors">
+                    <span class="material-symbols-outlined">menu</span>
+                </button>
+                <a href="menu.html" class="p-2 -ml-2 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 transition-colors flex items-center justify-center">
+                    <span class="material-symbols-outlined">arrow_back</span>
+                </a>
+                <div class="flex items-center gap-3">
+                    <div class="size-8 rounded-lg bg-violet-500/10 flex items-center justify-center text-violet-500 hidden sm:flex">
+                        <span class="material-symbols-outlined text-[20px]">edit_document</span>
+                    </div>
+                    <h1 class="text-sm font-black uppercase tracking-widest text-slate-900 dark:text-white">Ajuste de Stock</h1>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-4">
+                <div class="hidden sm:flex items-center gap-3">
+                    <span id="user-display-name" class="text-xs font-black text-slate-500 uppercase tracking-widest">Cargando...</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="flex-1 p-4 sm:p-8 max-w-5xl mx-auto w-full grid grid-cols-1 lg:grid-cols-2 gap-8">
+            
+            <!-- Columna Izquierda: Modificar Stock -->
+            <div class="glass-card rounded-[2rem] p-6 lg:p-8 shadow-xl flex flex-col h-fit sticky top-24">
+                <div>
+                    <h2 class="text-xl font-black text-slate-800 dark:text-white uppercase tracking-tight flex items-center gap-2 mb-2">
+                        <span class="material-symbols-outlined text-villalba-blue">edit</span>
+                        Modificar Stock
+                    </h2>
+                    <p class="text-[10px] uppercase tracking-widest text-slate-500 font-bold mb-8">Busca una pieza para consultar su stock actual y corregirlo directamente.</p>
+                </div>
+
+                <div class="space-y-6">
+                    <!-- Buscador -->
+                    <div class="space-y-2 relative">
+                        <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Código o Descripción</label>
+                        <div class="relative group">
+                            <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-villalba-blue transition-colors">search</span>
+                            <input type="text" id="buscador-input" placeholder="Ej: PLACA Ø4..." autocomplete="off" class="w-full h-14 pl-12 pr-4 bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-2xl text-sm font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-villalba-blue/50 focus:border-villalba-blue transition-all uppercase placeholder:normal-case placeholder:font-medium">
+                        </div>
+                        
+                        <!-- Resultados Autocompletado -->
+                        <div id="autocomplete-list" class="absolute left-0 right-0 top-full mt-2 bg-white dark:bg-[#151a27] border border-slate-200 dark:border-slate-800/80 rounded-2xl shadow-2xl z-50 max-h-[300px] overflow-y-auto hidden divide-y divide-slate-100 dark:divide-slate-800/50">
+                            <!-- Resultados aquí -->
+                        </div>
+                    </div>
+
+                    <!-- Detalles y Formulario de Ajuste -->
+                    <div id="item-seleccionado" class="hidden p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-white/5 space-y-5">
+                        <div>
+                            <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Ítem Seleccionado</span>
+                            <h3 id="item-codigo" class="text-lg font-black text-villalba-blue tracking-wider mt-1"></h3>
+                            <p id="item-desc" class="text-xs font-bold text-slate-600 dark:text-slate-300 mt-1"></p>
+                        </div>
+                        
+                        <!-- Stock Actual Display -->
+                        <div class="flex items-center justify-between p-4 rounded-xl bg-white dark:bg-black/10 border border-slate-200/60 dark:border-white/5">
+                            <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Stock en Sistema</span>
+                            <span id="stock-actual-badge" class="px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-black text-xs">0</span>
+                        </div>
+
+                        <!-- Nuevo Stock Input -->
+                        <div class="space-y-2">
+                            <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Nuevo Stock Físico</label>
+                            <input type="number" id="nuevo-stock" placeholder="Ej: 15" class="w-full h-12 px-4 bg-white dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-xl text-sm font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-villalba-blue/50 transition-all">
+                        </div>
+
+                        <button id="btn-guardar-ajuste" class="w-full py-4 bg-villalba-blue hover:bg-blue-600 text-white font-black text-xs uppercase tracking-widest rounded-xl transition-colors shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2">
+                            <span class="material-symbols-outlined text-[18px]">save</span>
+                            <span>Guardar Cambios</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Columna Derecha: Últimos Ajustes de Stock -->
+            <div class="glass-card rounded-[2rem] p-6 lg:p-8 shadow-xl flex flex-col h-full min-h-[500px]">
+                <div class="mb-6 flex items-center justify-between">
+                    <div>
+                        <h2 class="text-xl font-black text-slate-800 dark:text-white uppercase tracking-tight flex items-center gap-2 mb-2">
+                            <span class="material-symbols-outlined text-villalba-blue">history</span>
+                            Historial de Ajustes
+                        </h2>
+                        <p class="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Correcciones de inventario recientes</p>
+                    </div>
+                    <span id="contador-ajustes" class="bg-villalba-blue text-white text-[10px] font-black px-3 py-1 rounded-full shadow-sm">Cargando...</span>
+                </div>
+
+                <div class="flex-1 overflow-hidden border border-slate-200 dark:border-slate-800/80 rounded-2xl bg-white/50 dark:bg-black/20 relative">
+                    <div class="absolute inset-0 overflow-y-auto">
+                        <table class="w-full border-collapse">
+                            <thead class="sticky top-0 bg-slate-100/90 dark:bg-slate-800/90 backdrop-blur-md z-10 shadow-sm">
+                                <tr>
+                                    <th class="text-[9px] font-black uppercase tracking-widest text-slate-500 py-3 px-4 text-left w-16">Fecha</th>
+                                    <th class="text-[9px] font-black uppercase tracking-widest text-slate-500 py-3 px-4 text-left">Código / Detalle</th>
+                                    <th class="text-[9px] font-black uppercase tracking-widest text-slate-500 py-3 px-4 text-center w-20">Ajuste</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ajustes-tbody" class="divide-y divide-slate-100 dark:divide-slate-800/50">
+                                <tr>
+                                    <td colspan="3" class="py-16 text-center">
+                                        <div class="flex flex-col items-center justify-center gap-3">
+                                            <span class="material-symbols-outlined animate-spin text-3xl text-villalba-blue">sync</span>
+                                            <p class="text-xs font-bold text-slate-500 uppercase tracking-widest">Cargando historial...</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-6 right-6 bg-emerald-500 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 transform transition-all duration-300 translate-y-24 opacity-0 z-50">
+        <span class="material-symbols-outlined">check_circle</span>
+        <div>
+            <p class="text-sm font-black tracking-wide uppercase">¡Stock Ajustado!</p>
+            <p class="text-[10px] font-medium opacity-90">El stock se actualizó correctamente.</p>
+        </div>
+    </div>
+
+    <script type="module" src="js/ajuste-stock.js"></script>
+    <script type="module" src="../js/global-sidebar.js"></script>
+    <script type="module">import "../js/theme.js";</script>
+</body>
+</html>

@@ -93,6 +93,17 @@ document.addEventListener('DOMContentLoaded', async () => {
                 text: 'text-fuchsia-600 dark:text-fuchsia-400',
                 roles: ['supervisor'],
                 col: 'administracion'
+            },
+            {
+                id: 'ajuste-stock',
+                title: 'Ajuste de Stock',
+                desc: 'Modificar stock directamente',
+                icon: 'edit_document',
+                link: 'ajuste-stock.html',
+                bg: 'bg-violet-50 dark:bg-violet-500/10',
+                text: 'text-violet-600 dark:text-violet-400',
+                roles: ['supervisor'],
+                col: 'administracion'
             }
         ];
 

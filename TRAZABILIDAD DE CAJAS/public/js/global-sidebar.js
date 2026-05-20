@@ -119,6 +119,7 @@ export function initGlobalSidebar() {
             menuItems.push({ label: 'Estadísticas', icon: 'bar_chart', link: base + 'estadisticas.html' });
             menuItems.push({ label: 'Migración CSV', icon: 'upload_file', link: base + 'migracion.html' });
             menuItems.push({ label: 'Gestión Usuarios', icon: 'group', link: base + 'gestion-usuarios.html' });
+            menuItems.push({ label: 'Ajuste de Stock', icon: 'edit_document', link: base + 'ajuste-stock.html' });
         }
     } else {
         const base = `${baseRoot}${userRoleTrazabilidad}/`;
