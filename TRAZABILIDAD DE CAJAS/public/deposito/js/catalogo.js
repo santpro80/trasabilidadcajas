@@ -218,6 +218,44 @@ const setupApp = () => {
         if (e.target === imageModal) closeImageModalObj.onclick();
     };
 
+    const btnExportExcel = document.getElementById('btn-export-excel');
+    if (btnExportExcel) {
+        btnExportExcel.addEventListener('click', () => {
+            if (filteredItems.length === 0) return;
+            
+            const btnOriginalHtml = btnExportExcel.innerHTML;
+            btnExportExcel.innerHTML = '<span class="material-symbols-outlined text-[18px] animate-spin">sync</span><span>Descargando...</span>';
+            btnExportExcel.classList.add('pointer-events-none', 'opacity-75');
+
+            setTimeout(() => {
+                let csvContent = "\uFEFFCÓDIGO,DESCRIPCIÓN,CANTIDAD\n";
+                filteredItems.forEach(item => {
+                    const codigo = item.codigo ? `="${item.codigo}"` : "";
+                    const desc = item.descripcion ? `"${item.descripcion.replace(/"/g, '""')}"` : "";
+                    const cant = item.stock || 0;
+                    csvContent += `${codigo},${desc},${cant}\n`;
+                });
+                
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement("a");
+                link.setAttribute("href", url);
+                
+                const dateStr = new Date().toLocaleDateString('es-AR').replace(/\//g, '-');
+                const timeStr = new Date().toLocaleTimeString('es-AR').replace(/:/g, '');
+                
+                link.setAttribute("download", `Inventario_Villalba_${dateStr}_${timeStr}.csv`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+                
+                btnExportExcel.innerHTML = btnOriginalHtml;
+                btnExportExcel.classList.remove('pointer-events-none', 'opacity-75');
+            }, 500);
+        });
+    }
+
     loadCatalog(true);
 };
 
