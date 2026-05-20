@@ -214,14 +214,63 @@ const setupApp = () => {
             setTimeout(() => imageModal.classList.add('hidden'), 300);
         };
     }
-    imageModal.onclick = (e) => {
-        if (e.target === imageModal) closeImageModalObj.onclick();
-    };
+    
+    if (imageModal) {
+        imageModal.onclick = (e) => {
+            if (e.target === imageModal) closeImageModalObj.onclick();
+        };
+    }
 
     const btnExportExcel = document.getElementById('btn-export-excel');
+    const btnAddToList = document.getElementById('btn-add-to-list');
+    const btnClearList = document.getElementById('btn-clear-list');
+    const exportBtnText = document.getElementById('export-btn-text');
+    let customExportList = [];
+
+    const updateExportUI = () => {
+        if (customExportList.length > 0) {
+            exportBtnText.textContent = `Descargar Lista (${customExportList.length})`;
+            exportBtnText.classList.remove('hidden', 'md:block'); // Always show text if there's a list
+            btnClearList.classList.remove('hidden');
+            btnClearList.classList.add('flex');
+        } else {
+            exportBtnText.textContent = `Descargar a Excel`;
+            btnClearList.classList.add('hidden');
+            btnClearList.classList.remove('flex');
+        }
+    };
+
+    if (btnAddToList) {
+        btnAddToList.addEventListener('click', () => {
+            if (filteredItems.length === 0) return;
+            
+            // Animación del botón
+            const icon = btnAddToList.querySelector('span');
+            icon.textContent = 'check';
+            setTimeout(() => icon.textContent = 'add', 1000);
+
+            // Agregar items filtrados que no estén ya en la lista
+            filteredItems.forEach(item => {
+                if (!customExportList.some(i => i.codigo === item.codigo)) {
+                    customExportList.push(item);
+                }
+            });
+            updateExportUI();
+        });
+    }
+
+    if (btnClearList) {
+        btnClearList.addEventListener('click', () => {
+            customExportList = [];
+            updateExportUI();
+        });
+    }
+
     if (btnExportExcel) {
         btnExportExcel.addEventListener('click', () => {
-            if (filteredItems.length === 0) return;
+            const listToExport = customExportList.length > 0 ? customExportList : filteredItems;
+            
+            if (listToExport.length === 0) return;
             
             const btnOriginalHtml = btnExportExcel.innerHTML;
             btnExportExcel.innerHTML = '<span class="material-symbols-outlined text-[18px] animate-spin">sync</span><span>Descargando...</span>';
@@ -229,7 +278,7 @@ const setupApp = () => {
 
             setTimeout(() => {
                 let csvContent = "\uFEFFCÓDIGO,DESCRIPCIÓN,CANTIDAD\n";
-                filteredItems.forEach(item => {
+                listToExport.forEach(item => {
                     const codigo = item.codigo ? `="${item.codigo}"` : "";
                     const desc = item.descripcion ? `"${item.descripcion.replace(/"/g, '""')}"` : "";
                     const cant = item.stock || 0;
