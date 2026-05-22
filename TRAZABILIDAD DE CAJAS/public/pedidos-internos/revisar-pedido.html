@@ -129,17 +129,16 @@
                                 </div>
                             </div>
 
-                            <!-- Proveedor recomendado -->
+                            <!-- Comentario -->
                             <div class="flex flex-col gap-1.5">
                                 <label
-                                    class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400 ml-1">Proveedor
-                                    Recomendado</label>
+                                    class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400 ml-1">Comentario</label>
                                 <div class="relative group">
                                     <span
-                                        class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-villalba-blue transition-colors text-xl">storefront</span>
-                                    <input
-                                        class="w-full pl-12 pr-4 h-14 bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-villalba-blue/40 focus:border-villalba-blue outline-none transition-all"
-                                        id="no-supplier" placeholder="Nombre del proveedor" type="text" />
+                                        class="material-symbols-outlined absolute left-4 top-4 text-slate-400 group-focus-within:text-villalba-blue transition-colors text-xl">chat</span>
+                                    <div
+                                        class="w-full pl-12 pr-4 py-4 min-h-[6rem] max-h-32 bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-bold text-slate-900 dark:text-white outline-none overflow-y-auto whitespace-pre-wrap break-words"
+                                        id="no-supplier"></div>
                                 </div>
                             </div>
 
@@ -172,6 +171,7 @@
                                             <option value="LTS">Litros (LTS)</option>
                                             <option value="BLT">Bultos (BLT)</option>
                                             <option value="PQTE">Paquetes (PQTE)</option>
+                                            <option value="S/N">Sin unidad (S/N)</option>
                                         </select>
                                     </div>
                                 </div>
@@ -203,17 +203,16 @@
                                 </h3>
                             </div>
 
-                            <!-- Proveedor Elegido por Admin -->
+                            <!-- Comentario Final (Admin) -->
                             <div class="flex flex-col gap-1.5 mb-4">
                                 <label
-                                    class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400 ml-1">Proveedor
-                                    Final (Admin)</label>
+                                    class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400 ml-1">Comentario Final (Admin)</label>
                                 <div class="relative group">
                                     <span
-                                        class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-villalba-blue transition-colors text-xl">store</span>
-                                    <input
-                                        class="w-full pl-12 pr-4 h-14 bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-villalba-blue/40 focus:border-villalba-blue outline-none transition-all"
-                                        id="admin-supplier" placeholder="Nombre del proveedor elegido" type="text" />
+                                        class="material-symbols-outlined absolute left-4 top-4 text-slate-400 group-focus-within:text-villalba-blue transition-colors text-xl">comment</span>
+                                    <textarea
+                                        class="w-full pl-12 pr-4 py-4 h-24 bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-villalba-blue/40 focus:border-villalba-blue outline-none transition-all resize-none"
+                                        id="admin-supplier" placeholder="Comentario o notas del administrador..."></textarea>
                                 </div>
                             </div>
 
@@ -236,7 +235,7 @@
                                         </select>
                                     </div>
                                 </div>
-                                <div class="flex flex-col gap-1.5">
+                                <div class="flex flex-col gap-1.5" id="container-delivery-date">
                                     <label
                                         class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400 ml-1">Fecha
                                         Prometida</label>
@@ -251,7 +250,7 @@
                             </div>
 
                             <!-- Cotización -->
-                            <div class="flex flex-col gap-1.5 mt-4">
+                            <div class="flex flex-col gap-1.5 mt-4" id="container-quotation">
                                 <label
                                     class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400 ml-1">Costo
                                     / Cotizaci&oacute;n</label>
@@ -276,11 +275,11 @@
                             </div>
 
                             <!-- N de Orden -->
-                            <div class="flex flex-col gap-1.5 mt-4">
+                            <div class="flex flex-col gap-1.5 mt-4" id="container-order-number">
                                 <label class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400 ml-1">N&deg; de Orden</label>
                                 <div class="relative group">
                                     <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-villalba-blue transition-colors text-xl pointer-events-none">receipt_long</span>
-                                    <input class="w-full pl-12 pr-4 h-14 bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-villalba-blue/40 focus:border-villalba-blue outline-none transition-all uppercase" id="admin-order-number" placeholder="Ej: ORD-12345" required type="text" />
+                                    <input class="w-full pl-12 pr-4 h-14 bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-villalba-blue/40 focus:border-villalba-blue outline-none transition-all uppercase" id="admin-order-number" placeholder="Ej: ORD-12345" type="text" />
                                 </div>
                             </div>
 

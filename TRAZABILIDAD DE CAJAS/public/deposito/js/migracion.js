@@ -39,6 +39,20 @@ document.addEventListener('DOMContentLoaded', async () => {
                     return;
                 }
 
+                // Cargar catálogo actual para no pisar el stock
+                statusLog.innerHTML += `<div class="text-indigo-400 italic">Cargando stock y catálogo actual desde la base de datos...</div>`;
+                const existingItems = new Map();
+                try {
+                    const catalogSnap = await getDocs(collection(db, 'deposito_catalogo'));
+                    catalogSnap.forEach(doc => {
+                        existingItems.set(doc.id, doc.data());
+                    });
+                    statusLog.innerHTML += `<div class="text-emerald-500 font-bold mb-2">Catálogo cargado: ${existingItems.size} ítems en base de datos.</div>`;
+                } catch (err) {
+                    console.error("Error al obtener catálogo actual:", err);
+                    statusLog.innerHTML += `<div class="text-amber-500 font-bold mb-2">Advertencia: No se pudo verificar la base de datos actual. Nuevos ítems se inicializarán en 0.</div>`;
+                }
+
                 const rows = text.split(/\r?\n/).filter(row => row.trim() !== '');
                 statusLog.innerHTML += `<div class="text-slate-500 italic">Archivo leído: ${rows.length} líneas detectadas.</div>`;
 
@@ -96,20 +110,27 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                         const itemRef = doc(db, "deposito_catalogo", finalDocId);
                         
-                        await setDoc(itemRef, {
+                        const exists = existingItems.has(finalDocId);
+                        const itemData = {
                             codigo: codigo,
                             descripcion: descripcionFinal,
-                            estado: estado,
-                            stock: 0, 
                             ultimaActualizacion: new Date(),
                             migrado: true
-                        }, { merge: true });
+                        };
+
+                        if (!exists) {
+                            itemData.stock = 0;
+                            itemData.estado = estado;
+                        }
+
+                        await setDoc(itemRef, itemData, { merge: true });
+                        existingItems.set(finalDocId, { ...existingItems.get(finalDocId), ...itemData });
 
                         added++;
                         
                         // Cuadro rojo leve si hay S/N
                         const logBg = hasIssues ? 'bg-rose-500/10 text-rose-600 dark:bg-rose-500/20 dark:text-rose-400 p-1 rounded' : '';
-                        statusLog.innerHTML += `<div class="${logBg}">[${added}] OK: [${codigo}] ${descripcionFinal}</div>`;
+                        statusLog.innerHTML += `<div class="${logBg}">[${added}] OK: [${codigo}] ${descripcionFinal} ${exists ? '<span class="text-amber-500 font-bold">(Actualizado)</span>' : '<span class="text-emerald-500 font-bold">(Nuevo)</span>'}</div>`;
                     } catch (err) {
                         errors++;
                         statusLog.innerHTML += `<div class="bg-rose-500 text-white p-1 rounded mb-1">FATAL [Fila ${i+1}]: ${err.message}</div>`;
@@ -169,6 +190,19 @@ document.addEventListener('DOMContentLoaded', async () => {
             statusLog.classList.remove('hidden');
             statusLog.innerHTML = `<div class="mb-1 text-indigo-500 uppercase font-black">--- INICIANDO CARGA MANUAL ---</div>`;
 
+            // Cargar catálogo actual para no pisar el stock
+            statusLog.innerHTML += `<div class="text-indigo-400 italic">Cargando catálogo actual...</div>`;
+            const existingItems = new Map();
+            try {
+                const catalogSnap = await getDocs(collection(db, 'deposito_catalogo'));
+                catalogSnap.forEach(doc => {
+                    existingItems.set(doc.id, doc.data());
+                });
+                statusLog.innerHTML += `<div class="text-emerald-500 font-bold mb-2">Catálogo cargado: ${existingItems.size} ítems.</div>`;
+            } catch (err) {
+                console.error("Error al obtener catálogo actual:", err);
+            }
+
             let added = 0;
             let errors = 0;
 
@@ -192,18 +226,25 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                     const itemRef = doc(db, "deposito_catalogo", codigo);
                     
-                    await setDoc(itemRef, {
+                    const exists = existingItems.has(codigo);
+                    const itemData = {
                         codigo: codigo,
                         descripcion: descripcion,
-                        estado: 'ACTIVO',
-                        stock: 0, 
                         ultimaActualizacion: new Date(),
                         migrado: false,
                         manual: true
-                    }, { merge: true });
+                    };
+
+                    if (!exists) {
+                        itemData.stock = 0;
+                        itemData.estado = 'ACTIVO';
+                    }
+
+                    await setDoc(itemRef, itemData, { merge: true });
+                    existingItems.set(codigo, { ...existingItems.get(codigo), ...itemData });
 
                     added++;
-                    statusLog.innerHTML += `<div>[${added}] OK: [${codigo}] ${descripcion}</div>`;
+                    statusLog.innerHTML += `<div>[${added}] OK: [${codigo}] ${descripcion} ${exists ? '<span class="text-amber-500 font-bold">(Actualizado)</span>' : '<span class="text-emerald-500 font-bold">(Nuevo)</span>'}</div>`;
                 } catch (err) {
                     errors++;
                     statusLog.innerHTML += `<div class="bg-rose-500 text-white p-1 rounded mb-1">ERROR [Línea ${i+1}]: ${err.message}</div>`;

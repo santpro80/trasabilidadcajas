@@ -44,7 +44,7 @@ initApp().then((user) => {
                 entity: user?.name || user?.email || "Usuario Local",
                 operatorId: user?.uid || "anon",
                 sector: user?.sector_pedidos || "Sin Asignar",
-                supplier: supplier || "No especificado",
+                supplier: supplier || "Sin comentarios",
                 quantity: quantity,
                 unit: unit,
                 code: "NEW-" + Math.floor(Math.random() * 999),

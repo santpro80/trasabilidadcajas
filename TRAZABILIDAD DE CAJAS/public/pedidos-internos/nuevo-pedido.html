@@ -106,19 +106,19 @@
                                 </div>
                             </div>
 
-                            <!-- Proveedor recomendado -->
+                            <!-- Comentario -->
                             <div class="flex flex-col gap-1.5">
                                 <label
                                     class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400 ml-1 flex justify-between items-center">
-                                    <span>Proveedor Recomendado</span>
+                                    <span>Comentario</span>
                                     <span class="text-[8px] opacity-60 font-medium tracking-normal">(OPCIONAL)</span>
                                 </label>
                                 <div class="relative group">
                                     <span
-                                        class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-villalba-blue transition-colors text-xl">storefront</span>
-                                    <input
-                                        class="w-full pl-12 pr-4 h-14 bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-villalba-blue/40 focus:border-villalba-blue outline-none transition-all"
-                                        id="no-supplier" placeholder="Nombre del proveedor (si aplica)" type="text" />
+                                        class="material-symbols-outlined absolute left-4 top-4 text-slate-400 group-focus-within:text-villalba-blue transition-colors text-xl">chat</span>
+                                    <textarea
+                                        class="w-full pl-12 pr-4 py-4 h-24 bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-villalba-blue/40 focus:border-villalba-blue outline-none transition-all resize-none"
+                                        id="no-supplier" placeholder="Introduce un comentario o notas sobre el pedido..."></textarea>
                                 </div>
                             </div>
 
@@ -151,6 +151,7 @@
                                             <option value="LTS">Litros (LTS)</option>
                                             <option value="BLT">Bultos (BLT)</option>
                                             <option value="PQTE">Paquetes (PQTE)</option>
+                                            <option value="S/N">Sin unidad (S/N)</option>
                                         </select>
                                     </div>
                                 </div>

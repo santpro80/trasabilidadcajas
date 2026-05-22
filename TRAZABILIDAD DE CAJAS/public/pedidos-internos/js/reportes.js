@@ -81,8 +81,8 @@ function renderOrderCard(order) {
                     <p class="text-xs font-bold text-slate-900 dark:text-white">${order.quantity} <span class="text-[10px] text-slate-500 font-medium">${order.unit || 'UDS'}</span></p>
                 </div>
                 <div class="text-right">
-                    <p class="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">PROVEEDOR</p>
-                    <p class="text-xs font-bold text-slate-900 dark:text-white uppercase truncate max-w-[120px]">${order.supplier || 'N/A'}</p>
+                    <p class="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">COMENTARIO</p>
+                    <p class="text-xs font-bold text-slate-900 dark:text-white uppercase truncate max-w-[150px]" title="${order.supplier || ''}">${order.supplier || 'N/A'}</p>
                 </div>
             </div>
             ${order.quotation && order.quotation > 0 ? `
@@ -156,7 +156,7 @@ function updateReportsView() {
 window.reports = {
     exportToCSV: () => {
         const filtered = getFilteredOrders();
-        const headers = ["ID Orden", "Producto", "Sector", "Prioridad", "Cantidad", "Unidad", "Solicitante", "Fecha Creacion", "Fecha Entrega", "Proveedor", "Cotización"];
+        const headers = ["ID Orden", "Producto", "Sector", "Prioridad", "Cantidad", "Unidad", "Solicitante", "Fecha Creacion", "Fecha Entrega", "Comentario", "Cotización"];
         const rows = filtered.map(o => [
             o.orderNumber || `#ORD-${o.orderNum}`,
             o.item,

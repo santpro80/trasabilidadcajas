@@ -25,8 +25,21 @@ initApp().then(async (user) => {
             document.getElementById('no-entity').value = data.entity || 'N/A';
             document.getElementById('no-item').value = data.item || '';
             document.getElementById('no-item').disabled = true;
-            document.getElementById('no-supplier').value = data.supplier || '';
-            document.getElementById('no-supplier').disabled = true;
+            
+            const formatTextWithLinks = (text) => {
+                if (!text) return '';
+                const escaped = text.replace(/[&<>'"]/g, 
+                    tag => ({
+                        '&': '&amp;',
+                        '<': '&lt;',
+                        '>': '&gt;',
+                        "'": '&#39;',
+                        '"': '&quot;'
+                    }[tag] || tag)
+                );
+                return escaped.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" class="text-villalba-blue hover:underline">$1</a>');
+            };
+            document.getElementById('no-supplier').innerHTML = formatTextWithLinks(data.supplier || 'Sin comentarios');
             document.getElementById('no-quantity').value = data.quantity || 0;
             document.getElementById('no-quantity').disabled = true;
             document.getElementById('no-unit').value = data.unit || 'UDS';
@@ -222,5 +235,30 @@ function toggleRejectionReason(status) {
         container.classList.add('hidden');
         input.required = false;
         input.value = "";
+    }
+
+    const deliveryContainer = document.getElementById('container-delivery-date');
+    const quotationContainer = document.getElementById('container-quotation');
+    const orderNumberContainer = document.getElementById('container-order-number');
+    
+    if (status === 'Denegado') {
+        if (deliveryContainer) deliveryContainer.classList.add('hidden');
+        if (quotationContainer) quotationContainer.classList.add('hidden');
+        if (orderNumberContainer) orderNumberContainer.classList.add('hidden');
+        
+        // Limpiar los valores al ocultarlos para no guardar datos irrelevantes
+        const quotationHidden = document.getElementById('admin-quotation');
+        const quotationDisplay = document.getElementById('admin-quotation-display');
+        const orderNumber = document.getElementById('admin-order-number');
+        const deliveryDate = document.getElementById('admin-delivery-date');
+        
+        if (quotationHidden) quotationHidden.value = "0";
+        if (quotationDisplay) quotationDisplay.value = "";
+        if (orderNumber) orderNumber.value = "";
+        if (deliveryDate) deliveryDate.value = "";
+    } else {
+        if (deliveryContainer) deliveryContainer.classList.remove('hidden');
+        if (quotationContainer) quotationContainer.classList.remove('hidden');
+        if (orderNumberContainer) orderNumberContainer.classList.remove('hidden');
     }
 }
