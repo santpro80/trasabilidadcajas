@@ -60,13 +60,6 @@ initApp().then(async (user) => {
                 }
             }
 
-            // Admin Supplier
-            if (data.adminSupplier) {
-                document.getElementById('admin-supplier').value = data.adminSupplier;
-            } else if (data.supplier) {
-                document.getElementById('admin-supplier').value = data.supplier;
-            }
-
             // Currency Switcher
             if (data.currency) {
                 document.getElementById('admin-currency').value = data.currency;
@@ -174,7 +167,6 @@ initApp().then(async (user) => {
         const newDeliveryDate = document.getElementById('admin-delivery-date').value;
         const newRejectionReason = document.getElementById('admin-rejection-reason').value;
         const newQuotation = document.getElementById('admin-quotation').value;
-        const adminSupplier = document.getElementById('admin-supplier').value;
         const currency = document.getElementById('admin-currency').value;
         const adminOrderNumber = document.getElementById('admin-order-number').value.trim();
 
@@ -197,7 +189,6 @@ initApp().then(async (user) => {
             const updateData = {
                 status: newStatus,
                 deliveryDate: newDeliveryDate || "",
-                adminSupplier: adminSupplier || "",
                 currency: currency || "ARS",
                 orderNumber: adminOrderNumber || ""
             };

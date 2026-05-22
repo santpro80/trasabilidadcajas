@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" translate="no">
 
 <head>
     <meta charset="UTF-8">
@@ -249,9 +249,29 @@
                     <div id="pedidos-role-container" class="bg-blue-50 dark:bg-blue-900/10 p-4 rounded-lg border border-blue-100 dark:border-blue-900/20" style="display: none;">
                         <label class="block text-sm font-bold text-blue-800 dark:text-blue-300 mb-2">Rol Asignado (Pedidos)</label>
                         <select id="edit-role-pedidos"
-                            class="w-full p-2 border border-blue-300 dark:border-blue-800 rounded focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-background-dark text-slate-900 dark:text-white">
+                            class="w-full p-2 border border-blue-300 dark:border-blue-800 rounded focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-background-dark text-slate-900 dark:text-white mb-4">
                             <option value="operario">Operario</option>
                             <option value="supervisor">Supervisor</option>
+                        </select>
+
+                        <label class="block text-sm font-bold text-blue-800 dark:text-blue-300 mb-2">Sector Asignado (Pedidos)</label>
+                        <select id="edit-sector-pedidos"
+                            class="w-full p-2 border border-blue-300 dark:border-blue-800 rounded focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-background-dark text-slate-900 dark:text-white">
+                            <option value="" disabled selected>Selecciona un sector</option>
+                            <option value="Mecanizado">Mecanizado</option>
+                            <option value="Depósito">Depósito</option>
+                            <option value="Dirección Técnica">Dirección Técnica</option>
+                            <option value="Lavado">Lavado</option>
+                            <option value="Reacondicionamiento de Cajas">Reacondicionamiento de Cajas</option>
+                            <option value="Pulido">Pulido</option>
+                            <option value="Reparación de Cajas">Reparación de Cajas</option>
+                            <option value="Oficina Técnica">Oficina Técnica</option>
+                            <option value="Logística">Logística</option>
+                            <option value="Expedición">Expedición</option>
+                            <option value="Reacondicionamiento de Motores">Reacondicionamiento de Motores</option>
+                            <option value="Laboratorio">Laboratorio</option>
+                            <option value="Comercio">Comercio</option>
+                            <option value="Sucursales">Sucursales</option>
                         </select>
                     </div>
 
@@ -267,7 +287,7 @@
 
                     <!-- Sector (Editable) -->
                     <div class="bg-blue-50 dark:bg-blue-900/10 p-4 rounded-lg border border-blue-100 dark:border-blue-900/20">
-                        <label class="block text-sm font-bold text-blue-800 dark:text-blue-300 mb-2">Sector Asignado</label>
+                        <label class="block text-sm font-bold text-blue-800 dark:text-blue-300 mb-2">Sector Asignado (Trazabilidad)</label>
                         <select id="edit-sector"
                             class="w-full p-2 border border-blue-300 dark:border-blue-800 rounded focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-background-dark text-slate-900 dark:text-white">
                             <option value="" disabled selected>Cargando sectores...</option>

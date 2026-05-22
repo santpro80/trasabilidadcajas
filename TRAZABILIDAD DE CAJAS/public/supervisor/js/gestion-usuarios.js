@@ -23,6 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const depositoRoleContainer = document.getElementById('deposito-role-container');
     const editRolePedidos = document.getElementById('edit-role-pedidos');
     const pedidosRoleContainer = document.getElementById('pedidos-role-container');
+    const editSectorPedidos = document.getElementById('edit-sector-pedidos');
     const updateUserBtn = document.getElementById('update-user-btn');
 
     // Manejar visibilidad del rol de deposito
@@ -185,6 +186,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (editRolePedidos) {
             editRolePedidos.value = user.role_pedidos || 'operario';
         }
+        if (editSectorPedidos) {
+            editSectorPedidos.value = user.sector_pedidos || '';
+        }
         
         if (pedidosRoleContainer) {
             pedidosRoleContainer.style.display = editAppPedidos.checked ? 'block' : 'none';
@@ -250,6 +254,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (newRolePedidos) {
                     updates.role_pedidos = newRolePedidos;
                 }
+                const newSectorPedidos = editSectorPedidos ? editSectorPedidos.value : null;
+                if (newSectorPedidos) {
+                    updates.sector_pedidos = newSectorPedidos;
+                }
                 
                 await updateDoc(userRef, updates);
 
@@ -261,6 +269,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (newRoleDeposito) cachedUser.role_deposito = newRoleDeposito;
                     const newRolePedidos = editRolePedidos ? editRolePedidos.value : null;
                     if (newRolePedidos) cachedUser.role_pedidos = newRolePedidos;
+                    const newSectorPedidos = editSectorPedidos ? editSectorPedidos.value : null;
+                    if (newSectorPedidos) cachedUser.sector_pedidos = newSectorPedidos;
                 }
 
                 showMessage(`Rol y/o sector actualizado correctamente.`, 'success');
