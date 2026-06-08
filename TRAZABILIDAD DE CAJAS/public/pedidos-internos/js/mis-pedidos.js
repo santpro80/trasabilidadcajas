@@ -105,6 +105,13 @@ function renderOrderCard(order) {
                 </div>
             </div>
             
+            ${order.supplier && order.supplier.trim() !== '' && order.supplier !== 'Sin comentarios' ? `
+                <div class="mt-2.5 p-2 bg-slate-50 dark:bg-black/10 border border-slate-100 dark:border-white/5 rounded-lg">
+                    <p class="text-[8px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-0.5">Comentario</p>
+                    <p class="text-xs font-bold text-slate-700 dark:text-slate-300 leading-tight">${order.supplier}</p>
+                </div>
+            ` : ''}
+
             ${order.rejectionReason && (order.status === 'Denegado' || order.status === 'En revisión') ? `<div class="mt-2 p-2 ${order.status === 'Denegado' ? 'bg-rose-50 dark:bg-rose-900/10 border-rose-200 dark:border-rose-800/20' : 'bg-blue-50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800/20'} border rounded-lg"><p class="text-[9px] font-black uppercase ${order.status === 'Denegado' ? 'text-rose-500' : 'text-blue-500'} tracking-widest mb-1">Notas / Motivo</p><p class="text-xs ${order.status === 'Denegado' ? 'text-rose-600 dark:text-rose-400' : 'text-blue-600 dark:text-blue-400'} font-medium">${order.rejectionReason}</p></div>` : ''}
 
             ${order.status === 'Aprobado' && order.deliveryDate ? `<div class="mt-3 pt-2 border-t border-slate-100 dark:border-white/5"><p class="text-[10px] font-black tracking-widest uppercase text-emerald-600 dark:text-emerald-400 flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">local_shipping</span> Llega: ${order.deliveryDate}</p></div>` : ''}

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Historial de Movimientos | Depósito</title>
+    <title>Egresos Fallidos | Depósito</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -30,10 +30,10 @@
             <button onclick="window.location.href='menu.html'" class="flex items-center justify-center size-9 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 transition-colors mr-1 group" title="Volver al Menú">
                 <span class="material-symbols-outlined text-[18px] group-hover:-translate-x-1 transition-transform">arrow_back</span>
             </button>
-            <div class="h-9 w-9 rounded-xl bg-gradient-to-br from-indigo-500 to-villalba-blue flex items-center justify-center text-white shadow-lg shadow-blue-500/20">
-                <span class="material-symbols-outlined text-[18px]">history</span>
+            <div class="h-9 w-9 rounded-xl bg-gradient-to-br from-rose-500 to-rose-600 flex items-center justify-center text-white shadow-lg shadow-rose-500/20">
+                <span class="material-symbols-outlined text-[18px]">report_off</span>
             </div>
-            <h1 class="text-lg font-black tracking-tight uppercase text-slate-900 dark:text-white mt-0.5 hidden sm:block">Historial de Movimientos</h1>
+            <h1 class="text-lg font-black tracking-tight uppercase text-slate-900 dark:text-white mt-0.5 hidden sm:block">Intentos de Egresos sin Stock</h1>
         </div>
         
         <div class="flex items-center gap-4">
@@ -48,24 +48,16 @@
             
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
                 <h2 class="text-xl md:text-2xl font-black text-slate-800 dark:text-white uppercase tracking-tight flex items-center gap-2">
-                    Registro General
-                    <span id="contador-movimientos" class="text-xs font-bold bg-villalba-blue/10 text-villalba-blue px-3 py-1 rounded-full uppercase tracking-widest hidden">Cargando...</span>
+                    Historial de Rechazos
+                    <span id="contador-movimientos" class="text-xs font-bold bg-rose-500/10 text-rose-500 px-3 py-1 rounded-full uppercase tracking-widest hidden">Cargando...</span>
                 </h2>
                 
                 <div class="flex items-center gap-3 w-full md:w-auto">
                     <!-- Buscador -->
                     <div class="relative flex-1 md:w-72">
                         <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[20px]">search</span>
-                        <input type="text" id="buscador-historial" placeholder="Buscar por código o desc..." class="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-black/20 border-2 border-slate-200 dark:border-slate-700/50 rounded-xl text-sm font-bold text-slate-800 dark:text-white outline-none focus:border-villalba-blue transition-colors">
+                        <input type="text" id="buscador-historial" placeholder="Buscar por código, desc o usuario..." class="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-black/20 border-2 border-slate-200 dark:border-slate-700/50 rounded-xl text-sm font-bold text-slate-800 dark:text-white outline-none focus:border-rose-500 transition-colors">
                     </div>
-                    
-                    <!-- Filtro -->
-                    <select id="filtro-tipo" class="bg-slate-50 dark:bg-black/20 border-2 border-slate-200 dark:border-slate-700/50 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-800 dark:text-white outline-none focus:border-villalba-blue transition-colors cursor-pointer w-32 shrink-0">
-                        <option value="Todos">Todos</option>
-                        <option value="Ingreso">Ingreso</option>
-                        <option value="Egreso">Egreso</option>
-                        <option value="Ajuste">Ajuste</option>
-                    </select>
                 </div>
             </div>
 
@@ -75,16 +67,16 @@
                     <thead class="sticky top-0 bg-slate-100 dark:bg-slate-800 z-10 shadow-sm">
                         <tr>
                             <th class="px-5 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-200 dark:border-slate-700/50 w-40">Fecha</th>
-                            <th class="px-5 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-200 dark:border-slate-700/50 w-28">Tipo</th>
                             <th class="px-5 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-200 dark:border-slate-700/50 w-48">Código</th>
                             <th class="px-5 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-200 dark:border-slate-700/50">Descripción</th>
-                            <th class="px-5 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-200 dark:border-slate-700/50 w-32 text-center">Cantidad</th>
+                            <th class="px-5 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-200 dark:border-slate-700/50 w-32 text-center">Cant. Solicitada</th>
+                            <th class="px-5 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-200 dark:border-slate-700/50 w-32 text-center">Stock Disponible</th>
                             <th class="px-5 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-200 dark:border-slate-700/50 w-48 text-right">Usuario</th>
                         </tr>
                     </thead>
                     <tbody id="tabla-body" class="divide-y divide-slate-100 dark:divide-slate-800/50 relative">
                         <!-- Loading State -->
-                        <tr><td colspan="6" class="py-20 text-center"><span class="material-symbols-outlined text-4xl animate-spin text-villalba-blue">sync</span></td></tr>
+                        <tr><td colspan="6" class="py-20 text-center"><span class="material-symbols-outlined text-4xl animate-spin text-rose-500">sync</span></td></tr>
                     </tbody>
                  </table>
             </div>
@@ -96,7 +88,7 @@
         </div>
     </main>
 
-    <script type="module" src="js/historial.js?v=1.2"></script>
+    <script type="module" src="js/egresos-fallidos.js?v=1.2"></script>
     <script type="module" src="../js/global-sidebar.js?v=1.2"></script>
     <script type="module">import "../js/theme.js";</script>
 </body>

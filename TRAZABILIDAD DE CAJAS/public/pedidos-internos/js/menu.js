@@ -11,8 +11,7 @@ initApp().then((user) => {
         subtituloContainer.innerText = `PEDIDOS INTERNOS - ${user?.role || 'OPERADOR'}`;
     }
 
-    // Ocultar botones que no correspondan (TEMPORAL: Apagado para acceder a todo)
-    /*
+    // Ocultar botones que no correspondan
     if (!isSupervisor) {
         const gestionBtn = document.getElementById('btn-gestion');
         if (gestionBtn) gestionBtn.classList.add('hidden');
@@ -23,7 +22,6 @@ initApp().then((user) => {
         const adminBtn = document.getElementById('btn-admin');
         if (adminBtn) adminBtn.classList.add('hidden');
     }
-    */
 
     // Inicialización del panel completada, quitamos el skeleton si lo hubiera o mostramos el panel
     document.getElementById('dashboard-content').classList.remove('hidden');

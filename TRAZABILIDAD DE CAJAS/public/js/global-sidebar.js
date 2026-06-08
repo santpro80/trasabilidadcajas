@@ -45,8 +45,8 @@ export function initGlobalSidebar() {
     const rawRolePedidos = localStorage.getItem('rolePedidos');
     const rawRoleDeposito = localStorage.getItem('roleDeposito');
     
-    const userRolePedidos = rawRolePedidos || 'operario';
-    const userRoleDeposito = rawRoleDeposito || 'operario';
+    const userRolePedidos = rawRolePedidos || userRoleTrazabilidad;
+    const userRoleDeposito = rawRoleDeposito || userRoleTrazabilidad;
     
     const userName = localStorage.getItem('userName') || 'Usuario';
     
@@ -113,8 +113,10 @@ export function initGlobalSidebar() {
     } else if (isDepositoContext) {
         const base = `${baseRoot}deposito/`;
         menuItems.push({ label: 'Carga de Datos', icon: 'add_box', link: base + 'carga-datos.html' });
+        menuItems.push({ label: 'Egresos Fallidos', icon: 'report_off', link: base + 'egresos-fallidos.html' });
+        menuItems.push({ label: 'Historial', icon: 'history', link: base + 'historial.html' });
         if (isSupervisor) {
-            menuItems.push({ label: 'Historial', icon: 'history', link: base + 'historial.html' });
+            menuItems.push({ label: 'Alertas de Stock', icon: 'warning', link: base + 'alertas-stock.html' });
             menuItems.push({ label: 'Listado de Ítems / Stock', icon: 'category', link: base + 'catalogo.html' });
             menuItems.push({ label: 'Estadísticas', icon: 'bar_chart', link: base + 'estadisticas.html' });
             menuItems.push({ label: 'Migración CSV', icon: 'upload_file', link: base + 'migracion.html' });
@@ -281,9 +283,9 @@ export function initGlobalSidebar() {
         }
     });
 
-    // 7. Persistent "What's New" Modal v2.1
+    // 7. Persistent "What's New" Modal v2.1 (Desactivado)
     const currentVersion = 'v2_1';
-    if (!localStorage.getItem(`update_seen_${currentVersion}`)) {
+    if (false && !localStorage.getItem(`update_seen_${currentVersion}`)) {
         const updateModalHtml = `
             <div id="update-modal-overlay" class="fixed inset-0 bg-slate-900/60 dark:bg-black/80 backdrop-blur-md z-[100000] flex items-center justify-center p-4 opacity-0 transition-opacity duration-500">
                 <div class="glass-card bg-white dark:bg-[#161e2a] w-full max-w-lg rounded-[2rem] p-8 shadow-2xl transform scale-95 transition-transform duration-500 relative overflow-hidden border border-slate-200 dark:border-slate-700">

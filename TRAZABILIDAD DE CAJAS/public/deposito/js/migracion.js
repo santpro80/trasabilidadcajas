@@ -1,4 +1,4 @@
-import { db, requireDepositoAuth, doc, setDoc, getDocs, collection, writeBatch } from './firebase-config-deposito.js';
+import { db, requireDepositoAuth, doc, setDoc, getDocs, collection, writeBatch, deleteDoc } from './firebase-config-deposito.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
     try {
@@ -84,15 +84,17 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                 for (let i = startIdx; i < rows.length; i++) {
                     try {
-                        const columns = rows[i].split(separator);
-                        
-                        let codigo = columns[0]?.trim() || '';
-                        const rawDesc = columns[1]?.trim() || '';
-                        const rawDetalle = columns[2]?.trim() || '';
+                        const line = rows[i].trim();
+                        if (!line) continue;
 
-                        // Combinamos descripción y detalle
-                        let descripcionFinal = `${rawDesc} ${rawDetalle}`.trim();
-                        const estado = 'ACTIVO';
+                        const columns = line.split(separator);
+                        
+                        let codigo = columns[0]?.replace(/"/g, '')?.trim() || '';
+                        let descripcion = columns[1]?.replace(/"/g, '')?.trim() || '';
+                        let rawCantidad = columns[2]?.replace(/"/g, '')?.trim() || '0';
+
+                        let stock = parseInt(rawCantidad, 10);
+                        if (isNaN(stock)) stock = 0;
 
                         // Validaciones S/N
                         let hasIssues = false;
@@ -100,8 +102,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                             codigo = `S/N`;
                             hasIssues = true;
                         }
-                        if (!descripcionFinal) {
-                            descripcionFinal = `S/N`;
+                        if (!descripcion) {
+                            descripcion = `S/N`;
                             hasIssues = true;
                         }
 
@@ -113,24 +115,21 @@ document.addEventListener('DOMContentLoaded', async () => {
                         const exists = existingItems.has(finalDocId);
                         const itemData = {
                             codigo: codigo,
-                            descripcion: descripcionFinal,
+                            descripcion: descripcion,
+                            stock: stock,
+                            estado: 'ACTIVO',
                             ultimaActualizacion: new Date(),
                             migrado: true
                         };
 
-                        if (!exists) {
-                            itemData.stock = 0;
-                            itemData.estado = estado;
-                        }
-
                         await setDoc(itemRef, itemData, { merge: true });
-                        existingItems.set(finalDocId, { ...existingItems.get(finalDocId), ...itemData });
+                        existingItems.set(finalDocId, itemData);
 
                         added++;
                         
                         // Cuadro rojo leve si hay S/N
                         const logBg = hasIssues ? 'bg-rose-500/10 text-rose-600 dark:bg-rose-500/20 dark:text-rose-400 p-1 rounded' : '';
-                        statusLog.innerHTML += `<div class="${logBg}">[${added}] OK: [${codigo}] ${descripcionFinal} ${exists ? '<span class="text-amber-500 font-bold">(Actualizado)</span>' : '<span class="text-emerald-500 font-bold">(Nuevo)</span>'}</div>`;
+                        statusLog.innerHTML += `<div class="${logBg}">[${added}] OK: [${codigo}] ${descripcion} - Cantidad: ${stock} ${exists ? '<span class="text-amber-500 font-bold">(Actualizado)</span>' : '<span class="text-emerald-500 font-bold">(Nuevo)</span>'}</div>`;
                     } catch (err) {
                         errors++;
                         statusLog.innerHTML += `<div class="bg-rose-500 text-white p-1 rounded mb-1">FATAL [Fila ${i+1}]: ${err.message}</div>`;
@@ -219,10 +218,14 @@ document.addEventListener('DOMContentLoaded', async () => {
                         throw new Error("Formato inválido. Usá CODIGO ; DESCRIPCIÓN o pegá desde Excel");
                     }
                     
-                    const codigo = columns[0]?.trim() || '';
-                    const descripcion = columns[1]?.trim() || '';
+                    const codigo = columns[0]?.replace(/"/g, '')?.trim() || '';
+                    const descripcion = columns[1]?.replace(/"/g, '')?.trim() || '';
+                    let rawCantidad = columns[2]?.replace(/"/g, '')?.trim() || '0';
 
                     if (!codigo) throw new Error("Código faltante.");
+
+                    let stock = parseInt(rawCantidad, 10);
+                    if (isNaN(stock)) stock = 0;
 
                     const itemRef = doc(db, "deposito_catalogo", codigo);
                     
@@ -230,21 +233,18 @@ document.addEventListener('DOMContentLoaded', async () => {
                     const itemData = {
                         codigo: codigo,
                         descripcion: descripcion,
+                        stock: stock,
+                        estado: 'ACTIVO',
                         ultimaActualizacion: new Date(),
                         migrado: false,
                         manual: true
                     };
 
-                    if (!exists) {
-                        itemData.stock = 0;
-                        itemData.estado = 'ACTIVO';
-                    }
-
                     await setDoc(itemRef, itemData, { merge: true });
-                    existingItems.set(codigo, { ...existingItems.get(codigo), ...itemData });
+                    existingItems.set(codigo, itemData);
 
                     added++;
-                    statusLog.innerHTML += `<div>[${added}] OK: [${codigo}] ${descripcion} ${exists ? '<span class="text-amber-500 font-bold">(Actualizado)</span>' : '<span class="text-emerald-500 font-bold">(Nuevo)</span>'}</div>`;
+                    statusLog.innerHTML += `<div>[${added}] OK: [${codigo}] ${descripcion} - Cantidad: ${stock} ${exists ? '<span class="text-amber-500 font-bold">(Actualizado)</span>' : '<span class="text-emerald-500 font-bold">(Nuevo)</span>'}</div>`;
                 } catch (err) {
                     errors++;
                     statusLog.innerHTML += `<div class="bg-rose-500 text-white p-1 rounded mb-1">ERROR [Línea ${i+1}]: ${err.message}</div>`;
@@ -267,6 +267,98 @@ document.addEventListener('DOMContentLoaded', async () => {
             localStorage.removeItem('villalba_items_cache');
             alert(`Carga manual finalizada: ${added} items registrados y optimizados.`);
         });
+
+        // ELIMINAR ÍTEMS "SN" (SIN CÓDIGO)
+        const deleteSnBtn = document.getElementById('btn-delete-sn');
+        if (deleteSnBtn) {
+            deleteSnBtn.addEventListener('click', async () => {
+                const confirmed = confirm("¿Estás seguro de que deseas eliminar permanentemente todos los ítems cuyos códigos comienzan con 'SN'? Esta acción no se puede deshacer.");
+                if (!confirmed) return;
+
+                deleteSnBtn.disabled = true;
+                deleteSnBtn.innerHTML = '<span class="material-symbols-outlined animate-spin text-[18px]">sync</span> BORRANDO ÍTEMS...';
+                
+                statusLog.classList.remove('hidden');
+                statusLog.innerHTML = `<div class="mb-1 text-rose-500 uppercase font-black">--- INICIANDO ELIMINACIÓN DE REGISTROS 'SN' ---</div>`;
+
+                try {
+                    statusLog.innerHTML += `<div class="text-indigo-400 italic">Buscando ítems en la base de datos...</div>`;
+                    const catalogSnap = await getDocs(collection(db, 'deposito_catalogo'));
+                    
+                    const toDelete = [];
+                    catalogSnap.forEach(d => {
+                        const id = d.id;
+                        const isSN = id.toUpperCase().startsWith('SN');
+                        if (isSN) {
+                            toDelete.push(d);
+                        }
+                    });
+
+                    statusLog.innerHTML += `<div class="text-indigo-400 italic">Encontrados ${toDelete.length} ítems 'SN' para eliminar.</div>`;
+
+                    if (toDelete.length === 0) {
+                        statusLog.innerHTML += `<div class="text-emerald-500 font-bold mb-2">No se encontraron ítems 'SN' para eliminar.</div>`;
+                        alert("No se encontraron ítems que comiencen con 'SN'.");
+                        deleteSnBtn.disabled = false;
+                        deleteSnBtn.innerHTML = '<span class="material-symbols-outlined text-[18px]">delete_sweep</span> ELIMINAR ÍTEMS "SN" (SIN CÓDIGO)';
+                        return;
+                    }
+
+                    let deletedCount = 0;
+                    let batch = writeBatch(db);
+                    let countInBatch = 0;
+
+                    for (const docSnap of toDelete) {
+                        batch.delete(docSnap.ref);
+                        countInBatch++;
+                        deletedCount++;
+
+                        statusLog.innerHTML += `<div class="text-rose-500/80">[ELIMINADO] Fila ID: ${docSnap.id}</div>`;
+                        statusLog.scrollTop = statusLog.scrollHeight;
+
+                        if (countInBatch === 400) {
+                            statusLog.innerHTML += `<div class="text-slate-400 italic">Enviando lote de eliminaciones...</div>`;
+                            await batch.commit();
+                            batch = writeBatch(db);
+                            countInBatch = 0;
+                        }
+                    }
+
+                    if (countInBatch > 0) {
+                        statusLog.innerHTML += `<div class="text-slate-400 italic">Enviando lote final de eliminaciones...</div>`;
+                        await batch.commit();
+                    }
+
+                    statusLog.innerHTML += `<div class="text-emerald-500 font-bold mt-2">Eliminados ${deletedCount} registros con éxito.</div>`;
+                    
+                    // Regenerar el Master Document
+                    statusLog.innerHTML += `<div class="text-indigo-400 italic mt-2">Regenerando catálogo maestro (Master Document)...</div>`;
+                    const freshCatalogSnap = await getDocs(collection(db, 'deposito_catalogo'));
+                    const allItems = freshCatalogSnap.docs.map(d => ({ 
+                        codigo: d.id, 
+                        descripcion: d.data().descripcion || 'S/N', 
+                        stock: d.data().stock || 0 
+                    }));
+                    await setDoc(doc(db, 'system', 'master_catalog'), { items: allItems });
+
+                    // Limpiar caché local
+                    localStorage.removeItem('villalba_items_cache');
+
+                    statusLog.innerHTML += `<div class="mt-4 p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-500 font-black text-center uppercase tracking-widest">
+                        PROCESO COMPLETADO EXCoreCTAMENTE
+                    </div>`;
+                    alert(`Eliminación completada con éxito. Se eliminaron ${deletedCount} registros.`);
+
+                } catch (err) {
+                    console.error("Error al eliminar registros 'SN':", err);
+                    statusLog.innerHTML += `<div class="bg-rose-500 text-white p-1 rounded mb-1">ERROR CRÍTICO: ${err.message}</div>`;
+                    alert("Ocurrió un error al intentar eliminar los registros.");
+                } finally {
+                    deleteSnBtn.disabled = false;
+                    deleteSnBtn.innerHTML = '<span class="material-symbols-outlined text-[18px]">delete_sweep</span> ELIMINAR ÍTEMS "SN" (SIN CÓDIGO)';
+                }
+            });
+        }
     } catch (error) {
         console.error("Error en módulo de migración", error);
     }

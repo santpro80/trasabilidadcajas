@@ -4,6 +4,173 @@ let depositoItemsCache = [];
 let stagedMovements = [];
 let currentUser = null;
 
+// Modal Elements
+const imageModal = document.getElementById('imageModal');
+const enlargedImage = document.getElementById('enlargedImage');
+const closeImageModalObj = document.getElementById('closeImageModal');
+const modal3d = document.getElementById('modal-3d');
+const modalCaption = document.getElementById('modal-caption');
+const zControls = document.getElementById('zoom-controls');
+const zControlsMob = document.getElementById('zoom-controls-mobile');
+
+let currentScale = 1;
+let is3dActive = false;
+
+const openModal = () => {
+    currentScale = 1;
+    enlargedImage.style.transform = `scale(1)`;
+    if (is3dActive && modal3d.cameraOrbit) {
+        modal3d.setAttribute('camera-orbit', '0deg 90deg auto');
+        if (typeof modal3d.jumpCameraToGoal === 'function') modal3d.jumpCameraToGoal();
+    }
+
+    imageModal.classList.remove('hidden');
+    void imageModal.offsetWidth; // Reflow
+    imageModal.classList.add('opacity-100');
+    
+    if (zControls) zControls.classList.remove('opacity-0');
+    if (zControlsMob) zControlsMob.classList.remove('opacity-0');
+};
+
+const closeModal = () => {
+    imageModal.classList.remove('opacity-100');
+    if (zControls) zControls.classList.add('opacity-0');
+    if (zControlsMob) zControlsMob.classList.add('opacity-0');
+    
+    setTimeout(() => {
+        imageModal.classList.add('hidden');
+        enlargedImage.style.transform = `scale(1)`;
+        if (is3dActive && modal3d.cameraOrbit) {
+            modal3d.setAttribute('camera-orbit', '0deg 90deg auto');
+            if (typeof modal3d.jumpCameraToGoal === 'function') modal3d.jumpCameraToGoal();
+        }
+        is3dActive = false;
+    }, 300);
+};
+
+const handleZoom = (direction) => {
+    if (is3dActive) {
+        if (typeof modal3d.zoom === 'function') {
+            modal3d.zoom(direction === 'in' ? 3 : -3);
+        }
+    } else {
+        currentScale = direction === 'in' ? currentScale + 0.35 : Math.max(0.35, currentScale - 0.35);
+        enlargedImage.style.transform = `scale(${currentScale})`;
+        enlargedImage.style.transition = 'transform 0.3s ease-out';
+    }
+};
+
+const resetZoom = () => {
+    if (is3dActive) {
+        modal3d.setAttribute('camera-orbit', '0deg 90deg auto');
+        if (typeof modal3d.jumpCameraToGoal === 'function') modal3d.jumpCameraToGoal();
+    } else {
+        currentScale = 1;
+        enlargedImage.style.transform = `scale(1)`;
+    }
+};
+
+const playWarningBeep = () => {
+    try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        // Beep 1
+        const osc1 = audioCtx.createOscillator();
+        const gain1 = audioCtx.createGain();
+        osc1.connect(gain1);
+        gain1.connect(audioCtx.destination);
+        osc1.type = 'sawtooth';
+        osc1.frequency.setValueAtTime(150, audioCtx.currentTime); // Low warning tone
+        gain1.gain.setValueAtTime(0.2, audioCtx.currentTime);
+        osc1.start();
+        osc1.stop(audioCtx.currentTime + 0.15);
+
+        // Beep 2 (shortly after)
+        setTimeout(() => {
+            const osc2 = audioCtx.createOscillator();
+            const gain2 = audioCtx.createGain();
+            osc2.connect(gain2);
+            gain2.connect(audioCtx.destination);
+            osc2.type = 'sawtooth';
+            osc2.frequency.setValueAtTime(120, audioCtx.currentTime);
+            gain2.gain.setValueAtTime(0.2, audioCtx.currentTime);
+            osc2.start();
+            osc2.stop(audioCtx.currentTime + 0.2);
+        }, 180);
+    } catch (e) {
+        console.error("Audio Context not allowed or failed", e);
+    }
+};
+
+const showAlarmModal = (codigo, solicitado, disponible) => {
+    const modal = document.getElementById('alarmModal');
+    const lblCodigo = document.getElementById('alarm-item-codigo');
+    const lblSolicitado = document.getElementById('alarm-item-solicitado');
+    const lblDisponible = document.getElementById('alarm-item-disponible');
+    
+    if (!modal || !lblCodigo || !lblSolicitado || !lblDisponible) return;
+    
+    lblCodigo.textContent = codigo;
+    lblSolicitado.textContent = `${solicitado} UDS`;
+    lblDisponible.textContent = `${disponible} UDS`;
+    
+    playWarningBeep();
+    
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    void modal.offsetWidth; // Reflow
+    modal.classList.remove('opacity-0');
+    
+    const content = modal.querySelector('.transform');
+    if (content) {
+        content.classList.remove('scale-95');
+        content.classList.add('scale-100');
+    }
+};
+
+const closeAlarmModal = () => {
+    const modal = document.getElementById('alarmModal');
+    if (!modal) return;
+    
+    modal.classList.add('opacity-0');
+    const content = modal.querySelector('.transform');
+    if (content) {
+        content.classList.remove('scale-100');
+        content.classList.add('scale-95');
+    }
+    
+    setTimeout(() => {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }, 300);
+};
+
+const setPreviewVisibility = (visible) => {
+    const imgContainer = document.getElementById('img-container');
+    const previewActions = document.getElementById('preview-actions');
+    const previewPieza = document.getElementById('preview-pieza');
+    if (visible) {
+        if (imgContainer) {
+            imgContainer.classList.remove('hidden');
+            imgContainer.classList.add('flex');
+        }
+        if (previewActions) {
+            previewActions.classList.remove('hidden');
+            previewActions.classList.add('flex');
+        }
+    } else {
+        if (imgContainer) {
+            imgContainer.classList.add('hidden');
+            imgContainer.classList.remove('flex');
+        }
+        if (previewActions) {
+            previewActions.classList.add('hidden');
+            previewActions.classList.remove('flex');
+        }
+        if (previewPieza) previewPieza.style.opacity = '0';
+    }
+};
+
 const initAutocomplete = () => {
     const input = document.getElementById('codigo-pieza');
     const autocompleteList = document.getElementById('autocomplete-list');
@@ -11,11 +178,6 @@ const initAutocomplete = () => {
     const imgContainer = document.getElementById('img-container');
     const previewPieza = document.getElementById('preview-pieza');
     
-    // Modal elements
-    const imageModal = document.getElementById('imageModal');
-    const enlargedImage = document.getElementById('enlargedImage');
-    const closeImageModalObj = document.getElementById('closeImageModal');
-
     let isFetching = false;
 
     // Cachear lista de ítems en el navegador para ahorrar lecturas a Firebase (Válido por 12 hs)
@@ -33,14 +195,20 @@ const initAutocomplete = () => {
             if (cached) {
                 const { timestamp, data } = JSON.parse(cached);
                 if (Date.now() - timestamp < CACHE_EXPIRY && data && data.length > 0) {
-                    console.log(`Cargando ${data.length} ítems desde caché local.`);
-                    depositoItemsCache = data;
-                    input.disabled = false;
-                    input.placeholder = "Ej: 4211800";
-                    isFetching = false;
-                    
-                    if (input.value) input.dispatchEvent(new Event('input', { bubbles: true }));
-                    return;
+                    const containsNegative = data.some(i => (i.stock || 0) < 0);
+                    if (containsNegative) {
+                        console.log("Caché local contiene stock negativo en carga-datos. Invalidando...");
+                        localStorage.removeItem(CACHE_KEY);
+                    } else {
+                        console.log(`Cargando ${data.length} ítems desde caché local.`);
+                        depositoItemsCache = data;
+                        input.disabled = false;
+                        input.placeholder = "Ej: 4211800";
+                        isFetching = false;
+                        
+                        if (input.value) input.dispatchEvent(new Event('input', { bubbles: true }));
+                        return;
+                    }
                 }
             }
 
@@ -52,7 +220,24 @@ const initAutocomplete = () => {
             if (snap.exists()) {
                 const masterData = snap.data().items || [];
                 console.log(`Se descargaron ${masterData.length} ítems del Master Document.`);
-                depositoItemsCache = masterData;
+                
+                let hasNegative = false;
+                const correctedItems = masterData.map(item => {
+                    if ((item.stock || 0) < 0) {
+                        item.stock = 0;
+                        hasNegative = true;
+                        const itemRef = doc(db, 'deposito_catalogo', item.codigo);
+                        setDoc(itemRef, { stock: 0 }, { merge: true }).catch(err => console.error("Error al corregir stock negativo individual:", err));
+                    }
+                    return item;
+                });
+
+                if (hasNegative) {
+                    console.log("Se detectaron y corrigieron stocks negativos en el Master Document. Subiendo corrección...");
+                    setDoc(masterRef, { items: correctedItems }, { merge: true }).catch(err => console.error("Error al corregir master_catalog:", err));
+                }
+
+                depositoItemsCache = correctedItems;
             } else {
                 console.warn("Master Document no encontrado.");
             }
@@ -108,9 +293,7 @@ const initAutocomplete = () => {
         
         if (!val) {
             autocompleteList.classList.add('hidden');
-            imgContainer.classList.add('hidden');
-            imgContainer.classList.remove('flex');
-            previewPieza.style.opacity = '0';
+            setPreviewVisibility(false);
             return;
         }
 
@@ -148,9 +331,14 @@ const initAutocomplete = () => {
                     autocompleteList.classList.add('hidden');
                     
                     previewPieza.src = `../assets/items/${item.codigo}.webp`;
-                    previewPieza.style.opacity = '0';
-                    imgContainer.classList.remove('hidden');
-                    imgContainer.classList.add('flex');
+                    setPreviewVisibility(true);
+
+                    // ALARMA DE STOCK 0
+                    if ((item.stock || 0) <= 0) {
+                        playWarningBeep();
+                        showToastMessage(`¡Alerta! Este ítem tiene 0 stock.`, true);
+                        detalleInput.value = `[¡SIN STOCK!] ${item.descripcion}`;
+                    }
 
                     const cantInput = document.getElementById('cantidad-pieza');
                     if (cantInput) {
@@ -181,45 +369,91 @@ const initAutocomplete = () => {
             if (exactMatch) {
                  input.value = exactMatch.codigo; // Auto-formatea insertando guiones correctos
                  detalleInput.value = exactMatch.descripcion;
-                 
                  previewPieza.src = `../assets/items/${exactMatch.codigo}.webp`;
-                 previewPieza.style.opacity = '0';
-                 imgContainer.classList.remove('hidden');
-                 imgContainer.classList.add('flex');
+                 setPreviewVisibility(true);
+
+                 // ALARMA DE STOCK 0
+                 if ((exactMatch.stock || 0) <= 0) {
+                     playWarningBeep();
+                     showToastMessage(`¡Alerta! Este ítem tiene 0 stock.`, true);
+                     detalleInput.value = `[¡SIN STOCK!] ${exactMatch.descripcion}`;
+                 }
             } else {
-                 imgContainer.classList.add('hidden');
-                 imgContainer.classList.remove('flex');
+                 setPreviewVisibility(false);
             }
         } else {
-            imgContainer.classList.add('hidden');
-            imgContainer.classList.remove('flex');
+            setPreviewVisibility(false);
         }
     });
 
     // Modal Logic
+    const btnView3dPreview = document.getElementById('btn-view-3d-preview');
+    const btnZoomPreview = document.getElementById('btn-zoom-preview');
+
     if (imgContainer) {
-        imgContainer.addEventListener('click', () => {
-            const img = document.getElementById('preview-pieza');
-            if (img && img.style.opacity !== '0') {
-                enlargedImage.src = img.src;
-                imageModal.classList.remove('hidden');
-                setTimeout(() => imageModal.classList.remove('opacity-0'), 10);
-            }
+        imgContainer.addEventListener('click', (e) => {
+            if (e.target.closest('#btn-view-3d-preview') || e.target.closest('#btn-zoom-preview')) return;
+            if (btnZoomPreview) btnZoomPreview.click();
         });
     }
 
-    if (closeImageModalObj) {
-        closeImageModalObj.onclick = () => {
-            imageModal.classList.add('opacity-0');
-            setTimeout(() => imageModal.classList.add('hidden'), 300);
+    if (btnZoomPreview) {
+        btnZoomPreview.onclick = (e) => {
+            if (e) e.stopPropagation();
+            const code = input.value.trim().toUpperCase();
+            if (!code) return;
+            
+            is3dActive = false;
+            modal3d.classList.add('hidden');
+            enlargedImage.classList.remove('hidden');
+            enlargedImage.src = `../assets/items/${code}.webp`;
+            
+            modalCaption.textContent = `Código: ${code}`;
+            openModal();
         };
+    }
+
+    if (btnView3dPreview) {
+        btnView3dPreview.onclick = (e) => {
+            if (e) e.stopPropagation();
+            const code = input.value.trim().toUpperCase();
+            if (!code) return;
+            
+            is3dActive = true;
+            enlargedImage.classList.add('hidden');
+            modal3d.classList.remove('hidden');
+            const glbPath = `../assets/3d/${code}.glb`;
+            if (modal3d.getAttribute('src') !== glbPath) {
+                modal3d.src = glbPath;
+            }
+            
+            modalCaption.textContent = `Modelo 3D - Código: ${code}`;
+            openModal();
+        };
+    }
+
+    if (closeImageModalObj) {
+        closeImageModalObj.onclick = closeModal;
     }
     
     if (imageModal) {
         imageModal.onclick = (e) => {
-            if (e.target === imageModal) closeImageModalObj.onclick();
+            if (e.target === imageModal || e.target === document.getElementById('modal-scroll-container')) {
+                closeModal();
+            }
         };
     }
+
+    // Bind zoom control buttons
+    ['zoom-in', 'zoom-in-mob'].forEach(id => {
+        document.getElementById(id)?.addEventListener('click', (e) => { e.stopPropagation(); handleZoom('in'); });
+    });
+    ['zoom-out', 'zoom-out-mob'].forEach(id => {
+        document.getElementById(id)?.addEventListener('click', (e) => { e.stopPropagation(); handleZoom('out'); });
+    });
+    ['zoom-reset', 'zoom-reset-mob'].forEach(id => {
+        document.getElementById(id)?.addEventListener('click', (e) => { e.stopPropagation(); resetZoom(); });
+    });
 
     // Retornamos la función para poder llamarla más tarde
     return fetchListaItems;
@@ -252,12 +486,24 @@ const setupLastMovementListener = () => {
     });
 };
 
-const showToast = () => {
+const showToastMessage = (message, isError = false) => {
     const toast = document.getElementById('toast-notification');
+    if (!toast) return;
+    
+    // Cambiar color y texto dinámicamente
+    toast.className = `fixed top-20 right-4 md:right-8 transform transition-all duration-300 pointer-events-none px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 z-[100] ${
+        isError ? 'bg-rose-500 text-white animate-bounce' : 'bg-emerald-500 text-white'
+    }`;
+    
+    toast.innerHTML = `
+        <span class="material-symbols-outlined">${isError ? 'error' : 'check_circle'}</span>
+        <span class="text-xs font-black uppercase tracking-widest pt-0.5">${message}</span>
+    `;
+    
     toast.classList.remove('opacity-0', 'translate-x-12', 'pointer-events-none');
     setTimeout(() => {
         toast.classList.add('opacity-0', 'translate-x-12', 'pointer-events-none');
-    }, 3000);
+    }, 4000);
 };
 
 const renderStagedItems = () => {
@@ -345,7 +591,39 @@ const initForm = () => {
         const cantidad = parseInt(document.getElementById('cantidad-pieza').value, 10);
 
         if (!codigo || isNaN(cantidad) || cantidad <= 0) {
-            alert('Por favor, completa código y cantidad válida.');
+            showToastMessage('Completa el código y cantidad válida.', true);
+            return;
+        }
+
+        // Buscar stock disponible en cache
+        const itemCache = depositoItemsCache.find(item => item.codigo === codigo);
+        const currentStock = itemCache ? (itemCache.stock || 0) : 0;
+
+        // Calcular stock ya reservado/comprometido en la lista stagedMovements
+        let stagedQty = 0;
+        stagedMovements.forEach(m => {
+            if (m.codigo === codigo) {
+                if (m.tipo === 'Egreso') stagedQty += m.cantidad;
+                else if (m.tipo === 'Ingreso') stagedQty -= m.cantidad;
+            }
+        });
+
+        const availableStock = currentStock - stagedQty;
+
+        if (tipo === 'Egreso' && cantidad > availableStock) {
+            // Registrar Intento Fallido en Firestore
+            addDoc(collection(db, 'deposito_egresos_fallidos'), {
+                codigo,
+                descripcion: descripcion || 'Sin detalle',
+                cantidad,
+                stockDisponible: Math.max(0, availableStock),
+                timestamp: serverTimestamp(),
+                usuarioNombre: currentUser?.userData?.name || currentUser?.user?.email || 'Desconocido',
+                usuario: currentUser?.user?.email || 'Desconocido',
+                userId: currentUser?.user?.uid || 'Anónimo'
+            }).catch(err => console.error("Error al registrar intento fallido:", err));
+
+            showAlarmModal(codigo, cantidad, Math.max(0, availableStock));
             return;
         }
 
@@ -360,8 +638,7 @@ const initForm = () => {
         
         document.getElementById('detalle-pieza').value = '';
         document.getElementById('cantidad-pieza').value = '';
-        const imgC = document.getElementById('img-container');
-        if (imgC) { imgC.classList.add('hidden'); imgC.classList.remove('flex'); }
+        setPreviewVisibility(false);
 
         renderStagedItems();
         document.getElementById('codigo-pieza').focus();
@@ -429,7 +706,7 @@ const initForm = () => {
             stagedMovements = [];
             saveStagedToLocal();
             renderStagedItems();
-            showToast();
+            showToastMessage('Movimiento Exitoso');
         } catch (error) {
             console.error("Error en registro masivo: ", error);
             statusMsg.textContent = "Error al conectar. Verifica tu internet.";
@@ -523,6 +800,17 @@ document.addEventListener('DOMContentLoaded', () => {
     initDescSearch();
     initForm();
     loadStagedFromLocal();
+
+    const closeAlarmBtn = document.getElementById('closeAlarmModalBtn');
+    if (closeAlarmBtn) {
+        closeAlarmBtn.addEventListener('click', closeAlarmModal);
+    }
+    const alarmModal = document.getElementById('alarmModal');
+    if (alarmModal) {
+        alarmModal.addEventListener('click', (e) => {
+            if (e.target === alarmModal) closeAlarmModal();
+        });
+    }
 
     // 2. Manejar Auth en segundo plano
     requireDepositoAuth(['operario', 'supervisor'])

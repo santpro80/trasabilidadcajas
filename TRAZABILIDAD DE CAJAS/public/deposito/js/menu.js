@@ -40,6 +40,17 @@ document.addEventListener('DOMContentLoaded', async () => {
                 col: 'administracion'
             },
             {
+                id: 'egresos-fallidos',
+                title: 'Egresos Fallidos',
+                desc: 'Intentos de egreso sin stock',
+                icon: 'report_off',
+                link: 'egresos-fallidos.html',
+                bg: 'bg-rose-50 dark:bg-rose-500/10',
+                text: 'text-rose-600 dark:text-rose-400',
+                roles: ['supervisor', 'operario'],
+                col: 'administracion'
+            },
+            {
                 id: 'catalogo',
                 title: 'Listado de Ítems',
                 desc: 'Listado visual de ítems con stock actual',

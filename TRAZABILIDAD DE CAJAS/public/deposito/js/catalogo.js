@@ -1,4 +1,4 @@
-import { db, doc, getDoc, collection, query, getDocs, orderBy, limit, startAfter, requireDepositoAuth } from './firebase-config-deposito.js';
+import { db, doc, getDoc, collection, query, getDocs, orderBy, limit, startAfter, requireDepositoAuth, setDoc } from './firebase-config-deposito.js';
 
 let allItems = [];
 let filteredItems = [];
@@ -21,6 +21,67 @@ const buscador = document.getElementById('buscador-catalogo');
 const imageModal = document.getElementById('imageModal');
 const enlargedImage = document.getElementById('enlargedImage');
 const closeImageModalObj = document.getElementById('closeImageModal');
+const modal3d = document.getElementById('modal-3d');
+const modalCaption = document.getElementById('modal-caption');
+const zControls = document.getElementById('zoom-controls');
+const zControlsMob = document.getElementById('zoom-controls-mobile');
+
+let currentScale = 1;
+let is3dActive = false;
+
+const openModal = () => {
+    currentScale = 1;
+    enlargedImage.style.transform = `scale(1)`;
+    if (is3dActive && modal3d.cameraOrbit) {
+        modal3d.setAttribute('camera-orbit', '0deg 90deg auto');
+        if (typeof modal3d.jumpCameraToGoal === 'function') modal3d.jumpCameraToGoal();
+    }
+
+    imageModal.classList.remove('hidden');
+    void imageModal.offsetWidth; // Reflow
+    imageModal.classList.add('opacity-100');
+    
+    if (zControls) zControls.classList.remove('opacity-0');
+    if (zControlsMob) zControlsMob.classList.remove('opacity-0');
+};
+
+const closeModal = () => {
+    imageModal.classList.remove('opacity-100');
+    if (zControls) zControls.classList.add('opacity-0');
+    if (zControlsMob) zControlsMob.classList.add('opacity-0');
+    
+    setTimeout(() => {
+        imageModal.classList.add('hidden');
+        enlargedImage.style.transform = `scale(1)`;
+        if (is3dActive && modal3d.cameraOrbit) {
+            modal3d.setAttribute('camera-orbit', '0deg 90deg auto');
+            if (typeof modal3d.jumpCameraToGoal === 'function') modal3d.jumpCameraToGoal();
+        }
+        is3dActive = false;
+    }, 300);
+};
+
+const handleZoom = (direction) => {
+    if (is3dActive) {
+        if (typeof modal3d.zoom === 'function') {
+            modal3d.zoom(direction === 'in' ? 3 : -3);
+        }
+    } else {
+        currentScale = direction === 'in' ? currentScale + 0.35 : Math.max(0.35, currentScale - 0.35);
+        enlargedImage.style.transform = `scale(${currentScale})`;
+        enlargedImage.style.transition = 'transform 0.3s ease-out';
+    }
+};
+
+const resetZoom = () => {
+    if (is3dActive) {
+        modal3d.setAttribute('camera-orbit', '0deg 90deg auto');
+        if (typeof modal3d.jumpCameraToGoal === 'function') modal3d.jumpCameraToGoal();
+    } else {
+        currentScale = 1;
+        enlargedImage.style.transform = `scale(1)`;
+    }
+};
 
     const renderRows = () => {
         if (filteredItems.length === 0) {
@@ -52,13 +113,23 @@ const closeImageModalObj = document.getElementById('closeImageModal');
         return `
             <tr style="height: ${ROW_HEIGHT}px" class="group transition-colors border-b ${rowStyle}">
                 <td class="py-2 px-6">
-                    <div class="relative w-16 h-16 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center cursor-pointer item-img-clickable">
+                    <div class="relative w-16 h-16 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center overflow-hidden">
                         ${alertBadge}
                         <span class="material-symbols-outlined absolute text-2xl text-slate-300 dark:text-slate-700 transition-transform group-hover:scale-110">inventory_2</span>
                         <img src="../assets/items/${item.codigo}.webp" alt="${item.codigo}" 
-                             class="max-h-full max-w-full object-contain relative z-10 transition-transform group-hover:scale-110" 
+                             class="max-h-[90%] max-w-[90%] object-contain relative z-10 transition-transform group-hover:scale-110" 
                              loading="lazy"
                              onerror="this.style.opacity='0'" onload="this.style.opacity='1'; this.previousElementSibling.style.display='none'">
+                        
+                        <!-- Botones de acción al hacer hover -->
+                        <div class="absolute inset-0 z-20 flex flex-col items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm bg-white/75 dark:bg-slate-900/75 p-1">
+                            <button class="view-3d-btn p-1 rounded-md bg-purple-500 hover:bg-purple-600 text-white shadow-sm transition-colors cursor-pointer" data-code="${item.codigo}" title="Ver modelo 3D">
+                                <span class="material-symbols-outlined text-[15px]">3d_rotation</span>
+                            </button>
+                            <button class="zoom-img-btn p-1 rounded-md bg-villalba-blue hover:bg-blue-600 text-white shadow-sm transition-colors cursor-pointer" data-code="${item.codigo}" title="Ampliar imagen">
+                                <span class="material-symbols-outlined text-[15px]">zoom_in</span>
+                            </button>
+                        </div>
                     </div>
                 </td>
                 <td class="py-2 px-6">
@@ -78,14 +149,38 @@ const closeImageModalObj = document.getElementById('closeImageModal');
 
     tbody.innerHTML = html;
     
-    document.querySelectorAll('.item-img-clickable').forEach(el => {
-        el.onclick = () => {
-            const img = el.querySelector('img');
-            if (img && img.style.opacity !== '0') {
-                enlargedImage.src = img.src;
-                imageModal.classList.remove('hidden');
-                setTimeout(() => imageModal.classList.remove('opacity-0'), 10);
+    // Asignar eventos a los botones de acción
+    tbody.querySelectorAll('.zoom-img-btn').forEach(btn => {
+        btn.onclick = (e) => {
+            e.stopPropagation();
+            const code = btn.dataset.code;
+            const imgPath = `../assets/items/${code}.webp`;
+            
+            is3dActive = false;
+            modal3d.classList.add('hidden');
+            enlargedImage.classList.remove('hidden');
+            enlargedImage.src = imgPath;
+            
+            modalCaption.textContent = `Código: ${code}`;
+            openModal();
+        };
+    });
+
+    tbody.querySelectorAll('.view-3d-btn').forEach(btn => {
+        btn.onclick = (e) => {
+            e.stopPropagation();
+            is3dActive = true;
+            const code = btn.dataset.code;
+            const glbPath = `../assets/3d/${code}.glb`;
+            
+            enlargedImage.classList.add('hidden');
+            modal3d.classList.remove('hidden');
+            if (modal3d.getAttribute('src') !== glbPath) {
+                modal3d.src = glbPath;
             }
+            
+            modalCaption.textContent = `Modelo 3D - Código: ${code}`;
+            openModal();
         };
     });
 };
@@ -147,13 +242,19 @@ const loadCatalog = async (reset = true) => {
             const { timestamp, data } = JSON.parse(cached);
             // Reusar caché si es válido y no está vacío
             if (Date.now() - timestamp < CACHE_EXPIRY && data && data.length > 0) {
-                console.log(`Cargando ${data.length} ítems desde caché local.`);
-                // Asegurar ordenamiento
-                allItems = data.sort((a, b) => (a.codigo || '').localeCompare(b.codigo || ''));
-                allLoaded = true;
-                applyFilters(reset);
-                isFetching = false;
-                return;
+                const containsNegative = data.some(i => (i.stock || 0) < 0);
+                if (containsNegative) {
+                    console.log("Caché local contiene stock negativo. Invalidando...");
+                    localStorage.removeItem(CACHE_KEY);
+                } else {
+                    console.log(`Cargando ${data.length} ítems desde caché local.`);
+                    // Asegurar ordenamiento
+                    allItems = data.sort((a, b) => (a.codigo || '').localeCompare(b.codigo || ''));
+                    allLoaded = true;
+                    applyFilters(reset);
+                    isFetching = false;
+                    return;
+                }
             }
         }
 
@@ -166,7 +267,23 @@ const loadCatalog = async (reset = true) => {
             if (reset) emptyState.classList.remove('hidden');
         } else {
             const masterData = snap.data().items || [];
-            allItems = masterData.sort((a, b) => (a.codigo || '').localeCompare(b.codigo || ''));
+            let hasNegative = false;
+            const correctedItems = masterData.map(item => {
+                if ((item.stock || 0) < 0) {
+                    item.stock = 0;
+                    hasNegative = true;
+                    const itemRef = doc(db, 'deposito_catalogo', item.codigo);
+                    setDoc(itemRef, { stock: 0 }, { merge: true }).catch(err => console.error("Error al corregir stock negativo individual:", err));
+                }
+                return item;
+            });
+
+            if (hasNegative) {
+                console.log("Se detectaron y corrigieron stocks negativos en el Master Document. Subiendo corrección...");
+                await setDoc(masterRef, { items: correctedItems }, { merge: true }).catch(err => console.error("Error al corregir master_catalog:", err));
+            }
+
+            allItems = correctedItems.sort((a, b) => (a.codigo || '').localeCompare(b.codigo || ''));
             
             // Guardar en caché compartido
             localStorage.setItem(CACHE_KEY, JSON.stringify({
@@ -209,17 +326,26 @@ const setupApp = () => {
     window.addEventListener('scroll', handleScroll);
 
     if (closeImageModalObj) {
-        closeImageModalObj.onclick = () => {
-            imageModal.classList.add('opacity-0');
-            setTimeout(() => imageModal.classList.add('hidden'), 300);
-        };
+        closeImageModalObj.onclick = closeModal;
     }
     
     if (imageModal) {
         imageModal.onclick = (e) => {
-            if (e.target === imageModal) closeImageModalObj.onclick();
+            if (e.target === imageModal || e.target === document.getElementById('modal-scroll-container')) {
+                closeModal();
+            }
         };
     }
+
+    ['zoom-in', 'zoom-in-mob'].forEach(id => {
+        document.getElementById(id)?.addEventListener('click', (e) => { e.stopPropagation(); handleZoom('in'); });
+    });
+    ['zoom-out', 'zoom-out-mob'].forEach(id => {
+        document.getElementById(id)?.addEventListener('click', (e) => { e.stopPropagation(); handleZoom('out'); });
+    });
+    ['zoom-reset', 'zoom-reset-mob'].forEach(id => {
+        document.getElementById(id)?.addEventListener('click', (e) => { e.stopPropagation(); resetZoom(); });
+    });
 
     const btnExportExcel = document.getElementById('btn-export-excel');
     const btnAddToList = document.getElementById('btn-add-to-list');
