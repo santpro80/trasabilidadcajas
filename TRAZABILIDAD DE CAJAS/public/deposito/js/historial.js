@@ -4,6 +4,11 @@ let todosLosMovimientos = [];
 let filtroTexto = '';
 let filtroTipoSelect = 'Todos';
 
+let currentLimit = 100;
+let isFetching = false;
+let allLoaded = false;
+let unsubscribe = null;
+
 const renderTabla = () => {
     const tbody = document.getElementById('tabla-body');
     const contador = document.getElementById('contador-movimientos');
@@ -30,7 +35,13 @@ const renderTabla = () => {
         contador.classList.remove('hidden');
     }
     if (mostrando) {
-        mostrando.textContent = `Mostrando ${filtrados.length} movimientos`;
+        if (isFetching) {
+            mostrando.textContent = `Cargando más movimientos... (Mostrando ${filtrados.length})`;
+        } else if (allLoaded) {
+            mostrando.textContent = `Mostrando ${filtrados.length} movimientos. Fin del registro.`;
+        } else {
+            mostrando.textContent = `Mostrando ${filtrados.length} movimientos. Desliza para cargar más.`;
+        }
     }
 
     if (filtrados.length === 0) {
@@ -81,9 +92,57 @@ const renderTabla = () => {
     }).join('');
 };
 
+const setupRealtimeListener = () => {
+    if (unsubscribe) unsubscribe();
+
+    isFetching = true;
+    const mostrando = document.getElementById('mostrando-texto');
+    if (mostrando) mostrando.textContent = `Cargando movimientos...`;
+
+    const q = query(collection(db, 'deposito_movimientos'), orderBy('timestamp', 'desc'), limit(currentLimit));
+    unsubscribe = onSnapshot(q, (snap) => {
+        todosLosMovimientos = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        
+        if (snap.docs.length < currentLimit) {
+            allLoaded = true;
+        } else {
+            allLoaded = false;
+        }
+        
+        isFetching = false;
+        renderTabla();
+    }, (error) => {
+        console.error("Error fetching historial", error);
+        document.getElementById('tabla-body').innerHTML = '<tr><td colspan="6" class="py-16 text-center text-rose-500 font-bold uppercase tracking-widest text-xs">Error de conexión - Ver permisos</td></tr>';
+        isFetching = false;
+    });
+};
+
+const handleScroll = () => {
+    if (isFetching || allLoaded) return;
+
+    const tableContainer = document.querySelector('.table-container');
+    if (!tableContainer) return;
+
+    const { scrollTop, scrollHeight, clientHeight } = tableContainer;
+    
+    // Detectar scroll en el contenedor interno
+    const reachedContainerBottom = scrollHeight > clientHeight && scrollTop + clientHeight >= scrollHeight - 100;
+    
+    // Detectar scroll a nivel de ventana (mobile/fallback)
+    const doc = document.documentElement;
+    const reachedWindowBottom = doc.scrollHeight > window.innerHeight && doc.scrollTop + window.innerHeight >= doc.scrollHeight - 100;
+
+    if (reachedContainerBottom || reachedWindowBottom) {
+        currentLimit += 100;
+        setupRealtimeListener();
+    }
+};
+
 const setupListeners = () => {
     const buscarInput = document.getElementById('buscador-historial');
     const tipoSelect = document.getElementById('filtro-tipo');
+    const tableContainer = document.querySelector('.table-container');
 
     buscarInput.addEventListener('input', (e) => {
         filtroTexto = e.target.value.trim();
@@ -95,15 +154,12 @@ const setupListeners = () => {
         renderTabla();
     });
 
-    // Limitar a 200 movimientos para evitar consumo excesivo de lecturas en Firestore
-    const q = query(collection(db, 'deposito_movimientos'), orderBy('timestamp', 'desc'), limit(200));
-    onSnapshot(q, (snap) => {
-        todosLosMovimientos = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        renderTabla();
-    }, (error) => {
-        console.error("Error fetching historial", error);
-        document.getElementById('tabla-body').innerHTML = '<tr><td colspan="6" class="py-16 text-center text-rose-500 font-bold uppercase tracking-widest text-xs">Error de conexión - Ver permisos</td></tr>';
-    });
+    if (tableContainer) {
+        tableContainer.addEventListener('scroll', handleScroll);
+    }
+    window.addEventListener('scroll', handleScroll);
+
+    setupRealtimeListener();
 };
 
 document.addEventListener('DOMContentLoaded', async () => {
