@@ -92,14 +92,17 @@ const renderTabla = () => {
     }).join('');
 };
 
+let selectedWarehouse = ''; // 'no_esteril' | 'esteril' | 'materia_prima'
+
 const setupRealtimeListener = () => {
     if (unsubscribe) unsubscribe();
+    if (!selectedWarehouse) return;
 
     isFetching = true;
     const mostrando = document.getElementById('mostrando-texto');
     if (mostrando) mostrando.textContent = `Cargando movimientos...`;
 
-    const q = query(collection(db, 'deposito_movimientos'), orderBy('timestamp', 'desc'), limit(currentLimit));
+    const q = query(collection(db, `deposito_movimientos_${selectedWarehouse}`), orderBy('timestamp', 'desc'), limit(currentLimit));
     unsubscribe = onSnapshot(q, (snap) => {
         todosLosMovimientos = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         
@@ -119,7 +122,7 @@ const setupRealtimeListener = () => {
 };
 
 const handleScroll = () => {
-    if (isFetching || allLoaded) return;
+    if (isFetching || allLoaded || !selectedWarehouse) return;
 
     const tableContainer = document.querySelector('.table-container');
     if (!tableContainer) return;
@@ -139,7 +142,47 @@ const handleScroll = () => {
     }
 };
 
-const setupListeners = () => {
+const showHistoryView = (warehouseName, labelText) => {
+    selectedWarehouse = warehouseName;
+    document.getElementById('historial-title-text').textContent = `Historial: ${labelText}`;
+    
+    // Toggle screens
+    document.getElementById('warehouse-choice-screen').classList.add('hidden');
+    document.getElementById('historial-main-container').classList.remove('hidden');
+    document.getElementById('historial-main-container').classList.add('flex');
+    
+    currentLimit = 100;
+    allLoaded = false;
+    setupRealtimeListener();
+};
+
+const showChoiceScreen = () => {
+    if (unsubscribe) {
+        unsubscribe();
+        unsubscribe = null;
+    }
+    selectedWarehouse = '';
+    document.getElementById('historial-main-container').classList.add('hidden');
+    document.getElementById('historial-main-container').classList.remove('flex');
+    document.getElementById('warehouse-choice-screen').classList.remove('hidden');
+    
+    todosLosMovimientos = [];
+    document.getElementById('buscador-historial').value = '';
+    filtroTexto = '';
+    filtroTipoSelect = 'Todos';
+    document.getElementById('filtro-tipo').value = 'Todos';
+    document.getElementById('tabla-body').innerHTML = '<tr><td colspan="6" class="py-20 text-center"><span class="material-symbols-outlined text-4xl animate-spin text-villalba-blue">sync</span></td></tr>';
+};
+
+const setupApp = () => {
+    // Bind choice screen buttons
+    document.getElementById('choice-no-esteril').addEventListener('click', () => showHistoryView('no_esteril', 'No Estéril'));
+    document.getElementById('choice-esteril').addEventListener('click', () => showHistoryView('esteril', 'Estéril'));
+    document.getElementById('choice-materia-prima').addEventListener('click', () => showHistoryView('materia_prima', 'Materia Prima'));
+    
+    // Bind back button
+    document.getElementById('btn-back-to-choices').addEventListener('click', showChoiceScreen);
+
     const buscarInput = document.getElementById('buscador-historial');
     const tipoSelect = document.getElementById('filtro-tipo');
     const tableContainer = document.querySelector('.table-container');
@@ -158,14 +201,18 @@ const setupListeners = () => {
         tableContainer.addEventListener('scroll', handleScroll);
     }
     window.addEventListener('scroll', handleScroll);
-
-    setupRealtimeListener();
 };
 
 document.addEventListener('DOMContentLoaded', async () => {
     try {
-        await requireDepositoAuth(['supervisor', 'operario']);
-        setupListeners();
+        const authData = await requireDepositoAuth(['supervisor', 'operario']);
+        
+        const nameEl = document.getElementById('user-display-name');
+        if (nameEl && authData) {
+            nameEl.textContent = authData.userData.name || authData.user.email || 'USUARIO';
+        }
+        
+        setupApp();
     } catch (e) {
         console.error(e);
     }

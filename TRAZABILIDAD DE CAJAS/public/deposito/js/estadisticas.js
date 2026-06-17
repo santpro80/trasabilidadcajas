@@ -1,5 +1,6 @@
 import { db, doc, getDoc, collection, getDocs, query, where, requireDepositoAuth } from './firebase-config-deposito.js';
 
+let selectedWarehouse = ''; // 'no_esteril' | 'esteril' | 'materia_prima'
 let depositoItemsCache = [];
 let currentUser = null;
 let currentItemCode = null;
@@ -23,6 +24,70 @@ const THEME = {
     text: '#94a3b8'
 };
 
+const getMasterDoc = () => `master_catalog_${selectedWarehouse}`;
+const getCacheKey = () => `villalba_items_cache_${selectedWarehouse}`;
+const getMovimientosCollection = () => `deposito_movimientos_${selectedWarehouse}`;
+
+const showStatsView = (warehouseName, labelText) => {
+    selectedWarehouse = warehouseName;
+    const titleText = document.getElementById('stats-title-text');
+    if (titleText) {
+        titleText.textContent = `Estadísticas: ${labelText}`;
+    }
+    
+    // Toggle screens
+    document.getElementById('warehouse-choice-screen').classList.add('hidden');
+    document.getElementById('stats-main-container').classList.remove('hidden');
+    
+    fetchListaItems();
+};
+
+const showChoiceScreen = () => {
+    selectedWarehouse = '';
+    document.getElementById('stats-main-container').classList.add('hidden');
+    document.getElementById('warehouse-choice-screen').classList.remove('hidden');
+    
+    // Reset search inputs, clear caches and destroy charts
+    const input = document.getElementById('codigo-pieza');
+    const autocompleteList = document.getElementById('autocomplete-list');
+    const detalleInput = document.getElementById('detalle-pieza');
+    const imgContainer = document.getElementById('img-container');
+    const btnBuscar = document.getElementById('btn-buscar');
+    
+    if (input) input.value = '';
+    if (autocompleteList) autocompleteList.innerHTML = '';
+    if (detalleInput) detalleInput.value = '';
+    if (imgContainer) imgContainer.classList.add('hidden');
+    if (btnBuscar) btnBuscar.classList.add('opacity-50', 'cursor-not-allowed', 'pointer-events-none');
+    
+    const statsContainer = document.getElementById('stats-container');
+    if (statsContainer) {
+        statsContainer.classList.add('hidden');
+        statsContainer.classList.remove('flex');
+    }
+    
+    if (chartSemanal) { chartSemanal.destroy(); chartSemanal = null; }
+    if (chartMensual) { chartMensual.destroy(); chartMensual = null; }
+    if (chartAnual) { chartAnual.destroy(); chartAnual = null; }
+    
+    depositoItemsCache = [];
+    currentItemCode = null;
+    movimientosData = [];
+};
+
+const setupApp = () => {
+    // Choice Screen Bindings
+    document.getElementById('choice-no-esteril').addEventListener('click', () => showStatsView('no_esteril', 'No Estéril'));
+    document.getElementById('choice-esteril').addEventListener('click', () => showStatsView('esteril', 'Estéril'));
+    document.getElementById('choice-materia-prima').addEventListener('click', () => showStatsView('materia_prima', 'Materia Prima'));
+    
+    // Back to Choices
+    document.getElementById('btn-back-to-choices').addEventListener('click', showChoiceScreen);
+
+    initSearch();
+    initFilters();
+};
+
 document.addEventListener('DOMContentLoaded', async () => {
     try {
         const authData = await requireDepositoAuth(['supervisor', 'operario']);
@@ -30,9 +95,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const nameSpan = document.getElementById('user-display-name');
         if(nameSpan) nameSpan.textContent = authData.userData.name || currentUser.email;
 
-        await fetchListaItems();
-        initSearch();
-        initFilters();
+        setupApp();
 
     } catch (error) {
         console.error("Error en estadísticas:", error);
@@ -47,7 +110,7 @@ const fetchListaItems = async () => {
             input.placeholder = "Cargando ítems...";
         }
 
-        const CACHE_KEY = 'villalba_items_cache';
+        const CACHE_KEY = getCacheKey();
         const CACHE_EXPIRY = 1000 * 60 * 60 * 12; // 12 horas
         const cached = localStorage.getItem(CACHE_KEY);
         
@@ -63,7 +126,7 @@ const fetchListaItems = async () => {
             }
         }
 
-        const masterRef = doc(db, 'system', 'master_catalog');
+        const masterRef = doc(db, 'system', getMasterDoc());
         const snap = await getDoc(masterRef);
         
         depositoItemsCache = [];
@@ -218,7 +281,7 @@ const initSearch = () => {
 
 const fetchMovimientos = async (codigo) => {
     try {
-        const q = query(collection(db, 'deposito_movimientos'), where("codigo", "==", codigo));
+        const q = query(collection(db, getMovimientosCollection()), where("codigo", "==", codigo));
         const qs = await getDocs(q);
         
         movimientosData = qs.docs.map(doc => {

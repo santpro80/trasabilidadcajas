@@ -44,101 +44,146 @@
         </header>
 
         <!-- Main Content -->
-        <div class="flex-1 p-4 sm:p-8 max-w-5xl mx-auto w-full grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div class="flex-1 p-4 sm:p-8 max-w-5xl mx-auto w-full flex flex-col justify-start">
             
-            <!-- Columna Izquierda: Configurar Alerta -->
-            <div class="glass-card rounded-[2rem] p-6 lg:p-8 shadow-xl flex flex-col h-fit sticky top-24">
-                <div>
-                    <h2 class="text-xl font-black text-slate-800 dark:text-white uppercase tracking-tight flex items-center gap-2 mb-2">
-                        <span class="material-symbols-outlined text-villalba-blue">edit_notifications</span>
-                        Configurar Alerta
-                    </h2>
-                    <p class="text-[10px] uppercase tracking-widest text-slate-500 font-bold mb-8">Selecciona una pieza para asignarle una alerta y generar un pedido de reposición automáticamente.</p>
-                </div>
-
-                <div class="space-y-6">
-                    <!-- Buscador -->
-                    <div class="space-y-2 relative">
-                        <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Código o Descripción</label>
-                        <div class="relative group">
-                            <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-villalba-blue transition-colors">search</span>
-                            <input type="text" id="buscador-input" placeholder="Ej: PLACA Ø4..." autocomplete="off" class="w-full h-14 pl-12 pr-4 bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-2xl text-sm font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-villalba-blue/50 focus:border-villalba-blue transition-all uppercase placeholder:normal-case placeholder:font-medium">
+            <!-- Choice Screen Container -->
+            <div id="warehouse-choice-screen" class="flex-1 flex flex-col justify-center items-center py-12 w-full max-w-4xl mx-auto">
+                <h2 class="text-2xl md:text-3xl font-black text-slate-800 dark:text-white uppercase tracking-tight mb-2 text-center">Alertas de Stock</h2>
+                <p class="text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-[0.2em] mb-12 text-center">Seleccione el depósito que desea gestionar</p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 w-full px-4">
+                    <!-- No Estéril -->
+                    <button id="choice-no-esteril" class="flex flex-col items-center gap-4 p-6 bg-white dark:bg-[#161e2a] border border-slate-200 dark:border-slate-805 rounded-3xl group hover:shadow-2xl hover:border-blue-500 transition-all duration-300 transform hover:-translate-y-1 cursor-pointer w-full text-center">
+                        <div class="size-12 rounded-xl bg-blue-500/10 dark:bg-blue-500/20 text-blue-500 flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <span class="material-symbols-outlined text-[28px]">inventory</span>
                         </div>
-                        
-                        <!-- Resultados Autocompletado -->
-                        <div id="autocomplete-list" class="absolute left-0 right-0 top-full mt-2 bg-white dark:bg-[#151a27] border border-slate-200 dark:border-slate-800/80 rounded-2xl shadow-2xl z-50 max-h-[300px] overflow-y-auto hidden divide-y divide-slate-100 dark:divide-slate-800/50">
-                            <!-- Resultados aquí -->
-                        </div>
-                    </div>
-
-                    <!-- Detalles del ítem seleccionado -->
-                    <div id="item-seleccionado" class="hidden p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-white/5 space-y-4">
                         <div>
-                            <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Ítem Seleccionado</span>
-                            <h3 id="item-codigo" class="text-lg font-black text-villalba-blue tracking-wider mt-1"></h3>
-                            <p id="item-desc" class="text-xs font-bold text-slate-600 dark:text-slate-300 mt-1"></p>
+                            <h3 class="text-xs font-black text-slate-900 dark:text-white uppercase tracking-widest mb-0.5">No Estéril</h3>
+                            <p class="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide">Implantes no estériles</p>
                         </div>
-                        
-                        <div class="space-y-2">
-                            <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Cantidad a reponer (Opcional)</label>
-                            <input type="number" id="cantidad-reposicion" min="1" placeholder="Ej: 10" class="w-full h-12 px-4 bg-white dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-xl text-sm font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-villalba-blue/50 transition-all">
+                    </button>
+                    
+                    <!-- Estéril -->
+                    <button id="choice-esteril" class="flex flex-col items-center gap-4 p-6 bg-white dark:bg-[#161e2a] border border-slate-200 dark:border-slate-805 rounded-3xl group hover:shadow-2xl hover:border-emerald-500 transition-all duration-300 transform hover:-translate-y-1 cursor-pointer w-full text-center">
+                        <div class="size-12 rounded-xl bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-500 flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <span class="material-symbols-outlined text-[28px]">clean_hands</span>
                         </div>
+                        <div>
+                            <h3 class="text-xs font-black text-slate-900 dark:text-white uppercase tracking-widest mb-0.5">Estéril</h3>
+                            <p class="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide">Implantes estériles</p>
+                        </div>
+                    </button>
+                    
+                    <!-- Materia Prima -->
+                    <button id="choice-materia-prima" class="flex flex-col items-center gap-4 p-6 bg-white dark:bg-[#161e2a] border border-slate-200 dark:border-slate-805 rounded-3xl group hover:shadow-2xl hover:border-amber-500 transition-all duration-300 transform hover:-translate-y-1 cursor-pointer w-full text-center">
+                        <div class="size-12 rounded-xl bg-amber-500/10 dark:bg-amber-500/20 text-amber-500 flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <span class="material-symbols-outlined text-[28px]">precision_manufacturing</span>
+                        </div>
+                        <div>
+                            <h3 class="text-xs font-black text-slate-900 dark:text-white uppercase tracking-widest mb-0.5">Materia Prima</h3>
+                            <p class="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide">Materia Prima</p>
+                        </div>
+                    </button>
+                </div>
+            </div>
 
-                        <div class="grid grid-cols-2 gap-3 pt-2">
-                            <button id="btn-alerta-amarilla" class="flex flex-col items-center justify-center p-4 rounded-xl border border-yellow-500/20 bg-yellow-500/10 text-yellow-600 hover:bg-yellow-500 hover:text-white transition-all group">
-                                <span class="material-symbols-outlined mb-1 group-hover:scale-110 transition-transform">warning</span>
-                                <span class="text-[10px] font-black uppercase tracking-widest text-center">Amarilla<br>(Prioridad Media)</span>
-                            </button>
-                            <button id="btn-alerta-roja" class="flex flex-col items-center justify-center p-4 rounded-xl border border-rose-500/20 bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white transition-all group">
-                                <span class="material-symbols-outlined mb-1 group-hover:scale-110 transition-transform">error</span>
-                                <span class="text-[10px] font-black uppercase tracking-widest text-center">Roja<br>(Prioridad Alta)</span>
-                            </button>
-                        </div>
-                        <button id="btn-quitar-alerta" class="w-full py-3 mt-2 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-400 font-bold text-[10px] uppercase tracking-widest hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors hidden">
-                            Quitar Alerta
+            <!-- Content Grid (Initially Hidden) -->
+            <div id="alertas-main-container" class="w-full grid grid-cols-1 lg:grid-cols-2 gap-8 hidden">
+                <!-- Columna Izquierda: Configurar Alerta -->
+                <div class="glass-card rounded-[2rem] p-6 lg:p-8 shadow-xl flex flex-col h-fit sticky top-24">
+                    <div class="flex items-center gap-3 mb-6 border-b border-slate-200 dark:border-white/5 pb-4">
+                        <button id="btn-back-to-choices" class="flex items-center justify-center size-9 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 transition-colors mr-1 group" title="Cambiar Depósito">
+                            <span class="material-symbols-outlined text-[18px] group-hover:-translate-x-1 transition-transform">arrow_back</span>
                         </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Columna Derecha: Lista de Alertas Activas -->
-            <div class="glass-card rounded-[2rem] p-6 lg:p-8 shadow-xl flex flex-col h-full min-h-[500px]">
-                <div class="mb-6 flex items-center justify-between">
-                    <div>
-                        <h2 class="text-xl font-black text-slate-800 dark:text-white uppercase tracking-tight flex items-center gap-2 mb-2">
-                            <span class="material-symbols-outlined text-villalba-blue">list_alt</span>
-                            Alertas Activas
+                        <h2 class="text-lg font-black text-slate-800 dark:text-white uppercase tracking-tight flex items-center gap-2">
+                            <span id="alertas-title-text">Configurar Alerta</span>
                         </h2>
-                        <p class="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Ítems con necesidad de reposición</p>
                     </div>
-                    <span id="contador-alertas" class="bg-villalba-blue text-white text-[10px] font-black px-3 py-1 rounded-full shadow-sm">0 ÍTEMS</span>
+
+                    <div class="space-y-6">
+                        <!-- Buscador -->
+                        <div class="space-y-2 relative">
+                            <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Código o Descripción</label>
+                            <div class="relative group">
+                                <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-villalba-blue transition-colors">search</span>
+                                <input type="text" id="buscador-input" placeholder="Ej: PLACA Ø4..." autocomplete="off" class="w-full h-14 pl-12 pr-4 bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-2xl text-sm font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-villalba-blue/50 focus:border-villalba-blue transition-all uppercase placeholder:normal-case placeholder:font-medium">
+                            </div>
+                            
+                            <!-- Resultados Autocompletado -->
+                            <div id="autocomplete-list" class="absolute left-0 right-0 top-full mt-2 bg-white dark:bg-[#151a27] border border-slate-200 dark:border-slate-800/80 rounded-2xl shadow-2xl z-50 max-h-[300px] overflow-y-auto hidden divide-y divide-slate-100 dark:divide-slate-800/50">
+                                <!-- Resultados aquí -->
+                            </div>
+                        </div>
+
+                        <!-- Detalles del ítem seleccionado -->
+                        <div id="item-seleccionado" class="hidden p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-white/5 space-y-4">
+                            <div>
+                                <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Ítem Seleccionado</span>
+                                <h3 id="item-codigo" class="text-lg font-black text-villalba-blue tracking-wider mt-1"></h3>
+                                <p id="item-desc" class="text-xs font-bold text-slate-600 dark:text-slate-300 mt-1"></p>
+                            </div>
+                            
+                            <div class="space-y-2">
+                                <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Cantidad a reponer (Opcional)</label>
+                                <input type="number" id="cantidad-reposicion" min="1" placeholder="Ej: 10" class="w-full h-12 px-4 bg-white dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-xl text-sm font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-villalba-blue/50 transition-all">
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-3 pt-2">
+                                <button id="btn-alerta-amarilla" class="flex flex-col items-center justify-center p-4 rounded-xl border border-yellow-500/20 bg-yellow-500/10 text-yellow-600 hover:bg-yellow-500 hover:text-white transition-all group">
+                                    <span class="material-symbols-outlined mb-1 group-hover:scale-110 transition-transform">warning</span>
+                                    <span class="text-[10px] font-black uppercase tracking-widest text-center">Amarilla<br>(Prioridad Media)</span>
+                                </button>
+                                <button id="btn-alerta-roja" class="flex flex-col items-center justify-center p-4 rounded-xl border border-rose-500/20 bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white transition-all group">
+                                    <span class="material-symbols-outlined mb-1 group-hover:scale-110 transition-transform">error</span>
+                                    <span class="text-[10px] font-black uppercase tracking-widest text-center">Roja<br>(Prioridad Alta)</span>
+                                </button>
+                            </div>
+                            <button id="btn-quitar-alerta" class="w-full py-3 mt-2 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-400 font-bold text-[10px] uppercase tracking-widest hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors hidden">
+                                Quitar Alerta
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="flex-1 overflow-hidden border border-slate-200 dark:border-slate-800/80 rounded-2xl bg-white/50 dark:bg-black/20 relative">
-                    <div class="absolute inset-0 overflow-y-auto">
-                        <table class="w-full border-collapse">
-                            <thead class="sticky top-0 bg-slate-100/90 dark:bg-slate-800/90 backdrop-blur-md z-10 shadow-sm">
-                                <tr>
-                                    <th class="text-[9px] font-black uppercase tracking-widest text-slate-500 py-3 px-4 text-left">Nivel</th>
-                                    <th class="text-[9px] font-black uppercase tracking-widest text-slate-500 py-3 px-4 text-left">Código / Detalle</th>
-                                </tr>
-                            </thead>
-                            <tbody id="alertas-tbody" class="divide-y divide-slate-100 dark:divide-slate-800/50">
-                                <!-- Cargando state -->
-                                <tr>
-                                    <td colspan="2" class="py-16 text-center">
-                                        <div class="flex flex-col items-center justify-center gap-3">
-                                            <span class="material-symbols-outlined animate-spin text-3xl text-villalba-blue">sync</span>
-                                            <p class="text-xs font-bold text-slate-500 uppercase tracking-widest">Cargando alertas...</p>
-                                        </div>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
+                <!-- Columna Derecha: Lista de Alertas Activas -->
+                <div class="glass-card rounded-[2rem] p-6 lg:p-8 shadow-xl flex flex-col h-full min-h-[500px]">
+                    <div class="mb-6 flex items-center justify-between">
+                        <div>
+                            <h2 class="text-xl font-black text-slate-800 dark:text-white uppercase tracking-tight flex items-center gap-2 mb-2">
+                                <span class="material-symbols-outlined text-villalba-blue">list_alt</span>
+                                Alertas Activas
+                            </h2>
+                            <p class="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Ítems con necesidad de reposición</p>
+                        </div>
+                        <span id="contador-alertas" class="bg-villalba-blue text-white text-[10px] font-black px-3 py-1 rounded-full shadow-sm">0 ÍTEMS</span>
+                    </div>
+
+                    <div class="flex-1 overflow-hidden border border-slate-200 dark:border-slate-800/80 rounded-2xl bg-white/50 dark:bg-black/20 relative">
+                        <div class="absolute inset-0 overflow-y-auto">
+                            <table class="w-full border-collapse">
+                                <thead class="sticky top-0 bg-slate-100/90 dark:bg-slate-800/90 backdrop-blur-md z-10 shadow-sm">
+                                    <tr>
+                                        <th class="text-[9px] font-black uppercase tracking-widest text-slate-500 py-3 px-4 text-left">Nivel</th>
+                                        <th class="text-[9px] font-black uppercase tracking-widest text-slate-500 py-3 px-4 text-left">Código / Detalle</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="alertas-tbody" class="divide-y divide-slate-100 dark:divide-slate-800/50">
+                                    <!-- Cargando state -->
+                                    <tr>
+                                        <td colspan="2" class="py-16 text-center">
+                                            <div class="flex flex-col items-center justify-center gap-3">
+                                                <span class="material-symbols-outlined animate-spin text-3xl text-villalba-blue">sync</span>
+                                                <p class="text-xs font-bold text-slate-500 uppercase tracking-widest">Cargando alertas...</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
+
             </div>
-
         </div>
     </main>
 

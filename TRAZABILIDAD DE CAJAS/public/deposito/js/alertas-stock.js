@@ -1,6 +1,7 @@
 import { db, doc, getDoc, setDoc, requireDepositoAuth } from './firebase-config-deposito.js';
 import { dbPedidos, collection, addDoc, serverTimestamp } from '../../pedidos-internos/js/firebase-config-pedidos.js';
 
+let selectedWarehouse = ''; // 'no_esteril' | 'esteril' | 'materia_prima'
 let depositoItemsCache = [];
 let itemSeleccionado = null;
 let currentUser = null;
@@ -10,6 +11,45 @@ const THEME = {
     roja: { bg: 'bg-rose-500/10', border: 'border-rose-500/30', text: 'text-rose-600 dark:text-rose-500', icon: 'error', label: 'ROJA' }
 };
 
+const showAlertasView = (warehouseName, labelText) => {
+    selectedWarehouse = warehouseName;
+    document.getElementById('alertas-title-text').textContent = `Configurar Alerta: ${labelText}`;
+    
+    // Toggle screens
+    document.getElementById('warehouse-choice-screen').classList.add('hidden');
+    document.getElementById('alertas-main-container').classList.remove('hidden');
+    
+    // Load and render
+    fetchListaItems().then(() => {
+        renderAlertasActivas();
+    });
+};
+
+const showChoiceScreen = () => {
+    selectedWarehouse = '';
+    document.getElementById('alertas-main-container').classList.add('hidden');
+    document.getElementById('warehouse-choice-screen').classList.remove('hidden');
+    
+    depositoItemsCache = [];
+    itemSeleccionado = null;
+    document.getElementById('item-seleccionado').classList.add('hidden');
+    document.getElementById('buscador-input').value = '';
+    document.getElementById('cantidad-reposicion').value = '';
+    renderAlertasActivas();
+};
+
+const setupApp = () => {
+    // Bind choice screen buttons
+    document.getElementById('choice-no-esteril').addEventListener('click', () => showAlertasView('no_esteril', 'No Estéril'));
+    document.getElementById('choice-esteril').addEventListener('click', () => showAlertasView('esteril', 'Estéril'));
+    document.getElementById('choice-materia-prima').addEventListener('click', () => showAlertasView('materia_prima', 'Materia Prima'));
+    
+    // Bind back button
+    document.getElementById('btn-back-to-choices').addEventListener('click', showChoiceScreen);
+
+    initSearch();
+};
+
 document.addEventListener('DOMContentLoaded', async () => {
     try {
         const authData = await requireDepositoAuth(['supervisor']);
@@ -17,22 +57,22 @@ document.addEventListener('DOMContentLoaded', async () => {
         const nameSpan = document.getElementById('user-display-name');
         if (nameSpan) nameSpan.textContent = authData.userData.name || authData.user.email;
 
-        await fetchListaItems();
-        initSearch();
-        renderAlertasActivas();
+        setupApp();
     } catch (e) {
         console.error("Autenticación fallida o carga abortada", e);
     }
 });
 
 const fetchListaItems = async () => {
+    if (!selectedWarehouse) return;
     try {
-        const masterRef = doc(db, 'system', 'master_catalog');
+        const masterRef = doc(db, 'system', `master_catalog_${selectedWarehouse}`);
         const snap = await getDoc(masterRef);
         
         if (snap.exists()) {
             depositoItemsCache = snap.data().items || [];
         } else {
+            depositoItemsCache = [];
             console.warn("Master Document no encontrado.");
         }
     } catch (error) {
@@ -152,15 +192,15 @@ const setAlerta = async (nivel) => {
                 delete depositoItemsCache[idx].alertaStock;
             }
             
-            const masterRef = doc(db, 'system', 'master_catalog');
+            const masterRef = doc(db, 'system', `master_catalog_${selectedWarehouse}`);
             await setDoc(masterRef, { items: depositoItemsCache }, { merge: true });
             
             // Forzar recarga de cache en los clientes
-            localStorage.removeItem('villalba_items_cache');
+            localStorage.removeItem(`villalba_items_cache_${selectedWarehouse}`);
         }
 
         // 2. Actualizar Documento Individual
-        const itemRef = doc(db, 'deposito_catalogo', itemSeleccionado.codigo);
+        const itemRef = doc(db, `deposito_catalogo_${selectedWarehouse}`, itemSeleccionado.codigo);
         await setDoc(itemRef, nivel ? { alertaStock: nivel } : { alertaStock: null }, { merge: true });
 
         // 3. Generar Nota de Pedido Automática si es una alerta nueva

@@ -1,5 +1,6 @@
 import { db, doc, getDoc, collection, query, getDocs, orderBy, limit, startAfter, requireDepositoAuth, setDoc } from './firebase-config-deposito.js';
 
+let selectedWarehouse = ''; // 'no_esteril' | 'esteril' | 'materia_prima'
 let allItems = [];
 let filteredItems = [];
 let renderLimit = 50;
@@ -28,6 +29,10 @@ const zControlsMob = document.getElementById('zoom-controls-mobile');
 
 let currentScale = 1;
 let is3dActive = false;
+
+const getCatalogCollection = () => `deposito_catalogo_${selectedWarehouse}`;
+const getMasterDoc = () => `master_catalog_${selectedWarehouse}`;
+const getCacheKey = () => `villalba_items_cache_${selectedWarehouse}`;
 
 const openModal = () => {
     currentScale = 1;
@@ -83,17 +88,17 @@ const resetZoom = () => {
     }
 };
 
-    const renderRows = () => {
-        if (filteredItems.length === 0) {
-            tbody.innerHTML = '';
-            emptyState.classList.remove('hidden');
-            return;
-        }
-        emptyState.classList.add('hidden');
+const renderRows = () => {
+    if (filteredItems.length === 0) {
+        tbody.innerHTML = '';
+        emptyState.classList.remove('hidden');
+        return;
+    }
+    emptyState.classList.add('hidden');
 
-        const itemsToRender = filteredItems.slice(0, renderLimit);
-        let html = '';
-        html += itemsToRender.map(item => {
+    const itemsToRender = filteredItems.slice(0, renderLimit);
+    let html = '';
+    html += itemsToRender.map(item => {
         const stockActual = item.stock || 0;
         let stockColor = 'text-slate-500 bg-slate-100 dark:bg-slate-800';
         if (stockActual > 0) stockColor = 'text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20';
@@ -224,7 +229,7 @@ const updateVirtualLayout = (items, shouldReset = false) => {
 };
 
 const loadCatalog = async (reset = true) => {
-    if (isFetching || (allLoaded && !reset)) return;
+    if (!selectedWarehouse || isFetching || (allLoaded && !reset)) return;
     isFetching = true;
 
     if (reset) {
@@ -234,21 +239,16 @@ const loadCatalog = async (reset = true) => {
     }
 
     try {
-        const CACHE_KEY = 'villalba_items_cache';
+        const cached = localStorage.getItem(getCacheKey());
         const CACHE_EXPIRY = 1000 * 60 * 60 * 2; // 2 horas
-        const cached = localStorage.getItem(CACHE_KEY);
         
         if (cached) {
             const { timestamp, data } = JSON.parse(cached);
-            // Reusar caché si es válido y no está vacío
             if (Date.now() - timestamp < CACHE_EXPIRY && data && data.length > 0) {
                 const containsNegative = data.some(i => (i.stock || 0) < 0);
                 if (containsNegative) {
-                    console.log("Caché local contiene stock negativo. Invalidando...");
-                    localStorage.removeItem(CACHE_KEY);
+                    localStorage.removeItem(getCacheKey());
                 } else {
-                    console.log(`Cargando ${data.length} ítems desde caché local.`);
-                    // Asegurar ordenamiento
                     allItems = data.sort((a, b) => (a.codigo || '').localeCompare(b.codigo || ''));
                     allLoaded = true;
                     applyFilters(reset);
@@ -258,8 +258,8 @@ const loadCatalog = async (reset = true) => {
             }
         }
 
-        console.log("Descargando catálogo desde Firestore (Master Document)...");
-        const masterRef = doc(db, 'system', 'master_catalog');
+        console.log(`Descargando catálogo ${selectedWarehouse} desde Firestore...`);
+        const masterRef = doc(db, 'system', getMasterDoc());
         const snap = await getDoc(masterRef);
 
         if (!snap.exists()) {
@@ -272,21 +272,19 @@ const loadCatalog = async (reset = true) => {
                 if ((item.stock || 0) < 0) {
                     item.stock = 0;
                     hasNegative = true;
-                    const itemRef = doc(db, 'deposito_catalogo', item.codigo);
-                    setDoc(itemRef, { stock: 0 }, { merge: true }).catch(err => console.error("Error al corregir stock negativo individual:", err));
+                    const itemRef = doc(db, getCatalogCollection(), item.codigo);
+                    setDoc(itemRef, { stock: 0 }, { merge: true }).catch(err => console.error("Error al corregir stock negativo:", err));
                 }
                 return item;
             });
 
             if (hasNegative) {
-                console.log("Se detectaron y corrigieron stocks negativos en el Master Document. Subiendo corrección...");
                 await setDoc(masterRef, { items: correctedItems }, { merge: true }).catch(err => console.error("Error al corregir master_catalog:", err));
             }
 
             allItems = correctedItems.sort((a, b) => (a.codigo || '').localeCompare(b.codigo || ''));
             
-            // Guardar en caché compartido
-            localStorage.setItem(CACHE_KEY, JSON.stringify({
+            localStorage.setItem(getCacheKey(), JSON.stringify({
                 timestamp: Date.now(),
                 data: allItems
             }));
@@ -315,11 +313,43 @@ const applyFilters = (shouldReset = true) => {
             return codigo.includes(text) || desc.includes(text) || (termAlfanumerico.length > 0 && codigoAlfanumerico.includes(termAlfanumerico));
         });
     }
-    // we use true to always reset virtual view on filter change
     updateVirtualLayout(filteredItems, true);
 };
 
+const showCatalogView = (warehouseName, labelText) => {
+    selectedWarehouse = warehouseName;
+    document.getElementById('catalog-title-text').textContent = `Listado: ${labelText}`;
+    
+    // Toggle screens
+    document.getElementById('warehouse-choice-screen').classList.add('hidden');
+    document.getElementById('catalog-main-container').classList.remove('hidden');
+    document.getElementById('catalog-main-container').classList.add('flex');
+    
+    loadCatalog(true);
+};
+
+const showChoiceScreen = () => {
+    selectedWarehouse = '';
+    document.getElementById('catalog-main-container').classList.add('hidden');
+    document.getElementById('catalog-main-container').classList.remove('flex');
+    document.getElementById('warehouse-choice-screen').classList.remove('hidden');
+    
+    // Clear search and cache
+    buscador.value = '';
+    allItems = [];
+    filteredItems = [];
+    tbody.innerHTML = '';
+};
+
 const setupApp = () => {
+    // Choice Screen Bindings
+    document.getElementById('choice-no-esteril').addEventListener('click', () => showCatalogView('no_esteril', 'No Estéril'));
+    document.getElementById('choice-esteril').addEventListener('click', () => showCatalogView('esteril', 'Estéril'));
+    document.getElementById('choice-materia-prima').addEventListener('click', () => showCatalogView('materia_prima', 'Materia Prima'));
+    
+    // Back to Choices
+    document.getElementById('btn-back-to-choices').addEventListener('click', showChoiceScreen);
+
     buscador.addEventListener('input', () => applyFilters(true));
 
     scrollContainer.addEventListener('scroll', handleScroll);
@@ -356,7 +386,7 @@ const setupApp = () => {
     const updateExportUI = () => {
         if (customExportList.length > 0) {
             exportBtnText.textContent = `Descargar Lista (${customExportList.length})`;
-            exportBtnText.classList.remove('hidden', 'md:block'); // Always show text if there's a list
+            exportBtnText.classList.remove('hidden', 'md:block');
             btnClearList.classList.remove('hidden');
             btnClearList.classList.add('flex');
         } else {
@@ -370,12 +400,10 @@ const setupApp = () => {
         btnAddToList.addEventListener('click', () => {
             if (filteredItems.length === 0) return;
             
-            // Animación del botón
             const icon = btnAddToList.querySelector('span');
             icon.textContent = 'check';
             setTimeout(() => icon.textContent = 'add', 1000);
 
-            // Agregar items filtrados que no estén ya en la lista
             filteredItems.forEach(item => {
                 if (!customExportList.some(i => i.codigo === item.codigo)) {
                     customExportList.push(item);
@@ -419,7 +447,7 @@ const setupApp = () => {
                 const dateStr = new Date().toLocaleDateString('es-AR').replace(/\//g, '-');
                 const timeStr = new Date().toLocaleTimeString('es-AR').replace(/:/g, '');
                 
-                link.setAttribute("download", `Inventario_Villalba_${dateStr}_${timeStr}.csv`);
+                link.setAttribute("download", `Inventario_${selectedWarehouse.toUpperCase()}_${dateStr}_${timeStr}.csv`);
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
@@ -430,15 +458,12 @@ const setupApp = () => {
             }, 500);
         });
     }
-
-    loadCatalog(true);
 };
 
 document.addEventListener('DOMContentLoaded', async () => {
     try {
         const { userData } = await requireDepositoAuth(['supervisor']);
         
-        // Actualizar el nombre de perfil si el elemento existe
         const nameEl = document.getElementById('user-display-name');
         if (nameEl && userData) {
             nameEl.textContent = userData.name || userData.email || 'USUARIO';

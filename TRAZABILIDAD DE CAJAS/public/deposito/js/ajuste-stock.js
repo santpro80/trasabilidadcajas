@@ -1,8 +1,44 @@
 import { db, doc, getDoc, setDoc, requireDepositoAuth, collection, addDoc, serverTimestamp } from './firebase-config-deposito.js';
 
+let selectedWarehouse = ''; // 'no_esteril' | 'esteril' | 'materia_prima'
 let depositoItemsCache = [];
 let itemSeleccionado = null;
 let currentUser = null;
+
+const showAjusteView = (warehouseName, labelText) => {
+    selectedWarehouse = warehouseName;
+    document.getElementById('ajuste-title-text').textContent = `Ajustar: ${labelText}`;
+    
+    // Toggle screens
+    document.getElementById('warehouse-choice-screen').classList.add('hidden');
+    document.getElementById('ajuste-main-container').classList.remove('hidden');
+    
+    fetchListaItems();
+};
+
+const showChoiceScreen = () => {
+    selectedWarehouse = '';
+    document.getElementById('ajuste-main-container').classList.add('hidden');
+    document.getElementById('warehouse-choice-screen').classList.remove('hidden');
+    
+    depositoItemsCache = [];
+    itemSeleccionado = null;
+    document.getElementById('item-seleccionado').classList.add('hidden');
+    document.getElementById('buscador-input').value = '';
+    document.getElementById('nuevo-stock').value = '';
+};
+
+const setupApp = () => {
+    // Bind choice screen buttons
+    document.getElementById('choice-no-esteril').addEventListener('click', () => showAjusteView('no_esteril', 'No Estéril'));
+    document.getElementById('choice-esteril').addEventListener('click', () => showAjusteView('esteril', 'Estéril'));
+    document.getElementById('choice-materia-prima').addEventListener('click', () => showAjusteView('materia_prima', 'Materia Prima'));
+    
+    // Bind back button
+    document.getElementById('btn-back-to-choices').addEventListener('click', showChoiceScreen);
+
+    initSearch();
+};
 
 document.addEventListener('DOMContentLoaded', async () => {
     try {
@@ -11,21 +47,22 @@ document.addEventListener('DOMContentLoaded', async () => {
         const nameSpan = document.getElementById('user-display-name');
         if (nameSpan) nameSpan.textContent = authData.userData.name || authData.user.email;
 
-        await fetchListaItems();
-        initSearch();
+        setupApp();
     } catch (e) {
         console.error("Autenticación fallida o carga abortada", e);
     }
 });
 
 const fetchListaItems = async () => {
+    if (!selectedWarehouse) return;
     try {
-        const masterRef = doc(db, 'system', 'master_catalog');
+        const masterRef = doc(db, 'system', `master_catalog_${selectedWarehouse}`);
         const snap = await getDoc(masterRef);
         
         if (snap.exists()) {
             depositoItemsCache = snap.data().items || [];
         } else {
+            depositoItemsCache = [];
             console.warn("Master Document no encontrado.");
         }
     } catch (error) {
@@ -132,7 +169,7 @@ const initSearch = () => {
         try {
             // 1. Guardar Movimiento de Ajuste en deposito_movimientos
             const diff = nuevoVal - oldStock;
-            await addDoc(collection(db, 'deposito_movimientos'), {
+            await addDoc(collection(db, `deposito_movimientos_${selectedWarehouse}`), {
                 tipo: 'Ajuste',
                 codigo: itemSeleccionado.codigo,
                 descripcion: itemSeleccionado.descripcion,
@@ -145,11 +182,11 @@ const initSearch = () => {
             });
 
             // 2. Actualizar Stock Catálogo Individual (deposito_catalogo)
-            const itemRef = doc(db, 'deposito_catalogo', itemSeleccionado.codigo);
+            const itemRef = doc(db, `deposito_catalogo_${selectedWarehouse}`, itemSeleccionado.codigo);
             await setDoc(itemRef, { stock: nuevoVal }, { merge: true });
 
             // 3. Actualizar Master Document
-            const masterRef = doc(db, 'system', 'master_catalog');
+            const masterRef = doc(db, 'system', `master_catalog_${selectedWarehouse}`);
             const idx = depositoItemsCache.findIndex(i => i.codigo === itemSeleccionado.codigo);
             if (idx !== -1) {
                 depositoItemsCache[idx].stock = nuevoVal;
@@ -163,7 +200,7 @@ const initSearch = () => {
             await setDoc(masterRef, { items: depositoItemsCache });
 
             // 4. Limpiar caché local
-            localStorage.removeItem('villalba_items_cache');
+            localStorage.removeItem(`villalba_items_cache_${selectedWarehouse}`);
 
             // Mostrar toast de éxito
             showToast();

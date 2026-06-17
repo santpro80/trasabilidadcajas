@@ -68,17 +68,16 @@ const renderTabla = () => {
     }).join('');
 };
 
-const setupListeners = () => {
-    const buscarInput = document.getElementById('buscador-historial');
+let selectedWarehouse = ''; // 'no_esteril' | 'esteril' | 'materia_prima'
+let unsubscribe = null;
 
-    buscarInput.addEventListener('input', (e) => {
-        filtroTexto = e.target.value.trim();
-        renderTabla();
-    });
+const setupRealtimeListener = () => {
+    if (unsubscribe) unsubscribe();
+    if (!selectedWarehouse) return;
 
     // Limitar a 200 registros de intentos fallidos
-    const q = query(collection(db, 'deposito_egresos_fallidos'), orderBy('timestamp', 'desc'), limit(200));
-    onSnapshot(q, (snap) => {
+    const q = query(collection(db, `deposito_egresos_fallidos_${selectedWarehouse}`), orderBy('timestamp', 'desc'), limit(200));
+    unsubscribe = onSnapshot(q, (snap) => {
         todosLosIntentos = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         renderTabla();
     }, (error) => {
@@ -87,10 +86,59 @@ const setupListeners = () => {
     });
 };
 
+const showHistoryView = (warehouseName, labelText) => {
+    selectedWarehouse = warehouseName;
+    document.getElementById('historial-title-text').textContent = `Egresos Fallidos: ${labelText}`;
+    
+    // Toggle screens
+    document.getElementById('warehouse-choice-screen').classList.add('hidden');
+    document.getElementById('historial-main-container').classList.remove('hidden');
+    document.getElementById('historial-main-container').classList.add('flex');
+    
+    setupRealtimeListener();
+};
+
+const showChoiceScreen = () => {
+    if (unsubscribe) {
+        unsubscribe();
+        unsubscribe = null;
+    }
+    selectedWarehouse = '';
+    document.getElementById('historial-main-container').classList.add('hidden');
+    document.getElementById('historial-main-container').classList.remove('flex');
+    document.getElementById('warehouse-choice-screen').classList.remove('hidden');
+    
+    todosLosIntentos = [];
+    document.getElementById('buscador-historial').value = '';
+    filtroTexto = '';
+    document.getElementById('tabla-body').innerHTML = '<tr><td colspan="6" class="py-20 text-center"><span class="material-symbols-outlined text-4xl animate-spin text-rose-500">sync</span></td></tr>';
+};
+
+const setupApp = () => {
+    // Bind choice screen buttons
+    document.getElementById('choice-no-esteril').addEventListener('click', () => showHistoryView('no_esteril', 'No Estéril'));
+    document.getElementById('choice-esteril').addEventListener('click', () => showHistoryView('esteril', 'Estéril'));
+    document.getElementById('choice-materia-prima').addEventListener('click', () => showHistoryView('materia_prima', 'Materia Prima'));
+    
+    // Bind back button
+    document.getElementById('btn-back-to-choices').addEventListener('click', showChoiceScreen);
+
+    const buscarInput = document.getElementById('buscador-historial');
+
+    buscarInput.addEventListener('input', (e) => {
+        filtroTexto = e.target.value.trim();
+        renderTabla();
+    });
+};
+
 document.addEventListener('DOMContentLoaded', async () => {
     try {
-        await requireDepositoAuth(['supervisor', 'operario']);
-        setupListeners();
+        const authData = await requireDepositoAuth(['supervisor', 'operario']);
+        const nameEl = document.getElementById('user-display-name');
+        if (nameEl && authData) {
+            nameEl.textContent = authData.userData.name || authData.user.email || 'USUARIO';
+        }
+        setupApp();
     } catch (e) {
         console.error(e);
     }

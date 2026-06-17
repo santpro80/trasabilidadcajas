@@ -1,9 +1,49 @@
 import { db, requireDepositoAuth, doc, setDoc, getDocs, collection, writeBatch, deleteDoc } from './firebase-config-deposito.js';
 
+let selectedWarehouse = 'no_esteril'; // 'no_esteril' | 'esteril' | 'materia_prima'
+
+const updateSelectorUI = () => {
+    const buttons = {
+        'no_esteril': document.getElementById('btn-dep-no-esteril'),
+        'esteril': document.getElementById('btn-dep-esteril'),
+        'materia_prima': document.getElementById('btn-dep-materia-prima')
+    };
+
+    Object.keys(buttons).forEach(key => {
+        const btn = buttons[key];
+        if (!btn) return;
+        if (key === selectedWarehouse) {
+            btn.className = "warehouse-selector-btn py-3 px-2 rounded-xl border-2 font-black uppercase text-[10px] tracking-wider transition-all select-none bg-villalba-blue text-white border-villalba-blue shadow-lg shadow-blue-500/20 active:scale-[0.97]";
+        } else {
+            btn.className = "warehouse-selector-btn py-3 px-2 rounded-xl border-2 font-black uppercase text-[10px] tracking-wider transition-all select-none bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 active:scale-[0.97]";
+        }
+    });
+};
+
+const getCatalogCollection = () => `deposito_catalogo_${selectedWarehouse}`;
+const getMasterDoc = () => `master_catalog_${selectedWarehouse}`;
+const getCacheKey = () => `villalba_items_cache_${selectedWarehouse}`;
+
 document.addEventListener('DOMContentLoaded', async () => {
     try {
         const authData = await requireDepositoAuth(['supervisor']);
         document.getElementById('user-display-name').textContent = authData.userData.name || authData.user.email;
+
+        // Bind selector buttons
+        const bindWarehouseBtn = (id, key) => {
+            const btn = document.getElementById(id);
+            if (btn) {
+                btn.addEventListener('click', () => {
+                    selectedWarehouse = key;
+                    updateSelectorUI();
+                });
+            }
+        };
+        bindWarehouseBtn('btn-dep-no-esteril', 'no_esteril');
+        bindWarehouseBtn('btn-dep-esteril', 'esteril');
+        bindWarehouseBtn('btn-dep-materia-prima', 'materia_prima');
+        
+        updateSelectorUI();
 
         const csvInput = document.getElementById('csv-input');
         const fileName = document.getElementById('file-name');
@@ -28,7 +68,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             importBtn.disabled = true;
             progressContainer.classList.remove('hidden');
             statusLog.classList.remove('hidden');
-            statusLog.innerHTML = `<div class="mb-1 text-slate-900 dark:text-white uppercase font-black">--- INICIANDO PROCESO ---</div>`;
+            statusLog.innerHTML = `<div class="mb-1 text-slate-900 dark:text-white uppercase font-black">--- INICIANDO PROCESO (${selectedWarehouse.toUpperCase()}) ---</div>`;
 
             const reader = new FileReader();
             reader.onload = async (event) => {
@@ -40,10 +80,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
 
                 // Cargar catálogo actual para no pisar el stock
-                statusLog.innerHTML += `<div class="text-indigo-400 italic">Cargando stock y catálogo actual desde la base de datos...</div>`;
+                statusLog.innerHTML += `<div class="text-indigo-400 italic">Cargando stock y catálogo actual desde ${getCatalogCollection()}...</div>`;
                 const existingItems = new Map();
                 try {
-                    const catalogSnap = await getDocs(collection(db, 'deposito_catalogo'));
+                    const catalogSnap = await getDocs(collection(db, getCatalogCollection()));
                     catalogSnap.forEach(doc => {
                         existingItems.set(doc.id, doc.data());
                     });
@@ -97,20 +137,17 @@ document.addEventListener('DOMContentLoaded', async () => {
                         if (isNaN(stock)) stock = 0;
 
                         // Validaciones S/N
-                        let hasIssues = false;
                         if (!codigo) {
                             codigo = `S/N`;
-                            hasIssues = true;
                         }
                         if (!descripcion) {
                             descripcion = `S/N`;
-                            hasIssues = true;
                         }
 
                         // ID único para Firestore en caso de S/N repetidos
                         const finalDocId = codigo === 'S/N' ? `SN-${Date.now()}-${i}` : codigo;
 
-                        const itemRef = doc(db, "deposito_catalogo", finalDocId);
+                        const itemRef = doc(db, getCatalogCollection(), finalDocId);
                         
                         const exists = existingItems.has(finalDocId);
                         const itemData = {
@@ -128,6 +165,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         added++;
                         
                         // Cuadro rojo leve si hay S/N
+                        const hasIssues = (codigo === 'S/N' || descripcion === 'S/N');
                         const logBg = hasIssues ? 'bg-rose-500/10 text-rose-600 dark:bg-rose-500/20 dark:text-rose-400 p-1 rounded' : '';
                         statusLog.innerHTML += `<div class="${logBg}">[${added}] OK: [${codigo}] ${descripcion} - Cantidad: ${stock} ${exists ? '<span class="text-amber-500 font-bold">(Actualizado)</span>' : '<span class="text-emerald-500 font-bold">(Nuevo)</span>'}</div>`;
                     } catch (err) {
@@ -149,15 +187,15 @@ document.addEventListener('DOMContentLoaded', async () => {
                 </div>`;
                 
                 statusLog.innerHTML += `<div class="text-indigo-400 italic">Optimizando base maestra (creando Master Document)...</div>`;
-                const catalogSnap = await getDocs(collection(db, 'deposito_catalogo'));
+                const catalogSnap = await getDocs(collection(db, getCatalogCollection()));
                 const allItems = catalogSnap.docs.map(d => ({ 
                     codigo: d.id, 
                     descripcion: d.data().descripcion || 'S/N', 
                     stock: d.data().stock || 0 
                 }));
-                await setDoc(doc(db, 'system', 'master_catalog'), { items: allItems });
+                await setDoc(doc(db, 'system', getMasterDoc()), { items: allItems });
 
-                localStorage.removeItem('villalba_items_cache');
+                localStorage.removeItem(getCacheKey());
                 alert(`Migración terminada: ${added} items cargados con éxito y optimizados.`);
             };
             
@@ -170,7 +208,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             reader.readAsText(file);
         });
 
-        // NUEVA LÓGICA: CARGA MANUAL
+        // CARGA MANUAL
         const manualInput = document.getElementById('manual-input');
         const manualBtn = document.getElementById('manual-import-btn');
 
@@ -187,13 +225,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             manualBtn.innerHTML = '<span class="material-symbols-outlined animate-spin text-[18px]">sync</span> PROCESANDO...';
             
             statusLog.classList.remove('hidden');
-            statusLog.innerHTML = `<div class="mb-1 text-indigo-500 uppercase font-black">--- INICIANDO CARGA MANUAL ---</div>`;
+            statusLog.innerHTML = `<div class="mb-1 text-indigo-500 uppercase font-black">--- INICIANDO CARGA MANUAL (${selectedWarehouse.toUpperCase()}) ---</div>`;
 
             // Cargar catálogo actual para no pisar el stock
             statusLog.innerHTML += `<div class="text-indigo-400 italic">Cargando catálogo actual...</div>`;
             const existingItems = new Map();
             try {
-                const catalogSnap = await getDocs(collection(db, 'deposito_catalogo'));
+                const catalogSnap = await getDocs(collection(db, getCatalogCollection()));
                 catalogSnap.forEach(doc => {
                     existingItems.set(doc.id, doc.data());
                 });
@@ -227,7 +265,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     let stock = parseInt(rawCantidad, 10);
                     if (isNaN(stock)) stock = 0;
 
-                    const itemRef = doc(db, "deposito_catalogo", codigo);
+                    const itemRef = doc(db, getCatalogCollection(), codigo);
                     
                     const exists = existingItems.has(codigo);
                     const itemData = {
@@ -253,18 +291,18 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
 
             statusLog.innerHTML += `<div class="text-indigo-400 italic mt-2">Optimizando base maestra (creando Master Document)...</div>`;
-            const catalogSnap = await getDocs(collection(db, 'deposito_catalogo'));
+            const catalogSnap = await getDocs(collection(db, getCatalogCollection()));
             const allItems = catalogSnap.docs.map(d => ({ 
                 codigo: d.id, 
                 descripcion: d.data().descripcion || 'S/N', 
                 stock: d.data().stock || 0 
             }));
-            await setDoc(doc(db, 'system', 'master_catalog'), { items: allItems });
+            await setDoc(doc(db, 'system', getMasterDoc()), { items: allItems });
 
             manualBtn.innerHTML = '<span class="material-symbols-outlined text-[18px]">add_circle</span> AGREGAR ÍTEMS MANUALMENTE';
             manualInput.value = '';
             
-            localStorage.removeItem('villalba_items_cache');
+            localStorage.removeItem(getCacheKey());
             alert(`Carga manual finalizada: ${added} items registrados y optimizados.`);
         });
 
@@ -272,18 +310,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         const deleteSnBtn = document.getElementById('btn-delete-sn');
         if (deleteSnBtn) {
             deleteSnBtn.addEventListener('click', async () => {
-                const confirmed = confirm("¿Estás seguro de que deseas eliminar permanentemente todos los ítems cuyos códigos comienzan con 'SN'? Esta acción no se puede deshacer.");
+                const confirmed = confirm(`¿Estás seguro de que deseas eliminar permanentemente todos los ítems cuyos códigos comienzan con 'SN' en el depósito ${selectedWarehouse.toUpperCase()}? Esta acción no se puede deshacer.`);
                 if (!confirmed) return;
 
                 deleteSnBtn.disabled = true;
                 deleteSnBtn.innerHTML = '<span class="material-symbols-outlined animate-spin text-[18px]">sync</span> BORRANDO ÍTEMS...';
                 
                 statusLog.classList.remove('hidden');
-                statusLog.innerHTML = `<div class="mb-1 text-rose-500 uppercase font-black">--- INICIANDO ELIMINACIÓN DE REGISTROS 'SN' ---</div>`;
+                statusLog.innerHTML = `<div class="mb-1 text-rose-500 uppercase font-black">--- INICIANDO ELIMINACIÓN DE REGISTROS 'SN' (${selectedWarehouse.toUpperCase()}) ---</div>`;
 
                 try {
                     statusLog.innerHTML += `<div class="text-indigo-400 italic">Buscando ítems en la base de datos...</div>`;
-                    const catalogSnap = await getDocs(collection(db, 'deposito_catalogo'));
+                    const catalogSnap = await getDocs(collection(db, getCatalogCollection()));
                     
                     const toDelete = [];
                     catalogSnap.forEach(d => {
@@ -313,7 +351,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         countInBatch++;
                         deletedCount++;
 
-                        statusLog.innerHTML += `<div class="text-rose-500/80">[ELIMINADO] Fila ID: ${docSnap.id}</div>`;
+                        statusLog.innerHTML += `<div class="text-rose-500/80">[ELIMINADO] ID: ${docSnap.id}</div>`;
                         statusLog.scrollTop = statusLog.scrollHeight;
 
                         if (countInBatch === 400) {
@@ -333,16 +371,16 @@ document.addEventListener('DOMContentLoaded', async () => {
                     
                     // Regenerar el Master Document
                     statusLog.innerHTML += `<div class="text-indigo-400 italic mt-2">Regenerando catálogo maestro (Master Document)...</div>`;
-                    const freshCatalogSnap = await getDocs(collection(db, 'deposito_catalogo'));
+                    const freshCatalogSnap = await getDocs(collection(db, getCatalogCollection()));
                     const allItems = freshCatalogSnap.docs.map(d => ({ 
                         codigo: d.id, 
                         descripcion: d.data().descripcion || 'S/N', 
                         stock: d.data().stock || 0 
                     }));
-                    await setDoc(doc(db, 'system', 'master_catalog'), { items: allItems });
+                    await setDoc(doc(db, 'system', getMasterDoc()), { items: allItems });
 
                     // Limpiar caché local
-                    localStorage.removeItem('villalba_items_cache');
+                    localStorage.removeItem(getCacheKey());
 
                     statusLog.innerHTML += `<div class="mt-4 p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-500 font-black text-center uppercase tracking-widest">
                         PROCESO COMPLETADO EXCoreCTAMENTE

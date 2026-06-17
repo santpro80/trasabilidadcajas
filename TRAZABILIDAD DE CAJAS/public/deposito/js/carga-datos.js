@@ -1,8 +1,11 @@
 import { db, doc, getDoc, getDocs, collection, query, serverTimestamp, addDoc, setDoc, onSnapshot, orderBy, limit, requireDepositoAuth } from './firebase-config-deposito.js';
 
+let selectedWarehouse = ''; // 'no_esteril' | 'esteril' | 'materia_prima'
 let depositoItemsCache = [];
 let stagedMovements = [];
 let currentUser = null;
+let unsubscribeLastMovement = null;
+let fetchListaItems = null;
 
 // Modal Elements
 const imageModal = document.getElementById('imageModal');
@@ -182,13 +185,14 @@ const initAutocomplete = () => {
 
     // Cachear lista de ítems en el navegador para ahorrar lecturas a Firebase (Válido por 12 hs)
     const fetchListaItems = async () => {
+        if (!selectedWarehouse) return;
         try {
             isFetching = true;
             input.disabled = true;
             input.placeholder = "Cargando ítems...";
             console.log("Iniciando fetchListaItems...");
             
-            const CACHE_KEY = 'villalba_items_cache';
+            const CACHE_KEY = `villalba_items_cache_${selectedWarehouse}`;
             const CACHE_EXPIRY = 1000 * 60 * 60 * 2; // 2 horas
             const cached = localStorage.getItem(CACHE_KEY);
             
@@ -212,8 +216,8 @@ const initAutocomplete = () => {
                 }
             }
 
-            console.log("Descargando ítems desde Firestore (Master Document)...");
-            const masterRef = doc(db, 'system', 'master_catalog');
+            console.log(`Descargando ítems desde Firestore (Master Document ${selectedWarehouse})...`);
+            const masterRef = doc(db, 'system', `master_catalog_${selectedWarehouse}`);
             const snap = await getDoc(masterRef);
             
             depositoItemsCache = [];
@@ -226,7 +230,7 @@ const initAutocomplete = () => {
                     if ((item.stock || 0) < 0) {
                         item.stock = 0;
                         hasNegative = true;
-                        const itemRef = doc(db, 'deposito_catalogo', item.codigo);
+                        const itemRef = doc(db, `deposito_catalogo_${selectedWarehouse}`, item.codigo);
                         setDoc(itemRef, { stock: 0 }, { merge: true }).catch(err => console.error("Error al corregir stock negativo individual:", err));
                     }
                     return item;
@@ -234,7 +238,7 @@ const initAutocomplete = () => {
 
                 if (hasNegative) {
                     console.log("Se detectaron y corrigieron stocks negativos en el Master Document. Subiendo corrección...");
-                    setDoc(masterRef, { items: correctedItems }, { merge: true }).catch(err => console.error("Error al corregir master_catalog:", err));
+                    setDoc(masterRef, { items: correctedItems }, { merge: true }).catch(err => console.error(`Error al corregir master_catalog_${selectedWarehouse}:`, err));
                 }
 
                 depositoItemsCache = correctedItems;
@@ -460,9 +464,12 @@ const initAutocomplete = () => {
 };
 
 const setupLastMovementListener = () => {
-    const q = query(collection(db, 'deposito_movimientos'), orderBy('timestamp', 'desc'), limit(1));
+    if (unsubscribeLastMovement) unsubscribeLastMovement();
+    if (!selectedWarehouse) return;
+
+    const q = query(collection(db, `deposito_movimientos_${selectedWarehouse}`), orderBy('timestamp', 'desc'), limit(1));
     
-    onSnapshot(q, (snap) => {
+    unsubscribeLastMovement = onSnapshot(q, (snap) => {
         const lmTipoCant = document.getElementById('lm-tipo-cant');
         const lmCodigo = document.getElementById('lm-codigo');
         const lmDesc = document.getElementById('lm-desc');
@@ -543,11 +550,17 @@ const renderStagedItems = () => {
 };
 
 const saveStagedToLocal = () => {
-    localStorage.setItem('deposito_staged_movements', JSON.stringify(stagedMovements));
+    if (!selectedWarehouse) return;
+    localStorage.setItem(`deposito_staged_movements_${selectedWarehouse}`, JSON.stringify(stagedMovements));
 };
 
 const loadStagedFromLocal = () => {
-    const cached = localStorage.getItem('deposito_staged_movements');
+    if (!selectedWarehouse) {
+        stagedMovements = [];
+        renderStagedItems();
+        return;
+    }
+    const cached = localStorage.getItem(`deposito_staged_movements_${selectedWarehouse}`);
     if (cached) {
         try {
             stagedMovements = JSON.parse(cached);
@@ -556,6 +569,9 @@ const loadStagedFromLocal = () => {
             console.error("Error al cargar movimientos cacheados", e);
             stagedMovements = [];
         }
+    } else {
+        stagedMovements = [];
+        renderStagedItems();
     }
 };
 
@@ -612,7 +628,7 @@ const initForm = () => {
 
         if (tipo === 'Egreso' && cantidad > availableStock) {
             // Registrar Intento Fallido en Firestore
-            addDoc(collection(db, 'deposito_egresos_fallidos'), {
+            addDoc(collection(db, `deposito_egresos_fallidos_${selectedWarehouse}`), {
                 codigo,
                 descripcion: descripcion || 'Sin detalle',
                 cantidad,
@@ -654,7 +670,7 @@ const initForm = () => {
         try {
             for (const mov of stagedMovements) {
                 // 1. Guardar Movimiento
-                await addDoc(collection(db, 'deposito_movimientos'), {
+                await addDoc(collection(db, `deposito_movimientos_${selectedWarehouse}`), {
                     ...mov,
                     timestamp: serverTimestamp(),
                     usuarioNombre: currentUser?.userData?.name || currentUser?.user?.email || 'Desconocido',
@@ -663,7 +679,7 @@ const initForm = () => {
                 });
 
                 // 2. Actualizar Stock Catálogo Individual
-                const itemRef = doc(db, 'deposito_catalogo', mov.codigo);
+                const itemRef = doc(db, `deposito_catalogo_${selectedWarehouse}`, mov.codigo);
                 const itemSnap = await getDoc(itemRef);
                 const val = mov.tipo === 'Ingreso' ? mov.cantidad : -mov.cantidad;
                 
@@ -681,7 +697,7 @@ const initForm = () => {
 
             // 3. Actualizar Master Document para mantener stock sincronizado en 1 escritura
             try {
-                const masterRef = doc(db, 'system', 'master_catalog');
+                const masterRef = doc(db, 'system', `master_catalog_${selectedWarehouse}`);
                 const masterSnap = await getDoc(masterRef);
                 let masterItems = masterSnap.exists() ? (masterSnap.data().items || []) : [];
                 
@@ -697,7 +713,7 @@ const initForm = () => {
                 
                 await setDoc(masterRef, { items: masterItems });
                 // Limpiar caché local para forzar actualización del master
-                localStorage.removeItem('villalba_items_cache');
+                localStorage.removeItem(`villalba_items_cache_${selectedWarehouse}`);
             } catch (e) {
                 console.error("Error actualizando Master Document", e);
             }
@@ -794,12 +810,63 @@ const initDescSearch = () => {
     });
 };
 
-document.addEventListener('DOMContentLoaded', () => {
-    // 1. Inicializar UI de inmediato (No bloqueante)
-    const fetchListaItems = initAutocomplete();
+const showOperationView = (warehouseName, labelText) => {
+    selectedWarehouse = warehouseName;
+    document.getElementById('carga-title-text').textContent = `Registrar: ${labelText}`;
+    
+    // Toggle screens
+    document.getElementById('warehouse-choice-screen').classList.add('hidden');
+    document.getElementById('carga-main-container').classList.remove('hidden');
+    document.getElementById('last-movement-bar').classList.remove('hidden');
+    
+    // Load staged movements and fetch items
+    loadStagedFromLocal();
+    if (fetchListaItems) {
+        fetchListaItems();
+    }
+    setupLastMovementListener();
+};
+
+const showChoiceScreen = () => {
+    if (unsubscribeLastMovement) {
+        unsubscribeLastMovement();
+        unsubscribeLastMovement = null;
+    }
+    
+    selectedWarehouse = '';
+    document.getElementById('carga-main-container').classList.add('hidden');
+    document.getElementById('last-movement-bar').classList.add('hidden');
+    document.getElementById('warehouse-choice-screen').classList.remove('hidden');
+    
+    // Clear staged data & inputs
+    stagedMovements = [];
+    depositoItemsCache = [];
+    document.getElementById('codigo-pieza').value = '';
+    document.getElementById('detalle-pieza').value = '';
+    document.getElementById('cantidad-pieza').value = '';
+    document.getElementById('desc-search-input').value = '';
+    document.getElementById('desc-search-results').innerHTML = `
+        <div class="p-6 text-center text-slate-400 dark:text-slate-500 text-[10px] uppercase font-bold tracking-widest flex flex-col items-center gap-2">
+            <span class="material-symbols-outlined text-3xl">manage_search</span>
+            Escribe para buscar...
+        </div>
+    `;
+    setPreviewVisibility(false);
+};
+
+const setupApp = () => {
+    // Bind choice screen buttons
+    document.getElementById('choice-no-esteril').addEventListener('click', () => showOperationView('no_esteril', 'No Estéril'));
+    document.getElementById('choice-esteril').addEventListener('click', () => showOperationView('esteril', 'Estéril'));
+    document.getElementById('choice-materia-prima').addEventListener('click', () => showOperationView('materia_prima', 'Materia Prima'));
+    
+    // Bind back button
+    document.getElementById('btn-back-to-choices').addEventListener('click', showChoiceScreen);
+
+    // Initialize UI elements
+    fetchListaItems = initAutocomplete();
     initDescSearch();
     initForm();
-    loadStagedFromLocal();
 
     const closeAlarmBtn = document.getElementById('closeAlarmModalBtn');
     if (closeAlarmBtn) {
@@ -811,17 +878,18 @@ document.addEventListener('DOMContentLoaded', () => {
             if (e.target === alarmModal) closeAlarmModal();
         });
     }
+};
 
-    // 2. Manejar Auth en segundo plano
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. Manejar Auth primero
     requireDepositoAuth(['operario', 'supervisor'])
         .then(authData => {
             currentUser = authData;
             const nameSpan = document.getElementById('user-display-name');
             if (nameSpan) nameSpan.textContent = authData.userData.name || authData.user.email;
 
-            // 3. Ejecutar queries de Firestore DESPUÉS de que auth se resuelva
-            fetchListaItems();
-            setupLastMovementListener();
+            // 2. Setup App Bindings
+            setupApp();
         })
         .catch(e => {
             console.error("Autenticación fallida o carga abortada", e);

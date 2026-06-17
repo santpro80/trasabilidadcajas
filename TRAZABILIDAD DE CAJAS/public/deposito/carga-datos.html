@@ -49,144 +49,195 @@
     </header>
 
     <!-- Main Content -->
-    <main class="flex-1 w-full max-w-7xl mx-auto px-4 py-6 md:py-10 grid grid-cols-1 lg:grid-cols-3 gap-6 relative z-10 pb-28">
-        
-        <div class="lg:col-span-2 glass-card rounded-[2rem] p-6 lg:p-10 text-left w-full shadow-2xl relative flex flex-col h-full">
-            <h2 class="text-xl md:text-2xl font-black text-slate-800 dark:text-white uppercase tracking-tight mb-8 border-b border-slate-200 dark:border-slate-700/50 pb-4">Registrar Movimiento</h2>
+    <main class="flex-1 w-full max-w-7xl mx-auto px-4 py-6 md:py-10 flex flex-col relative z-10 overflow-hidden">
+        <!-- Choice Screen Container -->
+        <div id="warehouse-choice-screen" class="flex-1 flex flex-col justify-center items-center py-12 w-full max-w-4xl mx-auto">
+            <h2 class="text-2xl md:text-3xl font-black text-slate-800 dark:text-white uppercase tracking-tight mb-2 text-center">Movimientos Operativos</h2>
+            <p class="text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-[0.2em] mb-12 text-center">Seleccione el depósito para registrar movimientos</p>
             
-            <form id="movimiento-form" autocomplete="off" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <!-- Tipo de Movimiento -->
-                <div class="flex flex-col gap-2 lg:col-span-1">
-                    <label class="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Tipo de Operación</label>
-                    <div class="relative">
-                        <select id="tipo-movimiento" required class="w-full appearance-none bg-slate-50 dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3.5 text-sm font-bold text-slate-800 dark:text-white outline-none focus:border-villalba-blue dark:focus:border-villalba-blue transition-colors cursor-pointer shadow-inner">
-                            <option value="Ingreso">ingreso (ENTRAN)</option>
-                            <option value="Egreso">egreso (SALEN)</option>
-                        </select>
-                        <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">keyboard_arrow_down</span>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 w-full px-4">
+                <!-- No Estéril -->
+                <button id="choice-no-esteril" class="flex flex-col items-center gap-6 p-8 bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-3xl group hover:shadow-2xl hover:border-blue-500 transition-all duration-300 transform hover:-translate-y-2 cursor-pointer w-full text-center">
+                    <div class="size-16 rounded-2xl bg-blue-500/10 dark:bg-blue-500/20 text-blue-500 flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <span class="material-symbols-outlined text-[36px]">inventory</span>
                     </div>
-                </div>
-
-                <!-- Código -->
-                <div class="flex flex-col gap-2 lg:col-span-1 relative">
-                    <label class="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Código de Pieza</label>
-                    <input type="text" id="codigo-pieza" autocomplete="off" required placeholder="Ej: 4211801" class="w-full bg-white dark:bg-black/20 border-2 border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3.5 text-sm font-bold text-slate-800 dark:text-white uppercase outline-none focus:border-villalba-blue focus:ring-4 focus:ring-villalba-blue/10 transition-all shadow-inner placeholder-slate-300 dark:placeholder-slate-600">
-                    <!-- Dropdown autocompletar -->
-                    <div id="autocomplete-list" class="absolute top-[100%] left-0 w-full bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl mt-1 z-50 max-h-48 overflow-y-auto hidden divide-y divide-slate-100 dark:divide-slate-800"></div>
-                </div>
-
-                <!-- Cantidad -->
-                <div class="flex flex-col gap-2 lg:col-span-1">
-                    <label class="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Cantidad</label>
-                    <input type="number" id="cantidad-pieza" autocomplete="off" required min="1" step="1" value="" placeholder="Ej: 5" oninput="this.value = this.value.replace(/[^0-9]/g, '');" class="w-full bg-white dark:bg-black/20 border-2 border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3.5 text-base font-black text-slate-800 dark:text-white outline-none focus:border-villalba-blue focus:ring-4 focus:ring-villalba-blue/10 transition-all shadow-inner text-center">
-                </div>
-
-                <!-- Descripción Automática e Imagen -->
-                <div class="flex flex-col gap-2 md:col-span-2 lg:col-span-3">
-                    <label class="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Detalle de Producto (Automático)</label>
-                    <div class="flex items-center gap-3 md:gap-4 bg-slate-50 dark:bg-slate-800/50 border-2 border-slate-200 dark:border-slate-700 rounded-xl p-2 md:p-3 shadow-inner">
-                        <div id="img-container" class="relative w-14 h-14 md:w-16 md:h-16 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hidden items-center justify-center shrink-0 overflow-hidden shadow-sm cursor-pointer hover:border-villalba-blue transition-colors">
-                            <span id="img-placeholder-icon" class="material-symbols-outlined text-slate-300 dark:text-slate-600 text-2xl absolute z-0 transition-opacity duration-300">inventory_2</span>
-                            <img id="preview-pieza" src="" alt="Preview" class="w-[90%] h-[90%] object-contain relative z-10 transition-transform duration-300 hover:scale-105 opacity-0" onload="this.style.opacity='1'; document.getElementById('img-placeholder-icon').style.opacity='0';" onerror="this.style.opacity='0'; document.getElementById('img-placeholder-icon').style.opacity='1';">
-                        </div>
-
-                        <!-- Botones de acción siempre visibles -->
-                        <div id="preview-actions" class="hidden flex-col gap-1 shrink-0">
-                            <button type="button" id="btn-view-3d-preview" class="px-2 py-1 rounded-lg bg-purple-500 hover:bg-purple-600 text-white shadow-sm transition-colors cursor-pointer flex items-center justify-center gap-1 text-[9px] md:text-[10px] font-black uppercase tracking-wider" title="Ver 3D">
-                                <span class="material-symbols-outlined text-[13px]">3d_rotation</span>
-                                <span class="hidden sm:inline">3D</span>
-                            </button>
-                            <button type="button" id="btn-zoom-preview" class="px-2 py-1 rounded-lg bg-villalba-blue hover:bg-blue-600 text-white shadow-sm transition-colors cursor-pointer flex items-center justify-center gap-1 text-[9px] md:text-[10px] font-black uppercase tracking-wider" title="Ampliar">
-                                <span class="material-symbols-outlined text-[13px]">zoom_in</span>
-                                <span class="hidden sm:inline">Zoom</span>
-                            </button>
-                        </div>
-                        <input type="text" id="detalle-pieza" readonly tabindex="-1" placeholder="Esperando código..." class="flex-1 w-full appearance-none bg-transparent border-0 focus:ring-0 focus:outline-none px-2 py-2 md:py-3 text-sm md:text-base font-bold text-slate-700 dark:text-slate-200 outline-none select-none cursor-default truncate" style="box-shadow: none;">
+                    <div>
+                        <h3 class="text-sm font-black text-slate-900 dark:text-white uppercase tracking-widest mb-1">No Estéril</h3>
+                        <p class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide">Implantes y cajas no estériles</p>
                     </div>
-                </div>
-
-                <!-- Contenedor del Botón (Añadir a la lista) -->
-                <div class="md:col-span-2 lg:col-span-3 mt-4">
-                    <button type="submit" id="btn-add-list" class="w-full py-4 bg-slate-800 dark:bg-slate-700 text-white rounded-2xl font-black uppercase tracking-widest text-[13px] hover:bg-slate-900 hover:-translate-y-1 active:scale-[0.98] transition-all duration-300 shadow-xl flex items-center justify-center gap-2">
-                        <span class="material-symbols-outlined text-[20px]">playlist_add</span>
-                        Añadir a la Lista (ENTER)
-                    </button>
-                </div>
-            </form>
-
-            <!-- Sección de Lista de Movimientos (Nueva) -->
-            <div id="staged-section" class="mt-10 flex-1 flex flex-col hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <div class="flex items-center justify-between mb-4 px-1">
-                    <h3 class="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">Ítems pendientes de registro</h3>
-                    <span id="staged-count" class="bg-villalba-blue text-white text-[10px] font-black px-2 py-0.5 rounded-full">0 ÍTEMS</span>
-                </div>
+                </button>
                 
-                <div class="flex-1 overflow-hidden border border-slate-200 dark:border-slate-800 rounded-2xl bg-slate-50/30 dark:bg-black/10 shadow-inner">
-                    <div class="max-h-[300px] overflow-y-auto">
-                        <table class="w-full border-collapse">
-                            <thead class="sticky top-0 bg-slate-100 dark:bg-slate-800 z-10">
-                                <tr>
-                                    <th class="text-[9px] font-black uppercase tracking-widest text-slate-500 py-3 px-4 text-left">Tipo</th>
-                                    <th class="text-[9px] font-black uppercase tracking-widest text-slate-500 py-3 px-4 text-left">Código</th>
-                                    <th class="text-[9px] font-black uppercase tracking-widest text-slate-500 py-3 px-4 text-left">Descripción</th>
-                                    <th class="text-[9px] font-black uppercase tracking-widest text-slate-500 py-3 px-4 text-center">Cant</th>
-                                    <th class="text-[9px] font-black uppercase tracking-widest text-slate-500 py-3 px-4 text-right"></th>
-                                </tr>
-                            </thead>
-                            <tbody id="staged-tbody" class="divide-y divide-slate-100 dark:divide-slate-800/50">
-                                <!-- Filas dinámicas -->
-                            </tbody>
-                        </table>
+                <!-- Estéril -->
+                <button id="choice-esteril" class="flex flex-col items-center gap-6 p-8 bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-3xl group hover:shadow-2xl hover:border-emerald-500 transition-all duration-300 transform hover:-translate-y-2 cursor-pointer w-full text-center">
+                    <div class="size-16 rounded-2xl bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-500 flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <span class="material-symbols-outlined text-[36px]">clean_hands</span>
                     </div>
-                </div>
-
-                <div class="mt-6">
-                    <button id="btn-confirmar-todos" class="w-full py-4 bg-villalba-blue text-white rounded-2xl font-black uppercase tracking-widest text-[13px] hover:bg-blue-700 hover:-translate-y-1 active:scale-[0.98] transition-all duration-300 shadow-xl shadow-blue-500/30 flex items-center justify-center gap-2">
-                        <span class="material-symbols-outlined text-[20px]">how_to_reg</span>
-                        Confirmar Todos los Movimientos
-                    </button>
-                    <!-- Loading Status -->
-                    <div id="status-msg" class="w-full mt-4 text-center text-[11px] font-black uppercase tracking-widest hidden rounded-xl p-3 border"></div>
-                </div>
+                    <div>
+                        <h3 class="text-sm font-black text-slate-900 dark:text-white uppercase tracking-widest mb-1">Estéril</h3>
+                        <p class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide">Cajas e implantes estériles</p>
+                    </div>
+                </button>
+                
+                <!-- Materia Prima -->
+                <button id="choice-materia-prima" class="flex flex-col items-center gap-6 p-8 bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-3xl group hover:shadow-2xl hover:border-amber-500 transition-all duration-300 transform hover:-translate-y-2 cursor-pointer w-full text-center">
+                    <div class="size-16 rounded-2xl bg-amber-500/10 dark:bg-amber-500/20 text-amber-500 flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <span class="material-symbols-outlined text-[36px]">precision_manufacturing</span>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-black text-slate-900 dark:text-white uppercase tracking-widest mb-1">Materia Prima</h3>
+                        <p class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide">Materiales y piezas de producción</p>
+                    </div>
+                </button>
             </div>
-
         </div>
 
-        <!-- Buscador por Descripción (Columna Derecha) -->
-        <div class="lg:col-span-1 glass-card rounded-[2rem] p-6 lg:p-8 shadow-xl flex flex-col gap-6 h-full">
-            <div>
-                <h3 class="text-lg md:text-xl font-black text-slate-800 dark:text-white uppercase tracking-tight flex items-center gap-2">
-                    <span class="material-symbols-outlined text-villalba-blue">search</span>
-                    Buscador de Código
-                </h3>
-                <p class="text-[10px] uppercase tracking-widest text-slate-500 font-bold mt-1">Busca por descripción de pieza</p>
-            </div>
+        <!-- Main Operational Grid (Initially Hidden) -->
+        <div id="carga-main-container" class="w-full grid grid-cols-1 lg:grid-cols-3 gap-6 pb-28 hidden">
+            
+            <div class="lg:col-span-2 glass-card rounded-[2rem] p-6 lg:p-10 text-left w-full shadow-2xl relative flex flex-col h-full">
+                <div class="flex items-center gap-3 mb-8 border-b border-slate-200 dark:border-slate-700/50 pb-4">
+                    <button type="button" id="btn-back-to-choices" class="flex items-center justify-center size-9 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 transition-colors group" title="Cambiar Depósito">
+                        <span class="material-symbols-outlined text-[18px] group-hover:-translate-x-1 transition-transform">arrow_back</span>
+                    </button>
+                    <h2 class="text-xl md:text-2xl font-black text-slate-800 dark:text-white uppercase tracking-tight flex items-center gap-2">
+                        <span id="carga-title-text">Registrar Movimiento</span>
+                    </h2>
+                </div>
+                
+                <form id="movimiento-form" autocomplete="off" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Tipo de Movimiento -->
+                    <div class="flex flex-col gap-2 lg:col-span-1">
+                        <label class="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Tipo de Operación</label>
+                        <div class="relative">
+                            <select id="tipo-movimiento" required class="w-full appearance-none bg-slate-50 dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3.5 text-sm font-bold text-slate-800 dark:text-white outline-none focus:border-villalba-blue dark:focus:border-villalba-blue transition-colors cursor-pointer shadow-inner">
+                                <option value="Ingreso">ingreso (ENTRAN)</option>
+                                <option value="Egreso">egreso (SALEN)</option>
+                            </select>
+                            <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">keyboard_arrow_down</span>
+                        </div>
+                    </div>
 
-            <div class="flex flex-col gap-3 relative flex-1">
-                <input type="text" id="desc-search-input" placeholder="Ej: PLACA RECTA..." class="w-full bg-white dark:bg-black/20 border-2 border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-xs font-bold text-slate-800 dark:text-white uppercase outline-none focus:border-villalba-blue transition-all shadow-inner placeholder-slate-300 dark:placeholder-slate-600">
-                <div id="desc-search-results" class="flex-1 w-full bg-slate-50/50 dark:bg-surface-dark/50 border border-slate-200 dark:border-slate-700 rounded-xl shadow-inner overflow-y-auto max-h-[350px] divide-y divide-slate-100 dark:divide-slate-800">
-                    <div class="p-6 text-center text-slate-400 dark:text-slate-500 text-[10px] uppercase font-bold tracking-widest flex flex-col items-center gap-2">
-                        <span class="material-symbols-outlined text-3xl">manage_search</span>
-                        Escribe para buscar...
+                    <!-- Código -->
+                    <div class="flex flex-col gap-2 lg:col-span-1 relative">
+                        <label class="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Código de Pieza</label>
+                        <input type="text" id="codigo-pieza" autocomplete="off" required placeholder="Ej: 4211801" class="w-full bg-white dark:bg-black/20 border-2 border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3.5 text-sm font-bold text-slate-800 dark:text-white uppercase outline-none focus:border-villalba-blue focus:ring-4 focus:ring-villalba-blue/10 transition-all shadow-inner placeholder-slate-300 dark:placeholder-slate-600">
+                        <!-- Dropdown autocompletar -->
+                        <div id="autocomplete-list" class="absolute top-[100%] left-0 w-full bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl mt-1 z-50 max-h-48 overflow-y-auto hidden divide-y divide-slate-100 dark:divide-slate-800"></div>
+                    </div>
+
+                    <!-- Cantidad -->
+                    <div class="flex flex-col gap-2 lg:col-span-1">
+                        <label class="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Cantidad</label>
+                        <input type="number" id="cantidad-pieza" autocomplete="off" required min="1" step="1" value="" placeholder="Ej: 5" oninput="this.value = this.value.replace(/[^0-9]/g, '');" class="w-full bg-white dark:bg-black/20 border-2 border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3.5 text-base font-black text-slate-800 dark:text-white outline-none focus:border-villalba-blue focus:ring-4 focus:ring-villalba-blue/10 transition-all shadow-inner text-center">
+                    </div>
+
+                    <!-- Descripción Automática e Imagen -->
+                    <div class="flex flex-col gap-2 md:col-span-2 lg:col-span-3">
+                        <label class="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Detalle de Producto (Automático)</label>
+                        <div class="flex items-center gap-3 md:gap-4 bg-slate-50 dark:bg-slate-800/50 border-2 border-slate-200 dark:border-slate-700 rounded-xl p-2 md:p-3 shadow-inner">
+                            <div id="img-container" class="relative w-14 h-14 md:w-16 md:h-16 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hidden items-center justify-center shrink-0 overflow-hidden shadow-sm cursor-pointer hover:border-villalba-blue transition-colors">
+                                <span id="img-placeholder-icon" class="material-symbols-outlined text-slate-300 dark:text-slate-600 text-2xl absolute z-0 transition-opacity duration-300">inventory_2</span>
+                                <img id="preview-pieza" src="" alt="Preview" class="w-[90%] h-[90%] object-contain relative z-10 transition-transform duration-300 hover:scale-105 opacity-0" onload="this.style.opacity='1'; document.getElementById('img-placeholder-icon').style.opacity='0';" onerror="this.style.opacity='0'; document.getElementById('img-placeholder-icon').style.opacity='1';">
+                            </div>
+
+                            <!-- Botones de acción siempre visibles -->
+                            <div id="preview-actions" class="hidden flex-col gap-1 shrink-0">
+                                <button type="button" id="btn-view-3d-preview" class="px-2 py-1 rounded-lg bg-purple-500 hover:bg-purple-600 text-white shadow-sm transition-colors cursor-pointer flex items-center justify-center gap-1 text-[9px] md:text-[10px] font-black uppercase tracking-wider" title="Ver 3D">
+                                    <span class="material-symbols-outlined text-[13px]">3d_rotation</span>
+                                    <span class="hidden sm:inline">3D</span>
+                                </button>
+                                <button type="button" id="btn-zoom-preview" class="px-2 py-1 rounded-lg bg-villalba-blue hover:bg-blue-600 text-white shadow-sm transition-colors cursor-pointer flex items-center justify-center gap-1 text-[9px] md:text-[10px] font-black uppercase tracking-wider" title="Ampliar">
+                                    <span class="material-symbols-outlined text-[13px]">zoom_in</span>
+                                    <span class="hidden sm:inline">Zoom</span>
+                                </button>
+                            </div>
+                            <input type="text" id="detalle-pieza" readonly tabindex="-1" placeholder="Esperando código..." class="flex-1 w-full appearance-none bg-transparent border-0 focus:ring-0 focus:outline-none px-2 py-2 md:py-3 text-sm md:text-base font-bold text-slate-700 dark:text-slate-200 outline-none select-none cursor-default truncate" style="box-shadow: none;">
+                        </div>
+                    </div>
+
+                    <!-- Contenedor del Botón (Añadir a la lista) -->
+                    <div class="md:col-span-2 lg:col-span-3 mt-4">
+                        <button type="submit" id="btn-add-list" class="w-full py-4 bg-slate-800 dark:bg-slate-700 text-white rounded-2xl font-black uppercase tracking-widest text-[13px] hover:bg-slate-900 hover:-translate-y-1 active:scale-[0.98] transition-all duration-300 shadow-xl flex items-center justify-center gap-2">
+                            <span class="material-symbols-outlined text-[20px]">playlist_add</span>
+                            Añadir a la Lista (ENTER)
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Sección de Lista de Movimientos (Nueva) -->
+                <div id="staged-section" class="mt-10 flex-1 flex flex-col hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <div class="flex items-center justify-between mb-4 px-1">
+                        <h3 class="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">Ítems pendientes de registro</h3>
+                        <span id="staged-count" class="bg-villalba-blue text-white text-[10px] font-black px-2 py-0.5 rounded-full">0 ÍTEMS</span>
+                    </div>
+                    
+                    <div class="flex-1 overflow-hidden border border-slate-200 dark:border-slate-800 rounded-2xl bg-slate-50/30 dark:bg-black/10 shadow-inner">
+                        <div class="max-h-[300px] overflow-y-auto">
+                            <table class="w-full border-collapse">
+                                <thead class="sticky top-0 bg-slate-100 dark:bg-slate-800 z-10">
+                                    <tr>
+                                        <th class="text-[9px] font-black uppercase tracking-widest text-slate-500 py-3 px-4 text-left">Tipo</th>
+                                        <th class="text-[9px] font-black uppercase tracking-widest text-slate-500 py-3 px-4 text-left">Código</th>
+                                        <th class="text-[9px] font-black uppercase tracking-widest text-slate-500 py-3 px-4 text-left">Descripción</th>
+                                        <th class="text-[9px] font-black uppercase tracking-widest text-slate-500 py-3 px-4 text-center">Cant</th>
+                                        <th class="text-[9px] font-black uppercase tracking-widest text-slate-500 py-3 px-4 text-right"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="staged-tbody" class="divide-y divide-slate-100 dark:divide-slate-800/50">
+                                    <!-- Filas dinámicas -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="mt-6">
+                        <button id="btn-confirmar-todos" class="w-full py-4 bg-villalba-blue text-white rounded-2xl font-black uppercase tracking-widest text-[13px] hover:bg-blue-700 hover:-translate-y-1 active:scale-[0.98] transition-all duration-300 shadow-xl shadow-blue-500/30 flex items-center justify-center gap-2">
+                            <span class="material-symbols-outlined text-[20px]">how_to_reg</span>
+                            Confirmar Todos los Movimientos
+                        </button>
+                        <!-- Loading Status -->
+                        <div id="status-msg" class="w-full mt-4 text-center text-[11px] font-black uppercase tracking-widest hidden rounded-xl p-3 border"></div>
                     </div>
                 </div>
+
             </div>
 
-            <div class="mt-auto border-t border-slate-100 dark:border-slate-800 pt-5">
-                <p class="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-3 text-center leading-relaxed">
-                    ¿Todavía no encuentras tu código? <br>
-                    <span class="text-slate-800 dark:text-slate-300">Comunícate con nosotros</span>
-                </p>
-                <a href="https://wa.me/5491164518402?text=Hola,%20necesito%20ayuda%20para%20encontrar%20un%20código%20en%20el%20depósito." target="_blank" class="w-full py-3.5 bg-[#25D366]/10 text-[#128C7E] dark:text-[#25D366] hover:bg-[#25D366] hover:text-white border border-[#25D366]/30 rounded-xl font-black uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-2 shadow-sm">
-                    <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.274.072.376-.043c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.1.824zm-3.423-14.416c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm.029 18.88c-1.161 0-2.305-.292-3.318-.844l-3.677.964.984-3.595c-.607-1.052-.927-2.246-.926-3.468.001-5.824 4.737-10.56 10.56-10.56 5.824 0 10.559 4.736 10.559 10.559 0 5.824-4.735 10.56-10.559 10.56z"/></svg>
-                    Contactar Soporte
-                </a>
+            <!-- Buscador por Descripción (Columna Derecha) -->
+            <div class="lg:col-span-1 glass-card rounded-[2rem] p-6 lg:p-8 shadow-xl flex flex-col gap-6 h-full">
+                <div>
+                    <h3 class="text-lg md:text-xl font-black text-slate-800 dark:text-white uppercase tracking-tight flex items-center gap-2">
+                        <span class="material-symbols-outlined text-villalba-blue">search</span>
+                        Buscador de Código
+                    </h3>
+                    <p class="text-[10px] uppercase tracking-widest text-slate-500 font-bold mt-1">Busca por descripción de pieza</p>
+                </div>
+
+                <div class="flex flex-col gap-3 relative flex-1">
+                    <input type="text" id="desc-search-input" placeholder="Ej: PLACA RECTA..." class="w-full bg-white dark:bg-black/20 border-2 border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-xs font-bold text-slate-800 dark:text-white uppercase outline-none focus:border-villalba-blue transition-all shadow-inner placeholder-slate-300 dark:placeholder-slate-600">
+                    <div id="desc-search-results" class="flex-1 w-full bg-slate-50/50 dark:bg-surface-dark/50 border border-slate-200 dark:border-slate-700 rounded-xl shadow-inner overflow-y-auto max-h-[350px] divide-y divide-slate-100 dark:divide-slate-800">
+                        <div class="p-6 text-center text-slate-400 dark:text-slate-500 text-[10px] uppercase font-bold tracking-widest flex flex-col items-center gap-2">
+                            <span class="material-symbols-outlined text-3xl">manage_search</span>
+                            Escribe para buscar...
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-auto border-t border-slate-100 dark:border-slate-800 pt-5">
+                    <p class="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-3 text-center leading-relaxed">
+                        ¿Todavía no encuentras tu código? <br>
+                        <span class="text-slate-800 dark:text-slate-300">Comunícate con nosotros</span>
+                    </p>
+                    <a href="https://wa.me/5491164518402?text=Hola,%20necesito%20ayuda%20para%20encontrar%20un%20código%20en%20el%20depósito." target="_blank" class="w-full py-3.5 bg-[#25D366]/10 text-[#128C7E] dark:text-[#25D366] hover:bg-[#25D366] hover:text-white border border-[#25D366]/30 rounded-xl font-black uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-2 shadow-sm">
+                        <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.274.072.376-.043c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.1.824zm-3.423-14.416c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm.029 18.88c-1.161 0-2.305-.292-3.318-.844l-3.677.964.984-3.595c-.607-1.052-.927-2.246-.926-3.468.001-5.824 4.737-10.56 10.56-10.56 5.824 0 10.559 4.736 10.559 10.559 0 5.824-4.735 10.56-10.559 10.56z"/></svg>
+                        Contactar Soporte
+                    </a>
+                </div>
             </div>
         </div>
     </main>
 
     <!-- Barra Inferior Fija: Último Movimiento -->
-    <div class="fixed bottom-0 left-0 w-full bg-white/95 dark:bg-background-dark/95 backdrop-blur-xl border-t border-slate-200 dark:border-slate-800 shadow-[0_-10px_40px_-5px_rgba(0,0,0,0.1)] dark:shadow-none z-30 transition-transform transform translate-y-0 p-4 pb-4 md:pb-6" id="last-movement-bar">
+    <div class="fixed bottom-0 left-0 w-full bg-white/95 dark:bg-background-dark/95 backdrop-blur-xl border-t border-slate-200 dark:border-slate-800 shadow-[0_-10px_40px_-5px_rgba(0,0,0,0.1)] dark:shadow-none z-30 transition-transform transform translate-y-0 p-4 pb-4 md:pb-6 hidden" id="last-movement-bar">
         <div class="max-w-5xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
             <div class="flex items-center gap-3">
                 <div class="size-10 rounded-xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center"><span class="material-symbols-outlined">history</span></div>
