@@ -1,6 +1,6 @@
 import { db, doc, getDoc, setDoc, requireDepositoAuth, collection, addDoc, serverTimestamp } from './firebase-config-deposito.js';
 
-let selectedWarehouse = ''; // 'no_esteril' | 'esteril' | 'materia_prima'
+let selectedWarehouse = ''; // 'no_esteril_terminado' | 'esteril_terminado' | 'semi_elaborado' | 'materia_prima'
 let depositoItemsCache = [];
 let itemSeleccionado = null;
 let currentUser = null;
@@ -30,8 +30,9 @@ const showChoiceScreen = () => {
 
 const setupApp = () => {
     // Bind choice screen buttons
-    document.getElementById('choice-no-esteril').addEventListener('click', () => showAjusteView('no_esteril', 'No Estéril'));
-    document.getElementById('choice-esteril').addEventListener('click', () => showAjusteView('esteril', 'Estéril'));
+    document.getElementById('choice-no-esteril-terminado').addEventListener('click', () => showAjusteView('no_esteril_terminado', 'No Estéril Terminado'));
+    document.getElementById('choice-esteril-terminado').addEventListener('click', () => showAjusteView('esteril_terminado', 'Estéril Terminado'));
+    document.getElementById('choice-semi-elaborado').addEventListener('click', () => showAjusteView('semi_elaborado', 'Semi Elaborado'));
     document.getElementById('choice-materia-prima').addEventListener('click', () => showAjusteView('materia_prima', 'Materia Prima'));
     
     // Bind back button

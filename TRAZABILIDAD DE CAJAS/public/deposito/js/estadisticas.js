@@ -1,6 +1,6 @@
 import { db, doc, getDoc, collection, getDocs, query, where, requireDepositoAuth } from './firebase-config-deposito.js';
 
-let selectedWarehouse = ''; // 'no_esteril' | 'esteril' | 'materia_prima'
+let selectedWarehouse = ''; // 'no_esteril_terminado' | 'esteril_terminado' | 'semi_elaborado' | 'materia_prima'
 let depositoItemsCache = [];
 let currentUser = null;
 let currentItemCode = null;
@@ -77,8 +77,9 @@ const showChoiceScreen = () => {
 
 const setupApp = () => {
     // Choice Screen Bindings
-    document.getElementById('choice-no-esteril').addEventListener('click', () => showStatsView('no_esteril', 'No Estéril'));
-    document.getElementById('choice-esteril').addEventListener('click', () => showStatsView('esteril', 'Estéril'));
+    document.getElementById('choice-no-esteril-terminado').addEventListener('click', () => showStatsView('no_esteril_terminado', 'No Estéril Terminado'));
+    document.getElementById('choice-esteril-terminado').addEventListener('click', () => showStatsView('esteril_terminado', 'Estéril Terminado'));
+    document.getElementById('choice-semi-elaborado').addEventListener('click', () => showStatsView('semi_elaborado', 'Semi Elaborado'));
     document.getElementById('choice-materia-prima').addEventListener('click', () => showStatsView('materia_prima', 'Materia Prima'));
     
     // Back to Choices

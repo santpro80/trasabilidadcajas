@@ -1,7 +1,7 @@
 import { db, doc, getDoc, setDoc, requireDepositoAuth } from './firebase-config-deposito.js';
 import { dbPedidos, collection, addDoc, serverTimestamp } from '../../pedidos-internos/js/firebase-config-pedidos.js';
 
-let selectedWarehouse = ''; // 'no_esteril' | 'esteril' | 'materia_prima'
+let selectedWarehouse = ''; // 'no_esteril_terminado' | 'esteril_terminado' | 'semi_elaborado' | 'materia_prima'
 let depositoItemsCache = [];
 let itemSeleccionado = null;
 let currentUser = null;
@@ -40,8 +40,9 @@ const showChoiceScreen = () => {
 
 const setupApp = () => {
     // Bind choice screen buttons
-    document.getElementById('choice-no-esteril').addEventListener('click', () => showAlertasView('no_esteril', 'No Estéril'));
-    document.getElementById('choice-esteril').addEventListener('click', () => showAlertasView('esteril', 'Estéril'));
+    document.getElementById('choice-no-esteril-terminado').addEventListener('click', () => showAlertasView('no_esteril_terminado', 'No Estéril Terminado'));
+    document.getElementById('choice-esteril-terminado').addEventListener('click', () => showAlertasView('esteril_terminado', 'Estéril Terminado'));
+    document.getElementById('choice-semi-elaborado').addEventListener('click', () => showAlertasView('semi_elaborado', 'Semi Elaborado'));
     document.getElementById('choice-materia-prima').addEventListener('click', () => showAlertasView('materia_prima', 'Materia Prima'));
     
     // Bind back button

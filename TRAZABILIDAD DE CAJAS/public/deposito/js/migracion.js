@@ -1,11 +1,12 @@
 import { db, requireDepositoAuth, doc, setDoc, getDocs, collection, writeBatch, deleteDoc } from './firebase-config-deposito.js';
 
-let selectedWarehouse = 'no_esteril'; // 'no_esteril' | 'esteril' | 'materia_prima'
+let selectedWarehouse = 'no_esteril_terminado'; // 'no_esteril_terminado' | 'esteril_terminado' | 'semi_elaborado' | 'materia_prima'
 
 const updateSelectorUI = () => {
     const buttons = {
-        'no_esteril': document.getElementById('btn-dep-no-esteril'),
-        'esteril': document.getElementById('btn-dep-esteril'),
+        'no_esteril_terminado': document.getElementById('btn-dep-no-esteril-terminado'),
+        'esteril_terminado': document.getElementById('btn-dep-esteril-terminado'),
+        'semi_elaborado': document.getElementById('btn-dep-semi-elaborado'),
         'materia_prima': document.getElementById('btn-dep-materia-prima')
     };
 
@@ -39,8 +40,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 });
             }
         };
-        bindWarehouseBtn('btn-dep-no-esteril', 'no_esteril');
-        bindWarehouseBtn('btn-dep-esteril', 'esteril');
+        bindWarehouseBtn('btn-dep-no-esteril-terminado', 'no_esteril_terminado');
+        bindWarehouseBtn('btn-dep-esteril-terminado', 'esteril_terminado');
+        bindWarehouseBtn('btn-dep-semi-elaborado', 'semi_elaborado');
         bindWarehouseBtn('btn-dep-materia-prima', 'materia_prima');
         
         updateSelectorUI();

@@ -68,7 +68,7 @@ const renderTabla = () => {
     }).join('');
 };
 
-let selectedWarehouse = ''; // 'no_esteril' | 'esteril' | 'materia_prima'
+let selectedWarehouse = ''; // 'no_esteril_terminado' | 'esteril_terminado' | 'semi_elaborado' | 'materia_prima'
 let unsubscribe = null;
 
 const setupRealtimeListener = () => {
@@ -116,8 +116,9 @@ const showChoiceScreen = () => {
 
 const setupApp = () => {
     // Bind choice screen buttons
-    document.getElementById('choice-no-esteril').addEventListener('click', () => showHistoryView('no_esteril', 'No Estéril'));
-    document.getElementById('choice-esteril').addEventListener('click', () => showHistoryView('esteril', 'Estéril'));
+    document.getElementById('choice-no-esteril-terminado').addEventListener('click', () => showHistoryView('no_esteril_terminado', 'No Estéril Terminado'));
+    document.getElementById('choice-esteril-terminado').addEventListener('click', () => showHistoryView('esteril_terminado', 'Estéril Terminado'));
+    document.getElementById('choice-semi-elaborado').addEventListener('click', () => showHistoryView('semi_elaborado', 'Semi Elaborado'));
     document.getElementById('choice-materia-prima').addEventListener('click', () => showHistoryView('materia_prima', 'Materia Prima'));
     
     // Bind back button

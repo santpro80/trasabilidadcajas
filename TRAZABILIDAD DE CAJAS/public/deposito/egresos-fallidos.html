@@ -44,30 +44,41 @@
     <!-- Main Content -->
     <main class="flex-1 w-full max-w-7xl mx-auto px-4 py-6 md:py-10 flex flex-col relative z-10 overflow-hidden">
         <!-- Choice Screen Container -->
-        <div id="warehouse-choice-screen" class="flex-1 flex flex-col justify-center items-center py-12 w-full max-w-4xl mx-auto">
+        <div id="warehouse-choice-screen" class="flex-1 flex flex-col justify-center items-center py-12 w-full max-w-6xl mx-auto">
             <h2 class="text-2xl md:text-3xl font-black text-slate-800 dark:text-white uppercase tracking-tight mb-2 text-center">Egresos Fallidos</h2>
             <p class="text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-[0.2em] mb-12 text-center">Seleccione el depósito que desea consultar</p>
             
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 w-full px-4">
-                <!-- No Estéril -->
-                <button id="choice-no-esteril" class="flex flex-col items-center gap-6 p-8 bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-3xl group hover:shadow-2xl hover:border-blue-500 transition-all duration-300 transform hover:-translate-y-2 cursor-pointer w-full text-center">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 w-full px-4">
+                <!-- No Estéril Terminado -->
+                <button id="choice-no-esteril-terminado" class="flex flex-col items-center gap-6 p-8 bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-3xl group hover:shadow-2xl hover:border-blue-500 transition-all duration-300 transform hover:-translate-y-2 cursor-pointer w-full text-center">
                     <div class="size-16 rounded-2xl bg-blue-500/10 dark:bg-blue-500/20 text-blue-500 flex items-center justify-center group-hover:scale-110 transition-transform">
                         <span class="material-symbols-outlined text-[36px]">inventory</span>
                     </div>
                     <div>
-                        <h3 class="text-sm font-black text-slate-900 dark:text-white uppercase tracking-widest mb-1">No Estéril</h3>
-                        <p class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide">Implantes y cajas no estériles</p>
+                        <h3 class="text-sm font-black text-slate-900 dark:text-white uppercase tracking-widest mb-1 leading-tight">No Estéril Terminado</h3>
+                        <p class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide">Implantes y cajas no estériles terminados</p>
                     </div>
                 </button>
                 
-                <!-- Estéril -->
-                <button id="choice-esteril" class="flex flex-col items-center gap-6 p-8 bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-3xl group hover:shadow-2xl hover:border-emerald-500 transition-all duration-300 transform hover:-translate-y-2 cursor-pointer w-full text-center">
+                <!-- Estéril Terminado -->
+                <button id="choice-esteril-terminado" class="flex flex-col items-center gap-6 p-8 bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-3xl group hover:shadow-2xl hover:border-emerald-500 transition-all duration-300 transform hover:-translate-y-2 cursor-pointer w-full text-center">
                     <div class="size-16 rounded-2xl bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-500 flex items-center justify-center group-hover:scale-110 transition-transform">
                         <span class="material-symbols-outlined text-[36px]">clean_hands</span>
                     </div>
                     <div>
-                        <h3 class="text-sm font-black text-slate-900 dark:text-white uppercase tracking-widest mb-1">Estéril</h3>
-                        <p class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide">Cajas e implantes estériles</p>
+                        <h3 class="text-sm font-black text-slate-900 dark:text-white uppercase tracking-widest mb-1 leading-tight">Estéril Terminado</h3>
+                        <p class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide">Cajas e implantes estériles terminados</p>
+                    </div>
+                </button>
+
+                <!-- Semi Elaborado -->
+                <button id="choice-semi-elaborado" class="flex flex-col items-center gap-6 p-8 bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-3xl group hover:shadow-2xl hover:border-purple-500 transition-all duration-300 transform hover:-translate-y-2 cursor-pointer w-full text-center">
+                    <div class="size-16 rounded-2xl bg-purple-500/10 dark:bg-purple-500/20 text-purple-500 flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <span class="material-symbols-outlined text-[36px]">pending_actions</span>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-black text-slate-900 dark:text-white uppercase tracking-widest mb-1 leading-tight">Semi Elaborado</h3>
+                        <p class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide">Productos en proceso de elaboración</p>
                     </div>
                 </button>
                 
@@ -77,7 +88,7 @@
                         <span class="material-symbols-outlined text-[36px]">precision_manufacturing</span>
                     </div>
                     <div>
-                        <h3 class="text-sm font-black text-slate-900 dark:text-white uppercase tracking-widest mb-1">Materia Prima</h3>
+                        <h3 class="text-sm font-black text-slate-900 dark:text-white uppercase tracking-widest mb-1 leading-tight">Materia Prima</h3>
                         <p class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide">Materiales y piezas de producción</p>
                     </div>
                 </button>
