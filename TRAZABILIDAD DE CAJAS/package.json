@@ -11,5 +11,8 @@
     "busboy": "^1.6.0",
     "isomorphic-fetch": "^3.0.0",
     "simple-oauth2": "^5.1.0"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.19"
   }
 }
