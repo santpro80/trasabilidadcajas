@@ -64,9 +64,9 @@
                     <span class="material-symbols-outlined mt-1">info</span>
                     <div>
                         <span class="text-xs font-black uppercase tracking-wider block mb-1">Formato requerido del archivo:</span>
-                        <p class="text-[11px] font-bold uppercase tracking-wide leading-relaxed">
+                        <p id="format-instructions" class="text-[11px] font-bold uppercase tracking-wide leading-relaxed">
                             Cargar un archivo .csv con separación por punto y coma (;) que incluya las siguientes columnas:<br>
-                            <span class="text-blue-600 dark:text-blue-400">CODIGO ; DESCRIPCION ; DETALLE</span>
+                            <span class="text-blue-600 dark:text-blue-400">CODIGO ; DESCRIPCION ; ENTREPISO ; CANTIDAD</span>
                         </p>
                     </div>
                 </div>
@@ -114,7 +114,7 @@
 
             <div class="flex flex-col gap-4">
                 <div class="flex flex-col gap-2">
-                    <label class="text-[10px] font-black uppercase tracking-widest text-slate-500">Formato: CODIGO ; DESCRIPCIÓN (uno por línea)</label>
+                    <label id="manual-input-label" class="text-[10px] font-black uppercase tracking-widest text-slate-500">Formato: CODIGO ; DESCRIPCIÓN (uno por línea)</label>
                     <textarea id="manual-input" rows="4" placeholder="42-118-01 ; PLACA VOLAR ANGOSTA...
 42-118-02 ; PLACA VOLAR ANCHA..." class="w-full bg-slate-50 dark:bg-black/20 border-2 border-slate-200 dark:border-slate-800 rounded-2xl p-4 text-xs font-bold text-slate-800 dark:text-white outline-none focus:border-villalba-blue transition-all shadow-inner placeholder-slate-300 dark:placeholder-slate-600"></textarea>
                 </div>

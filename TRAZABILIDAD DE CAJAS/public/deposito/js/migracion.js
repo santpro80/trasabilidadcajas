@@ -19,6 +19,33 @@ const updateSelectorUI = () => {
             btn.className = "warehouse-selector-btn py-3 px-2 rounded-xl border-2 font-black uppercase text-[10px] tracking-wider transition-all select-none bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 active:scale-[0.97]";
         }
     });
+
+    const formatInstructions = document.getElementById('format-instructions');
+    if (formatInstructions) {
+        if (selectedWarehouse === 'no_esteril_terminado') {
+            formatInstructions.innerHTML = `Cargar un archivo .csv con separación por punto y coma (;) que incluya las siguientes columnas:<br>
+<span class="text-blue-600 dark:text-blue-400">CODIGO ; DESCRIPCION ; ENTREPISO ; CANTIDAD</span>`;
+        } else {
+            formatInstructions.innerHTML = `Cargar un archivo .csv con separación por punto y coma (;) que incluya las siguientes columnas:<br>
+<span class="text-blue-600 dark:text-blue-400">CODIGO ; DESCRIPCION ; CANTIDAD</span>`;
+        }
+    }
+
+    const manualInputLabel = document.getElementById('manual-input-label');
+    const manualInput = document.getElementById('manual-input');
+    if (manualInput) {
+        if (selectedWarehouse === 'no_esteril_terminado') {
+            if (manualInputLabel) {
+                manualInputLabel.textContent = "Formato: CODIGO ; DESCRIPCIÓN ; ENTREPISO ; CANTIDAD (uno por línea)";
+            }
+            manualInput.placeholder = "42-118-01 ; PLACA VOLAR ANGOSTA ; E1 ; 15\n42-118-02 ; PLACA VOLAR ANCHA ; E2 ; 22";
+        } else {
+            if (manualInputLabel) {
+                manualInputLabel.textContent = "Formato: CODIGO ; DESCRIPCIÓN ; CANTIDAD (uno por línea)";
+            }
+            manualInput.placeholder = "42-118-01 ; PLACA VOLAR ANGOSTA ; 15\n42-118-02 ; PLACA VOLAR ANCHA ; 22";
+        }
+    }
 };
 
 const getCatalogCollection = () => `deposito_catalogo_${selectedWarehouse}`;
@@ -133,7 +160,15 @@ document.addEventListener('DOMContentLoaded', async () => {
                         
                         let codigo = columns[0]?.replace(/"/g, '')?.trim() || '';
                         let descripcion = columns[1]?.replace(/"/g, '')?.trim() || '';
-                        let rawCantidad = columns[2]?.replace(/"/g, '')?.trim() || '0';
+                        let entrepiso = '';
+                        let rawCantidad = '0';
+
+                        if (selectedWarehouse === 'no_esteril_terminado') {
+                            entrepiso = columns[2]?.replace(/"/g, '')?.trim() || '';
+                            rawCantidad = columns[3]?.replace(/"/g, '')?.trim() || '0';
+                        } else {
+                            rawCantidad = columns[2]?.replace(/"/g, '')?.trim() || '0';
+                        }
 
                         let stock = parseInt(rawCantidad, 10);
                         if (isNaN(stock)) stock = 0;
@@ -161,6 +196,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                             migrado: true
                         };
 
+                        if (selectedWarehouse === 'no_esteril_terminado') {
+                            itemData.entrepiso = entrepiso;
+                        }
+
                         await setDoc(itemRef, itemData, { merge: true });
                         existingItems.set(finalDocId, itemData);
 
@@ -169,7 +208,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                         // Cuadro rojo leve si hay S/N
                         const hasIssues = (codigo === 'S/N' || descripcion === 'S/N');
                         const logBg = hasIssues ? 'bg-rose-500/10 text-rose-600 dark:bg-rose-500/20 dark:text-rose-400 p-1 rounded' : '';
-                        statusLog.innerHTML += `<div class="${logBg}">[${added}] OK: [${codigo}] ${descripcion} - Cantidad: ${stock} ${exists ? '<span class="text-amber-500 font-bold">(Actualizado)</span>' : '<span class="text-emerald-500 font-bold">(Nuevo)</span>'}</div>`;
+                        const entrepisoLog = selectedWarehouse === 'no_esteril_terminado' ? ` - Entrepiso: ${entrepiso}` : '';
+                        statusLog.innerHTML += `<div class="${logBg}">[${added}] OK: [${codigo}] ${descripcion}${entrepisoLog} - Cantidad: ${stock} ${exists ? '<span class="text-amber-500 font-bold">(Actualizado)</span>' : '<span class="text-emerald-500 font-bold">(Nuevo)</span>'}</div>`;
                     } catch (err) {
                         errors++;
                         statusLog.innerHTML += `<div class="bg-rose-500 text-white p-1 rounded mb-1">FATAL [Fila ${i+1}]: ${err.message}</div>`;
@@ -190,11 +230,18 @@ document.addEventListener('DOMContentLoaded', async () => {
                 
                 statusLog.innerHTML += `<div class="text-indigo-400 italic">Optimizando base maestra (creando Master Document)...</div>`;
                 const catalogSnap = await getDocs(collection(db, getCatalogCollection()));
-                const allItems = catalogSnap.docs.map(d => ({ 
-                    codigo: d.id, 
-                    descripcion: d.data().descripcion || 'S/N', 
-                    stock: d.data().stock || 0 
-                }));
+                const allItems = catalogSnap.docs.map(d => {
+                    const data = d.data();
+                    const item = { 
+                        codigo: d.id, 
+                        descripcion: data.descripcion || 'S/N', 
+                        stock: data.stock || 0 
+                    };
+                    if (selectedWarehouse === 'no_esteril_terminado') {
+                        item.entrepiso = data.entrepiso || '';
+                    }
+                    return item;
+                });
                 await setDoc(doc(db, 'system', getMasterDoc()), { items: allItems });
 
                 localStorage.removeItem(getCacheKey());
@@ -254,13 +301,18 @@ document.addEventListener('DOMContentLoaded', async () => {
                     }
                     
                     const columns = rows[i].split(separator);
-                    if (columns.length < 2) {
-                        throw new Error("Formato inválido. Usá CODIGO ; DESCRIPCIÓN o pegá desde Excel");
-                    }
                     
                     const codigo = columns[0]?.replace(/"/g, '')?.trim() || '';
                     const descripcion = columns[1]?.replace(/"/g, '')?.trim() || '';
-                    let rawCantidad = columns[2]?.replace(/"/g, '')?.trim() || '0';
+                    let entrepiso = '';
+                    let rawCantidad = '0';
+
+                    if (selectedWarehouse === 'no_esteril_terminado') {
+                        entrepiso = columns[2]?.replace(/"/g, '')?.trim() || '';
+                        rawCantidad = columns[3]?.replace(/"/g, '')?.trim() || '0';
+                    } else {
+                        rawCantidad = columns[2]?.replace(/"/g, '')?.trim() || '0';
+                    }
 
                     if (!codigo) throw new Error("Código faltante.");
 
@@ -280,11 +332,16 @@ document.addEventListener('DOMContentLoaded', async () => {
                         manual: true
                     };
 
+                    if (selectedWarehouse === 'no_esteril_terminado') {
+                        itemData.entrepiso = entrepiso;
+                    }
+
                     await setDoc(itemRef, itemData, { merge: true });
                     existingItems.set(codigo, itemData);
 
                     added++;
-                    statusLog.innerHTML += `<div>[${added}] OK: [${codigo}] ${descripcion} - Cantidad: ${stock} ${exists ? '<span class="text-amber-500 font-bold">(Actualizado)</span>' : '<span class="text-emerald-500 font-bold">(Nuevo)</span>'}</div>`;
+                    const entrepisoLog = selectedWarehouse === 'no_esteril_terminado' ? ` - Entrepiso: ${entrepiso}` : '';
+                    statusLog.innerHTML += `<div>[${added}] OK: [${codigo}] ${descripcion}${entrepisoLog} - Cantidad: ${stock} ${exists ? '<span class="text-amber-500 font-bold">(Actualizado)</span>' : '<span class="text-emerald-500 font-bold">(Nuevo)</span>'}</div>`;
                 } catch (err) {
                     errors++;
                     statusLog.innerHTML += `<div class="bg-rose-500 text-white p-1 rounded mb-1">ERROR [Línea ${i+1}]: ${err.message}</div>`;
@@ -294,11 +351,18 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             statusLog.innerHTML += `<div class="text-indigo-400 italic mt-2">Optimizando base maestra (creando Master Document)...</div>`;
             const catalogSnap = await getDocs(collection(db, getCatalogCollection()));
-            const allItems = catalogSnap.docs.map(d => ({ 
-                codigo: d.id, 
-                descripcion: d.data().descripcion || 'S/N', 
-                stock: d.data().stock || 0 
-            }));
+            const allItems = catalogSnap.docs.map(d => {
+                const data = d.data();
+                const item = { 
+                    codigo: d.id, 
+                    descripcion: data.descripcion || 'S/N', 
+                    stock: data.stock || 0 
+                };
+                if (selectedWarehouse === 'no_esteril_terminado') {
+                    item.entrepiso = data.entrepiso || '';
+                }
+                return item;
+            });
             await setDoc(doc(db, 'system', getMasterDoc()), { items: allItems });
 
             manualBtn.innerHTML = '<span class="material-symbols-outlined text-[18px]">add_circle</span> AGREGAR ÍTEMS MANUALMENTE';

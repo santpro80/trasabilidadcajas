@@ -115,6 +115,15 @@ const renderRows = () => {
             alertBadge = '<span class="absolute -top-1 -right-1 flex size-5 items-center justify-center rounded-full bg-rose-500 text-white shadow-sm z-20" title="Alerta Roja (Alta)"><span class="material-symbols-outlined text-[12px]">error</span></span>';
         }
 
+        let entrepisoCell = '';
+        if (selectedWarehouse === 'no_esteril_terminado') {
+            entrepisoCell = `
+                <td class="py-2 px-6">
+                    <span class="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wide">${item.entrepiso || '-'}</span>
+                </td>
+            `;
+        }
+
         return `
             <tr style="height: ${ROW_HEIGHT}px" class="group transition-colors border-b ${rowStyle}">
                 <td class="py-2 px-6">
@@ -143,6 +152,7 @@ const renderRows = () => {
                 <td class="py-2 px-6">
                     <p class="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wide leading-relaxed line-clamp-2">${item.descripcion || 'Sin descripción'}</p>
                 </td>
+                ${entrepisoCell}
                 <td class="py-2 px-6 text-center">
                     <span class="px-4 py-1.5 rounded-lg border ${stockColor} font-black text-xs uppercase tracking-widest">
                         ${stockActual}
@@ -320,6 +330,16 @@ const showCatalogView = (warehouseName, labelText) => {
     selectedWarehouse = warehouseName;
     document.getElementById('catalog-title-text').textContent = `Listado: ${labelText}`;
     
+    // Show/hide entrepiso header
+    const colHeaderEntrepiso = document.getElementById('col-header-entrepiso');
+    if (colHeaderEntrepiso) {
+        if (selectedWarehouse === 'no_esteril_terminado') {
+            colHeaderEntrepiso.classList.remove('hidden');
+        } else {
+            colHeaderEntrepiso.classList.add('hidden');
+        }
+    }
+    
     // Toggle screens
     document.getElementById('warehouse-choice-screen').classList.add('hidden');
     document.getElementById('catalog-main-container').classList.remove('hidden');
@@ -333,6 +353,12 @@ const showChoiceScreen = () => {
     document.getElementById('catalog-main-container').classList.add('hidden');
     document.getElementById('catalog-main-container').classList.remove('flex');
     document.getElementById('warehouse-choice-screen').classList.remove('hidden');
+    
+    // Hide entrepiso header
+    const colHeaderEntrepiso = document.getElementById('col-header-entrepiso');
+    if (colHeaderEntrepiso) {
+        colHeaderEntrepiso.classList.add('hidden');
+    }
     
     // Clear search and cache
     buscador.value = '';
@@ -432,13 +458,25 @@ const setupApp = () => {
             btnExportExcel.classList.add('pointer-events-none', 'opacity-75');
 
             setTimeout(() => {
-                let csvContent = "\uFEFFCÓDIGO;DESCRIPCIÓN;CANTIDAD\n";
-                listToExport.forEach(item => {
-                    const codigo = item.codigo ? `="${item.codigo}"` : "";
-                    const desc = item.descripcion ? `"${item.descripcion.replace(/"/g, '""')}"` : "";
-                    const cant = item.stock || 0;
-                    csvContent += `${codigo};${desc};${cant}\n`;
-                });
+                let csvContent = "";
+                if (selectedWarehouse === 'no_esteril_terminado') {
+                    csvContent = "\uFEFFCÓDIGO;DESCRIPCIÓN;ENTREPISO;CANTIDAD\n";
+                    listToExport.forEach(item => {
+                        const codigo = item.codigo ? `="${item.codigo}"` : "";
+                        const desc = item.descripcion ? `"${item.descripcion.replace(/"/g, '""')}"` : "";
+                        const entrepiso = item.entrepiso ? `"${item.entrepiso.replace(/"/g, '""')}"` : "";
+                        const cant = item.stock || 0;
+                        csvContent += `${codigo};${desc};${entrepiso};${cant}\n`;
+                    });
+                } else {
+                    csvContent = "\uFEFFCÓDIGO;DESCRIPCIÓN;CANTIDAD\n";
+                    listToExport.forEach(item => {
+                        const codigo = item.codigo ? `="${item.codigo}"` : "";
+                        const desc = item.descripcion ? `"${item.descripcion.replace(/"/g, '""')}"` : "";
+                        const cant = item.stock || 0;
+                        csvContent += `${codigo};${desc};${cant}\n`;
+                    });
+                }
                 
                 const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
                 const url = URL.createObjectURL(blob);
