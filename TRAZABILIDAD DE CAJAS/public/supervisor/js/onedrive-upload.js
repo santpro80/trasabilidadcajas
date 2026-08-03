@@ -4,7 +4,7 @@ const CLOUD_FUNCTION_URL = "https://us-central1-cajas-secuela.cloudfunctions.net
 const OD_CONFIG = {
     clientId: "56c7f9c1-d4df-41f8-af09-3c3561ccb35a",
     // Asegúrate de que este sea el TOKEN NUEVO que generaste recién con PowerShell
-    initialRefreshToken: "M.C501_BAY.0.U.-CkPlrgUDMn*pQi1ceTysx5AjQEiTm4RwOXb6EIX*23nzWkK6KYFNhJ0Bpbi8QEc2gpV1dk1Apj00xtPl0VYLM82hoXhYL!VtVe5Te1ZS!wbEVQ6q0y1hciempob!SotWTvqQNrnzLbqIq0HH2tFBytK9pdFm34mnMXQJD74FJMVnPilv3hpewuSlhTo9JIYHCqEjbfoO0pFHqcjD4BK!pDfqwAXwKMqgYKXz!UUyE6HQ785HLf4ibxg0dxpx1KAd6gWd5PtYZcUf6gwTUj04wdBDJ5Y375BnHnyEf6SYRAgRrP5oveyTHIme*M1aj06uOFsI4dOkcgsev7pU9HIS!YU2xmLeUQi8kLnQWNjyJlQr"
+    initialRefreshToken: "M.C501_BAY.0.U.MsaArtifacts.-Cg1ayh2JHwQtMXUYWihRqxvetWg00BRFiR7Sb1XmSL*LO3pr68lpqGpoeenVZGcasdrOC0Sdvw2NVLaestE0Oe3o2lQWNAmdlddZ3LHlTRjgMf1wuAmolwKNERblZT7PduKxsuW2QQe18mxikMEpwzmJdO4UTojlmXr8HjOHPuJZEpwQtSb59BA!6w9zwObRjyP8WJicFCnoo!8g3VMb!kDu2IfS9jDmenta3*j9UYzDVHvdPTP4PLCw8pes7S29cK*cO1dOHJ492APVDCwqNdLDo0mUFrGYCq00sHH5EbaZ0JlqGZm*zP72hJv3q5e4i0DNLqRme2uCMtjT0hg2i64RHnYHAiYrSo*x6vgQuzrd"
 }
 
 async function getODAccessToken() {
