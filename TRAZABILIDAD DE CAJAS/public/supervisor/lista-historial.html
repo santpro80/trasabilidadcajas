@@ -95,14 +95,21 @@
             align-items: center;
             flex-shrink: 0;
         }
-        .filter-container input[type="text"], .filter-container input[type="date"] {
+        .filter-container input[type="text"], .filter-container input[type="date"], .filter-container select {
             padding: 10px;
             border: 1px solid #ccc;
             border-radius: 8px;
+            background-color: #fff;
+            color: #2c3e50;
+            font-size: 0.95em;
         }
         .filter-container input[type="text"] {
             flex-grow: 1;
             min-width: 200px;
+        }
+        .filter-container select {
+            cursor: pointer;
+            min-width: 160px;
         }
         .filter-container .date-range {
             display: flex;
@@ -148,7 +155,7 @@
         .history-table tbody tr:hover {
             background-color: #e9ecef;
         }
-         .history-table td {
+        .history-table td {
             color: #212529;
             font-size: 0.88em;
         }
@@ -175,7 +182,6 @@
             to { transform: rotate(360deg); }
         }
 
-    
         body {
             opacity: 0;
             animation: fadeInMenu 0.4s ease forwards;
@@ -185,10 +191,8 @@
         @keyframes fadeInMenu {
             to { opacity: 1; }
         }
-    
-</style>
+    </style>
 
-    
     <link rel="stylesheet" href="../css/dark-theme.css">
 </head>
 <body>
@@ -211,6 +215,9 @@
     <main class="main-content">
         <div class="filter-container">
             <input type="text" id="search-input" placeholder="Buscar por usuario, acción o detalle...">
+            <select id="sector-select" class="filter-select">
+                <option value="">Todos los sectores</option>
+            </select>
             <div class="date-range">
                 <label for="start-date">Desde:</label>
                 <input type="date" id="start-date">
@@ -239,7 +246,7 @@
                         </tr>
                     </thead>
                     <tbody id="history-tbody">
-                        </tbody>
+                    </tbody>
                 </table>
             </div>
 
@@ -250,7 +257,6 @@
     </main>
 
     <script type="module" src="js/lista-historial.js"></script>
-
     <script type="module">import '../js/theme.js';</script>
 </body>
 </html>

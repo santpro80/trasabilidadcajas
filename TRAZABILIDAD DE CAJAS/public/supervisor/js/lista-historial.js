@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const emptyState = document.getElementById('empty-state');
     
     const searchInput = document.getElementById('search-input');
+    const sectorSelect = document.getElementById('sector-select');
     const startDateInput = document.getElementById('start-date');
     const endDateInput = document.getElementById('end-date');
     const filterBtn = document.getElementById('filter-btn');
@@ -34,6 +35,48 @@ document.addEventListener('DOMContentLoaded', () => {
             window.location.href = '../login.html';
         }
     });
+
+    const populateSectorOptions = async () => {
+        const sectorSet = new Set();
+
+        // Intentar obtener la lista de sectores desde la configuración en Firestore
+        try {
+            const docSnap = await getDoc(doc(db, "config", "sectors_list"));
+            if (docSnap.exists() && Array.isArray(docSnap.data().list)) {
+                docSnap.data().list.forEach(s => sectorSet.add(String(s).trim()));
+            }
+        } catch (e) {
+            console.warn("No se pudo obtener config/sectors_list:", e);
+        }
+
+        // Si la lista está vacía, incluir sectores estándar
+        if (sectorSet.size === 0) {
+            ['001', '002', '003', '004', '005', '006', '007', '008'].forEach(s => sectorSet.add(s));
+        }
+
+        // Incluir además cualquier sector que aparezca en los registros del historial o de los usuarios
+        allHistoryItems.forEach(item => {
+            const sec = item.sector || usersMap[item.usuarioEmail];
+            if (sec && sec !== 'N/A') {
+                sectorSet.add(String(sec).trim());
+            }
+        });
+
+        // Ordenar sectores de menor a mayor (numéricamente)
+        const sortedSectors = Array.from(sectorSet).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+
+        if (sectorSelect) {
+            const currentVal = sectorSelect.value;
+            sectorSelect.innerHTML = '<option value="">Todos los sectores</option>';
+            sortedSectors.forEach(sector => {
+                const opt = document.createElement('option');
+                opt.value = sector;
+                opt.textContent = sector;
+                sectorSelect.appendChild(opt);
+            });
+            sectorSelect.value = currentVal;
+        }
+    };
     
     const loadHistoryData = async () => {
         showState(loadingState);
@@ -56,6 +99,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             allHistoryItems = querySnapshot.docs.map(doc => doc.data());
+            await populateSectorOptions();
             applyFiltersAndRender();
         } catch (error) {
             console.error("Error al obtener el historial:", error);
@@ -77,26 +121,23 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const searchTerm = searchInput.value.toLowerCase();
-
-        console.log("Filtro - Fecha Inicio (Local):", startDate ? startDate.toLocaleString() : "N/A");
-        console.log("Filtro - Fecha Fin (Local):", endDate ? endDate.toLocaleString() : "N/A");
+        const selectedSector = sectorSelect ? sectorSelect.value : '';
 
         const filteredItems = allHistoryItems.filter(item => {
             if (item.timestamp) {
                 const itemDate = item.timestamp.toDate(); 
                 
-                console.log("  Item - Fecha (Local):", itemDate.toLocaleString());
-                console.log("  Item - Fecha (UTC):", itemDate.toUTCString());
-                console.log("  Comparando:", itemDate.getTime(), "con", startDate ? startDate.getTime() : "N/A", "y", endDate ? endDate.getTime() : "N/A");
-
                 if (startDate && itemDate < startDate) {
-                    console.log("    Filtrado: itemDate < startDate");
                     return false;
                 }
                 if (endDate && itemDate > endDate) {
-                    console.log("    Filtrado: itemDate > endDate");
                     return false;
                 }
+            }
+
+            const itemSector = String(item.sector || usersMap[item.usuarioEmail] || 'N/A');
+            if (selectedSector && itemSector !== selectedSector) {
+                return false;
             }
 
             const user = (item.usuarioNombre || '').toLowerCase();
@@ -143,9 +184,11 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     if(filterBtn) filterBtn.addEventListener('click', applyFiltersAndRender);
+    if(sectorSelect) sectorSelect.addEventListener('change', applyFiltersAndRender);
     if(clearFilterBtn) {
         clearFilterBtn.addEventListener('click', () => {
             if(searchInput) searchInput.value = '';
+            if(sectorSelect) sectorSelect.value = '';
             if(startDateInput) startDateInput.value = '';
             if(endDateInput) endDateInput.value = '';
             applyFiltersAndRender();
