@@ -17,6 +17,7 @@ const tbody = document.getElementById('catalogo-tbody');
 const contador = document.getElementById('contador-items');
 const emptyState = document.getElementById('empty-state');
 const buscador = document.getElementById('buscador-catalogo');
+const filtroEntrepiso = document.getElementById('filtro-entrepiso');
 
 // Modal Elements
 const imageModal = document.getElementById('imageModal');
@@ -311,18 +312,31 @@ const loadCatalog = async (reset = true) => {
 
 const applyFilters = (shouldReset = true) => {
     const text = buscador.value.trim().toLowerCase();
-    if (!text) {
-        filteredItems = [...allItems];
-    } else {
-        const termAlfanumerico = text.replace(/[^a-z0-9]/g, '');
-        filteredItems = allItems.filter(i => {
+    const entrepisoVal = filtroEntrepiso ? filtroEntrepiso.value : '';
+
+    filteredItems = allItems.filter(i => {
+        // Filtro por entrepiso (cuando está seleccionado 'no_esteril_terminado')
+        if (selectedWarehouse === 'no_esteril_terminado' && entrepisoVal) {
+            const itemEntrepiso = String(i.entrepiso || '').replace(/^entrepiso\s*/i, '').trim();
+            if (itemEntrepiso !== entrepisoVal) {
+                return false;
+            }
+        }
+
+        // Filtro por texto (código o descripción)
+        if (text) {
+            const termAlfanumerico = text.replace(/[^a-z0-9]/g, '');
             const codigo = (i.codigo || '').toLowerCase();
             const codigoAlfanumerico = codigo.replace(/[^a-z0-9]/g, '');
             const desc = (i.descripcion || '').toLowerCase();
             
-            return codigo.includes(text) || desc.includes(text) || (termAlfanumerico.length > 0 && codigoAlfanumerico.includes(termAlfanumerico));
-        });
-    }
+            const matchesText = codigo.includes(text) || desc.includes(text) || (termAlfanumerico.length > 0 && codigoAlfanumerico.includes(termAlfanumerico));
+            if (!matchesText) return false;
+        }
+
+        return true;
+    });
+
     updateVirtualLayout(filteredItems, true);
 };
 
@@ -330,13 +344,21 @@ const showCatalogView = (warehouseName, labelText) => {
     selectedWarehouse = warehouseName;
     document.getElementById('catalog-title-text').textContent = `Listado: ${labelText}`;
     
-    // Show/hide entrepiso header
+    // Show/hide entrepiso header & dropdown filter
     const colHeaderEntrepiso = document.getElementById('col-header-entrepiso');
     if (colHeaderEntrepiso) {
         if (selectedWarehouse === 'no_esteril_terminado') {
             colHeaderEntrepiso.classList.remove('hidden');
         } else {
             colHeaderEntrepiso.classList.add('hidden');
+        }
+    }
+    if (filtroEntrepiso) {
+        if (selectedWarehouse === 'no_esteril_terminado') {
+            filtroEntrepiso.classList.remove('hidden');
+        } else {
+            filtroEntrepiso.classList.add('hidden');
+            filtroEntrepiso.value = '';
         }
     }
     
@@ -354,10 +376,14 @@ const showChoiceScreen = () => {
     document.getElementById('catalog-main-container').classList.remove('flex');
     document.getElementById('warehouse-choice-screen').classList.remove('hidden');
     
-    // Hide entrepiso header
+    // Hide entrepiso header & dropdown
     const colHeaderEntrepiso = document.getElementById('col-header-entrepiso');
     if (colHeaderEntrepiso) {
         colHeaderEntrepiso.classList.add('hidden');
+    }
+    if (filtroEntrepiso) {
+        filtroEntrepiso.classList.add('hidden');
+        filtroEntrepiso.value = '';
     }
     
     // Clear search and cache
@@ -378,6 +404,9 @@ const setupApp = () => {
     document.getElementById('btn-back-to-choices').addEventListener('click', showChoiceScreen);
 
     buscador.addEventListener('input', () => applyFilters(true));
+    if (filtroEntrepiso) {
+        filtroEntrepiso.addEventListener('change', () => applyFilters(true));
+    }
 
     scrollContainer.addEventListener('scroll', handleScroll);
     window.addEventListener('scroll', handleScroll);
