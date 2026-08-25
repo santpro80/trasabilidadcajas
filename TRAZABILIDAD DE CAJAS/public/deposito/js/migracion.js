@@ -462,7 +462,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 await setDoc(doc(db, 'system', getMasterDoc()), { items: allItems });
 
                 materialBtn.disabled = false;
-                materialBtn.innerHTML = '<span class="material-symbols-outlined text-[18px]">sell</span> ASIGNAR / ACTUALIZAR MATERIALES';
+                materialBtn.innerHTML = '<span class="material-symbols-outlined text-[18px]">add_circle</span> ASIGNAR MATERIALES';
                 if (materialInput) materialInput.value = '';
                 
                 localStorage.removeItem(getCacheKey());
