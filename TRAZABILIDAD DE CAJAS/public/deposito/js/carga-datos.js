@@ -562,6 +562,7 @@ const renderStagedItems = () => {
         stagedSection.classList.add('hidden');
         return;
     }
+    stagedSection.classList.remove('hidden');
     const totalUnidades = stagedMovements.reduce((acc, m) => acc + (m.cantidad || 0), 0);
     stagedCount.textContent = `${stagedMovements.length} ÍTEMS | ${totalUnidades} UNIDADES`;
 
