@@ -148,6 +148,39 @@ const closeAlarmModal = () => {
     }, 300);
 };
 
+const updateMaterialBadge = (materialStr) => {
+    const badge = document.getElementById('badge-material-pieza');
+    if (!badge) return;
+
+    if (!materialStr || !String(materialStr).trim()) {
+        badge.classList.add('hidden');
+        badge.textContent = '';
+        return;
+    }
+
+    const mat = String(materialStr).trim().toUpperCase();
+    badge.classList.remove('hidden');
+
+    // Clases base
+    badge.className = 'px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider shrink-0 shadow-sm transition-all border';
+
+    if (mat.includes('TITANIO') || mat.includes('TITANIUM') || mat === 'TI') {
+        // Titanio: Gris un poco oscuro
+        badge.classList.add('bg-slate-700', 'text-white', 'border-slate-800', 'dark:bg-slate-800', 'dark:text-slate-100', 'dark:border-slate-700');
+    } else if (mat.includes('ACERO') || mat.includes('STEEL') || mat.includes('INOX') || mat === 'AC') {
+        // Acero: Gris más claro
+        badge.classList.add('bg-slate-400', 'text-slate-900', 'border-slate-500', 'dark:bg-slate-500', 'dark:text-slate-100', 'dark:border-slate-400');
+    } else if (mat.includes('ALUMINIO') || mat.includes('ALUMINUM') || mat === 'AL') {
+        // Aluminio: Gris aún más claro
+        badge.classList.add('bg-slate-200', 'text-slate-800', 'border-slate-300', 'dark:bg-slate-300', 'dark:text-slate-900', 'dark:border-slate-200');
+    } else {
+        // Otros materiales
+        badge.classList.add('bg-indigo-600', 'text-white', 'border-indigo-700', 'dark:bg-indigo-500');
+    }
+
+    badge.textContent = mat;
+};
+
 const setPreviewVisibility = (visible) => {
     const imgContainer = document.getElementById('img-container');
     const previewActions = document.getElementById('preview-actions');
@@ -171,6 +204,7 @@ const setPreviewVisibility = (visible) => {
             previewActions.classList.remove('flex');
         }
         if (previewPieza) previewPieza.style.opacity = '0';
+        updateMaterialBadge(null);
     }
 };
 
@@ -324,14 +358,16 @@ const initAutocomplete = () => {
             matches.forEach(item => {
                 const div = document.createElement('div');
                 div.className = "px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer flex justify-between items-center transition-colors border-b border-slate-100 dark:border-slate-800/50 last:border-0";
+                const matHtml = item.material ? `<span class="px-1.5 py-0.5 rounded text-[9px] font-black uppercase bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 ml-2 border border-slate-300 dark:border-slate-700">${item.material}</span>` : '';
                 div.innerHTML = `
-                    <span class="text-sm font-bold text-slate-800 dark:text-white whitespace-nowrap">${item.codigo}</span>
+                    <span class="text-sm font-bold text-slate-800 dark:text-white whitespace-nowrap flex items-center">${item.codigo} ${matHtml}</span>
                     <span class="text-[9px] text-slate-500 font-medium uppercase tracking-widest text-right leading-tight ml-4 flex-1 break-words">${item.descripcion}</span>
                 `;
                 div.addEventListener('mousedown', (e) => {
                     e.preventDefault(); // Prevent input from losing focus immediately so this registers first
                     input.value = item.codigo;
                     detalleInput.value = item.descripcion;
+                    updateMaterialBadge(item.material);
                     autocompleteList.classList.add('hidden');
                     
                     previewPieza.src = `../assets/items/${item.codigo}.webp`;
@@ -356,6 +392,7 @@ const initAutocomplete = () => {
         } else {
             autocompleteList.classList.add('hidden');
             detalleInput.value = "Ítem no encontrado en base maestra.";
+            updateMaterialBadge(null);
         }
     });
 
@@ -373,6 +410,7 @@ const initAutocomplete = () => {
             if (exactMatch) {
                  input.value = exactMatch.codigo; // Auto-formatea insertando guiones correctos
                  detalleInput.value = exactMatch.descripcion;
+                 updateMaterialBadge(exactMatch.material);
                  previewPieza.src = `../assets/items/${exactMatch.codigo}.webp`;
                  setPreviewVisibility(true);
 
@@ -384,9 +422,11 @@ const initAutocomplete = () => {
                  }
             } else {
                  setPreviewVisibility(false);
+                 updateMaterialBadge(null);
             }
         } else {
             setPreviewVisibility(false);
+            updateMaterialBadge(null);
         }
     });
 
@@ -522,21 +562,20 @@ const renderStagedItems = () => {
         stagedSection.classList.add('hidden');
         return;
     }
-
-    stagedSection.classList.remove('hidden');
     const totalUnidades = stagedMovements.reduce((acc, m) => acc + (m.cantidad || 0), 0);
     stagedCount.textContent = `${stagedMovements.length} ÍTEMS | ${totalUnidades} UNIDADES`;
 
     stagedTbody.innerHTML = stagedMovements.map((m, index) => {
         const esIngreso = m.tipo === 'Ingreso';
         const color = esIngreso ? 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20' : 'text-rose-500 bg-rose-500/10 border-rose-500/20';
+        const matBadge = m.material ? `<span class="px-1.5 py-0.5 rounded text-[9px] font-black uppercase bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-300 dark:border-slate-700 ml-1.5">${m.material}</span>` : '';
         
         return `
             <tr class="hover:bg-slate-100/50 dark:hover:bg-white/5 transition-colors">
                 <td class="py-3 px-4">
                     <span class="px-2 py-0.5 rounded text-[9px] font-black uppercase border ${color}">${m.tipo}</span>
                 </td>
-                <td class="py-3 px-4 text-xs font-black text-villalba-blue dark:text-blue-400 tracking-widest">${m.codigo}</td>
+                <td class="py-3 px-4 text-xs font-black text-villalba-blue dark:text-blue-400 tracking-widest flex items-center">${m.codigo} ${matBadge}</td>
                 <td class="py-3 px-4 text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase truncate max-w-[150px] md:max-w-xs" title="${m.descripcion}">${m.descripcion}</td>
                 <td class="py-3 px-4 text-center text-xs font-black text-slate-800 dark:text-white">${m.cantidad}</td>
                 <td class="py-3 px-4 text-right">
@@ -614,6 +653,7 @@ const initForm = () => {
         // Buscar stock disponible en cache
         const itemCache = depositoItemsCache.find(item => item.codigo === codigo);
         const currentStock = itemCache ? (itemCache.stock || 0) : 0;
+        const material = itemCache ? (itemCache.material || '') : '';
 
         // Calcular stock ya reservado/comprometido en la lista stagedMovements
         let stagedQty = 0;
@@ -644,7 +684,7 @@ const initForm = () => {
         }
 
         // Añadir al array de pendientes
-        stagedMovements.push({ tipo, codigo, descripcion, cantidad });
+        stagedMovements.push({ tipo, codigo, descripcion, material, cantidad });
         saveStagedToLocal();
         
         // Reset parcial: Mantener el TIPO DE MOVIMIENTO
