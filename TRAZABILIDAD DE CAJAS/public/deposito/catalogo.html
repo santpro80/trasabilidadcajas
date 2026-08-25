@@ -132,6 +132,9 @@
                         <option value="12">Entrepiso 12</option>
                         <option value="13">Entrepiso 13</option>
                     </select>
+                    <select id="filtro-material" class="hidden px-3 py-2.5 bg-slate-50 dark:bg-black/20 border-2 border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold text-slate-800 dark:text-white outline-none focus:border-villalba-blue transition-colors shadow-inner shrink-0 cursor-pointer">
+                        <option value="">Todos los materiales</option>
+                    </select>
                     <div class="relative flex-1 w-full md:w-96 group ml-1">
                         <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[20px] group-focus-within:text-villalba-blue transition-colors">search</span>
                         <input type="text" id="buscador-catalogo" placeholder="Buscar por código o descripción..." class="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-black/20 border-2 border-slate-200 dark:border-slate-800 rounded-xl text-sm font-bold text-slate-800 dark:text-white outline-none focus:border-villalba-blue transition-colors shadow-inner">
@@ -149,6 +152,7 @@
                             <th class="py-4 px-6 text-left text-[10px] font-black text-slate-500 uppercase tracking-widest w-40">Código</th>
                             <th class="py-4 px-6 text-left text-[10px] font-black text-slate-500 uppercase tracking-widest">Descripción / Detalle</th>
                             <th id="col-header-entrepiso" class="py-4 px-6 text-left text-[10px] font-black text-slate-500 uppercase tracking-widest w-32 hidden">Entrepiso</th>
+                            <th id="col-header-material" class="py-4 px-6 text-left text-[10px] font-black text-slate-500 uppercase tracking-widest w-32 hidden">Material</th>
                             <th class="py-4 px-6 text-center text-[10px] font-black text-slate-500 uppercase tracking-widest w-32">Stock Actual</th>
                         </tr>
                     </thead>

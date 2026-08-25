@@ -24,7 +24,8 @@ const updateSelectorUI = () => {
     if (formatInstructions) {
         if (selectedWarehouse === 'no_esteril_terminado') {
             formatInstructions.innerHTML = `Cargar un archivo .csv con separación por punto y coma (;) que incluya las siguientes columnas:<br>
-<span class="text-blue-600 dark:text-blue-400">CODIGO ; DESCRIPCION ; ENTREPISO ; CANTIDAD</span>`;
+<span class="text-blue-600 dark:text-blue-400">CODIGO ; DESCRIPCION ; ENTREPISO ; MATERIAL ; CANTIDAD</span><br>
+<span class="text-slate-400 text-[10px]">(o bien CODIGO ; DESCRIPCION ; ENTREPISO ; CANTIDAD)</span>`;
         } else {
             formatInstructions.innerHTML = `Cargar un archivo .csv con separación por punto y coma (;) que incluya las siguientes columnas:<br>
 <span class="text-blue-600 dark:text-blue-400">CODIGO ; DESCRIPCION ; CANTIDAD</span>`;
@@ -36,9 +37,9 @@ const updateSelectorUI = () => {
     if (manualInput) {
         if (selectedWarehouse === 'no_esteril_terminado') {
             if (manualInputLabel) {
-                manualInputLabel.textContent = "Formato: CODIGO ; DESCRIPCIÓN ; ENTREPISO ; CANTIDAD (uno por línea)";
+                manualInputLabel.textContent = "Formato: CODIGO ; DESCRIPCIÓN ; ENTREPISO ; MATERIAL ; CANTIDAD (uno por línea)";
             }
-            manualInput.placeholder = "42-118-01 ; PLACA VOLAR ANGOSTA ; E1 ; 15\n42-118-02 ; PLACA VOLAR ANCHA ; E2 ; 22";
+            manualInput.placeholder = "42-118-01 ; PLACA VOLAR ANGOSTA ; 12 ; TITANIO ; 15\n42-118-02 ; PLACA VOLAR ANCHA ; 12 ; ACERO ; 22";
         } else {
             if (manualInputLabel) {
                 manualInputLabel.textContent = "Formato: CODIGO ; DESCRIPCIÓN ; CANTIDAD (uno por línea)";
@@ -161,11 +162,18 @@ document.addEventListener('DOMContentLoaded', async () => {
                         let codigo = columns[0]?.replace(/"/g, '')?.trim() || '';
                         let descripcion = columns[1]?.replace(/"/g, '')?.trim() || '';
                         let entrepiso = '';
+                        let material = '';
                         let rawCantidad = '0';
 
                         if (selectedWarehouse === 'no_esteril_terminado') {
-                            entrepiso = columns[2]?.replace(/"/g, '')?.trim() || '';
-                            rawCantidad = columns[3]?.replace(/"/g, '')?.trim() || '0';
+                            if (columns.length >= 5) {
+                                entrepiso = columns[2]?.replace(/"/g, '')?.trim() || '';
+                                material = columns[3]?.replace(/"/g, '')?.trim() || '';
+                                rawCantidad = columns[4]?.replace(/"/g, '')?.trim() || '0';
+                            } else {
+                                entrepiso = columns[2]?.replace(/"/g, '')?.trim() || '';
+                                rawCantidad = columns[3]?.replace(/"/g, '')?.trim() || '0';
+                            }
                         } else {
                             rawCantidad = columns[2]?.replace(/"/g, '')?.trim() || '0';
                         }
@@ -198,6 +206,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                         if (selectedWarehouse === 'no_esteril_terminado') {
                             itemData.entrepiso = entrepiso;
+                            if (material) itemData.material = material;
                         }
 
                         await setDoc(itemRef, itemData, { merge: true });
@@ -239,6 +248,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     };
                     if (selectedWarehouse === 'no_esteril_terminado') {
                         item.entrepiso = data.entrepiso || '';
+                        item.material = data.material || '';
                     }
                     return item;
                 });
@@ -305,11 +315,18 @@ document.addEventListener('DOMContentLoaded', async () => {
                     const codigo = columns[0]?.replace(/"/g, '')?.trim() || '';
                     const descripcion = columns[1]?.replace(/"/g, '')?.trim() || '';
                     let entrepiso = '';
+                    let material = '';
                     let rawCantidad = '0';
 
                     if (selectedWarehouse === 'no_esteril_terminado') {
-                        entrepiso = columns[2]?.replace(/"/g, '')?.trim() || '';
-                        rawCantidad = columns[3]?.replace(/"/g, '')?.trim() || '0';
+                        if (columns.length >= 5) {
+                            entrepiso = columns[2]?.replace(/"/g, '')?.trim() || '';
+                            material = columns[3]?.replace(/"/g, '')?.trim() || '';
+                            rawCantidad = columns[4]?.replace(/"/g, '')?.trim() || '0';
+                        } else {
+                            entrepiso = columns[2]?.replace(/"/g, '')?.trim() || '';
+                            rawCantidad = columns[3]?.replace(/"/g, '')?.trim() || '0';
+                        }
                     } else {
                         rawCantidad = columns[2]?.replace(/"/g, '')?.trim() || '0';
                     }
@@ -334,6 +351,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                     if (selectedWarehouse === 'no_esteril_terminado') {
                         itemData.entrepiso = entrepiso;
+                        if (material) itemData.material = material;
                     }
 
                     await setDoc(itemRef, itemData, { merge: true });
@@ -341,7 +359,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                     added++;
                     const entrepisoLog = selectedWarehouse === 'no_esteril_terminado' ? ` - Entrepiso: ${entrepiso}` : '';
-                    statusLog.innerHTML += `<div>[${added}] OK: [${codigo}] ${descripcion}${entrepisoLog} - Cantidad: ${stock} ${exists ? '<span class="text-amber-500 font-bold">(Actualizado)</span>' : '<span class="text-emerald-500 font-bold">(Nuevo)</span>'}</div>`;
+                    const materialLog = material ? ` - Material: ${material}` : '';
+                    statusLog.innerHTML += `<div>[${added}] OK: [${codigo}] ${descripcion}${entrepisoLog}${materialLog} - Cantidad: ${stock} ${exists ? '<span class="text-amber-500 font-bold">(Actualizado)</span>' : '<span class="text-emerald-500 font-bold">(Nuevo)</span>'}</div>`;
                 } catch (err) {
                     errors++;
                     statusLog.innerHTML += `<div class="bg-rose-500 text-white p-1 rounded mb-1">ERROR [Línea ${i+1}]: ${err.message}</div>`;
@@ -360,6 +379,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 };
                 if (selectedWarehouse === 'no_esteril_terminado') {
                     item.entrepiso = data.entrepiso || '';
+                    item.material = data.material || '';
                 }
                 return item;
             });
@@ -371,6 +391,84 @@ document.addEventListener('DOMContentLoaded', async () => {
             localStorage.removeItem(getCacheKey());
             alert(`Carga manual finalizada: ${added} items registrados y optimizados.`);
         });
+
+        // ASIGNACIÓN / CARGA DE MATERIALES POR CÓDIGO
+        const materialInput = document.getElementById('material-input');
+        const materialBtn = document.getElementById('material-import-btn');
+
+        if (materialBtn) {
+            materialBtn.addEventListener('click', async () => {
+                const text = materialInput ? materialInput.value.trim() : '';
+                if (!text) {
+                    alert("Por favor, ingresá al menos un código con su material.");
+                    return;
+                }
+
+                const rows = text.split(/\r?\n/).filter(row => row.trim() !== '');
+                
+                materialBtn.disabled = true;
+                materialBtn.innerHTML = '<span class="material-symbols-outlined animate-spin text-[18px]">sync</span> ASIGNANDO MATERIALES...';
+                
+                statusLog.classList.remove('hidden');
+                statusLog.innerHTML = `<div class="mb-1 text-indigo-500 uppercase font-black">--- INICIANDO ASIGNACIÓN DE MATERIALES (${selectedWarehouse.toUpperCase()}) ---</div>`;
+
+                let updated = 0;
+                let errors = 0;
+
+                for (let i = 0; i < rows.length; i++) {
+                    try {
+                        let separator = ';';
+                        if (rows[i].includes('\t')) separator = '\t';
+                        else if (!rows[i].includes(';') && rows[i].includes(',')) separator = ',';
+
+                        const columns = rows[i].split(separator);
+                        const codigo = columns[0]?.replace(/"/g, '')?.trim() || '';
+                        const material = columns[1]?.replace(/"/g, '')?.trim() || '';
+
+                        if (!codigo) throw new Error("Código faltante.");
+                        if (!material) throw new Error("Material faltante.");
+
+                        const itemRef = doc(db, getCatalogCollection(), codigo);
+                        await setDoc(itemRef, { 
+                            codigo: codigo,
+                            material: material,
+                            ultimaActualizacion: new Date()
+                        }, { merge: true });
+
+                        updated++;
+                        statusLog.innerHTML += `<div>[${updated}] OK: Código [${codigo}] -> Material: <span class="text-indigo-400 font-black">${material}</span></div>`;
+                    } catch (err) {
+                        errors++;
+                        statusLog.innerHTML += `<div class="bg-rose-500 text-white p-1 rounded mb-1">ERROR [Línea ${i+1}]: ${err.message}</div>`;
+                    }
+                    statusLog.scrollTop = statusLog.scrollHeight;
+                }
+
+                statusLog.innerHTML += `<div class="text-indigo-400 italic mt-2">Optimizando base maestra (creando Master Document)...</div>`;
+                const catalogSnap = await getDocs(collection(db, getCatalogCollection()));
+                const allItems = catalogSnap.docs.map(d => {
+                    const data = d.data();
+                    const item = { 
+                        codigo: d.id, 
+                        descripcion: data.descripcion || 'S/N', 
+                        stock: data.stock || 0 
+                    };
+                    if (selectedWarehouse === 'no_esteril_terminado') {
+                        item.entrepiso = data.entrepiso || '';
+                        item.material = data.material || '';
+                    }
+                    return item;
+                });
+                await setDoc(doc(db, 'system', getMasterDoc()), { items: allItems });
+
+                materialBtn.disabled = false;
+                materialBtn.innerHTML = '<span class="material-symbols-outlined text-[18px]">sell</span> ASIGNAR / ACTUALIZAR MATERIALES';
+                if (materialInput) materialInput.value = '';
+                
+                localStorage.removeItem(getCacheKey());
+                alert(`Asignación de materiales finalizada: ${updated} ítems actualizados y optimizados.`);
+            });
+        }
 
         // ELIMINAR ÍTEMS "SN" (SIN CÓDIGO)
         const deleteSnBtn = document.getElementById('btn-delete-sn');

@@ -18,6 +18,7 @@ const contador = document.getElementById('contador-items');
 const emptyState = document.getElementById('empty-state');
 const buscador = document.getElementById('buscador-catalogo');
 const filtroEntrepiso = document.getElementById('filtro-entrepiso');
+const filtroMaterial = document.getElementById('filtro-material');
 
 // Modal Elements
 const imageModal = document.getElementById('imageModal');
@@ -117,10 +118,16 @@ const renderRows = () => {
         }
 
         let entrepisoCell = '';
+        let materialCell = '';
         if (selectedWarehouse === 'no_esteril_terminado') {
             entrepisoCell = `
                 <td class="py-2 px-6">
                     <span class="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wide">${item.entrepiso || '-'}</span>
+                </td>
+            `;
+            materialCell = `
+                <td class="py-2 px-6">
+                    <span class="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wide">${item.material || '-'}</span>
                 </td>
             `;
         }
@@ -154,6 +161,7 @@ const renderRows = () => {
                     <p class="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wide leading-relaxed line-clamp-2">${item.descripcion || 'Sin descripción'}</p>
                 </td>
                 ${entrepisoCell}
+                ${materialCell}
                 <td class="py-2 px-6 text-center">
                     <span class="px-4 py-1.5 rounded-lg border ${stockColor} font-black text-xs uppercase tracking-widest">
                         ${stockActual}
@@ -310,27 +318,59 @@ const loadCatalog = async (reset = true) => {
     finally { isFetching = false; }
 };
 
+const populateMaterialOptions = (items) => {
+    if (!filtroMaterial) return;
+    const materialsSet = new Set();
+    items.forEach(i => {
+        if (i.material && String(i.material).trim()) {
+            materialsSet.add(String(i.material).trim());
+        }
+    });
+
+    const currentVal = filtroMaterial.value;
+    filtroMaterial.innerHTML = '<option value="">Todos los materiales</option>';
+    Array.from(materialsSet).sort((a, b) => a.localeCompare(b)).forEach(mat => {
+        const opt = document.createElement('option');
+        opt.value = mat;
+        opt.textContent = mat;
+        filtroMaterial.appendChild(opt);
+    });
+    filtroMaterial.value = currentVal;
+};
+
 const applyFilters = (shouldReset = true) => {
+    populateMaterialOptions(allItems);
+
     const text = buscador.value.trim().toLowerCase();
     const entrepisoVal = filtroEntrepiso ? filtroEntrepiso.value : '';
+    const materialVal = filtroMaterial ? filtroMaterial.value : '';
 
     filteredItems = allItems.filter(i => {
-        // Filtro por entrepiso (cuando está seleccionado 'no_esteril_terminado')
-        if (selectedWarehouse === 'no_esteril_terminado' && entrepisoVal) {
-            const itemEntrepiso = String(i.entrepiso || '').replace(/^entrepiso\s*/i, '').trim();
-            if (itemEntrepiso !== entrepisoVal) {
-                return false;
+        // Filtro por entrepiso y material (cuando está seleccionado 'no_esteril_terminado')
+        if (selectedWarehouse === 'no_esteril_terminado') {
+            if (entrepisoVal) {
+                const itemEntrepiso = String(i.entrepiso || '').replace(/^entrepiso\s*/i, '').trim();
+                if (itemEntrepiso !== entrepisoVal) {
+                    return false;
+                }
+            }
+            if (materialVal) {
+                const itemMaterial = String(i.material || '').trim().toLowerCase();
+                if (itemMaterial !== materialVal.toLowerCase()) {
+                    return false;
+                }
             }
         }
 
-        // Filtro por texto (código o descripción)
+        // Filtro por texto (código, descripción o material)
         if (text) {
             const termAlfanumerico = text.replace(/[^a-z0-9]/g, '');
             const codigo = (i.codigo || '').toLowerCase();
             const codigoAlfanumerico = codigo.replace(/[^a-z0-9]/g, '');
             const desc = (i.descripcion || '').toLowerCase();
+            const mat = (i.material || '').toLowerCase();
             
-            const matchesText = codigo.includes(text) || desc.includes(text) || (termAlfanumerico.length > 0 && codigoAlfanumerico.includes(termAlfanumerico));
+            const matchesText = codigo.includes(text) || desc.includes(text) || mat.includes(text) || (termAlfanumerico.length > 0 && codigoAlfanumerico.includes(termAlfanumerico));
             if (!matchesText) return false;
         }
 
@@ -344,13 +384,21 @@ const showCatalogView = (warehouseName, labelText) => {
     selectedWarehouse = warehouseName;
     document.getElementById('catalog-title-text').textContent = `Listado: ${labelText}`;
     
-    // Show/hide entrepiso header & dropdown filter
+    // Show/hide entrepiso & material headers and dropdown filters
     const colHeaderEntrepiso = document.getElementById('col-header-entrepiso');
+    const colHeaderMaterial = document.getElementById('col-header-material');
     if (colHeaderEntrepiso) {
         if (selectedWarehouse === 'no_esteril_terminado') {
             colHeaderEntrepiso.classList.remove('hidden');
         } else {
             colHeaderEntrepiso.classList.add('hidden');
+        }
+    }
+    if (colHeaderMaterial) {
+        if (selectedWarehouse === 'no_esteril_terminado') {
+            colHeaderMaterial.classList.remove('hidden');
+        } else {
+            colHeaderMaterial.classList.add('hidden');
         }
     }
     if (filtroEntrepiso) {
@@ -359,6 +407,14 @@ const showCatalogView = (warehouseName, labelText) => {
         } else {
             filtroEntrepiso.classList.add('hidden');
             filtroEntrepiso.value = '';
+        }
+    }
+    if (filtroMaterial) {
+        if (selectedWarehouse === 'no_esteril_terminado') {
+            filtroMaterial.classList.remove('hidden');
+        } else {
+            filtroMaterial.classList.add('hidden');
+            filtroMaterial.value = '';
         }
     }
     
@@ -376,14 +432,18 @@ const showChoiceScreen = () => {
     document.getElementById('catalog-main-container').classList.remove('flex');
     document.getElementById('warehouse-choice-screen').classList.remove('hidden');
     
-    // Hide entrepiso header & dropdown
+    // Hide entrepiso & material headers and dropdowns
     const colHeaderEntrepiso = document.getElementById('col-header-entrepiso');
-    if (colHeaderEntrepiso) {
-        colHeaderEntrepiso.classList.add('hidden');
-    }
+    const colHeaderMaterial = document.getElementById('col-header-material');
+    if (colHeaderEntrepiso) colHeaderEntrepiso.classList.add('hidden');
+    if (colHeaderMaterial) colHeaderMaterial.classList.add('hidden');
     if (filtroEntrepiso) {
         filtroEntrepiso.classList.add('hidden');
         filtroEntrepiso.value = '';
+    }
+    if (filtroMaterial) {
+        filtroMaterial.classList.add('hidden');
+        filtroMaterial.value = '';
     }
     
     // Clear search and cache
@@ -406,6 +466,9 @@ const setupApp = () => {
     buscador.addEventListener('input', () => applyFilters(true));
     if (filtroEntrepiso) {
         filtroEntrepiso.addEventListener('change', () => applyFilters(true));
+    }
+    if (filtroMaterial) {
+        filtroMaterial.addEventListener('change', () => applyFilters(true));
     }
 
     scrollContainer.addEventListener('scroll', handleScroll);
