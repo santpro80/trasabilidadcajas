@@ -552,13 +552,14 @@ const setupApp = () => {
             setTimeout(() => {
                 let csvContent = "";
                 if (selectedWarehouse === 'no_esteril_terminado') {
-                    csvContent = "\uFEFFCÓDIGO;DESCRIPCIÓN;ENTREPISO;CANTIDAD\n";
+                    csvContent = "\uFEFFCÓDIGO;DESCRIPCIÓN;ENTREPISO;MATERIAL;CANTIDAD\n";
                     listToExport.forEach(item => {
                         const codigo = item.codigo ? `="${item.codigo}"` : "";
                         const desc = item.descripcion ? `"${item.descripcion.replace(/"/g, '""')}"` : "";
                         const entrepiso = item.entrepiso ? `"${item.entrepiso.replace(/"/g, '""')}"` : "";
+                        const material = item.material ? `"${item.material.replace(/"/g, '""')}"` : "";
                         const cant = item.stock || 0;
-                        csvContent += `${codigo};${desc};${entrepiso};${cant}\n`;
+                        csvContent += `${codigo};${desc};${entrepiso};${material};${cant}\n`;
                     });
                 } else {
                     csvContent = "\uFEFFCÓDIGO;DESCRIPCIÓN;CANTIDAD\n";
