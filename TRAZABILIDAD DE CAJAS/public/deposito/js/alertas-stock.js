@@ -1,5 +1,4 @@
 import { db, doc, getDoc, setDoc, requireDepositoAuth } from './firebase-config-deposito.js';
-import { dbPedidos, collection, addDoc, serverTimestamp } from '../../pedidos-internos/js/firebase-config-pedidos.js';
 
 let selectedWarehouse = ''; // 'no_esteril_terminado' | 'esteril_terminado' | 'semi_elaborado' | 'materia_prima'
 let depositoItemsCache = [];
@@ -219,32 +218,8 @@ const setAlerta = async (nivel) => {
         const itemUpdate = nivel ? { alertaStock: nivel, stockMinimo: cant, minimo: cant } : { alertaStock: null };
         await setDoc(itemRef, itemUpdate, { merge: true });
 
-        // 3. Generar Nota de Pedido Automática si es una alerta nueva
-        if (nivel) {
-            const prioridad = nivel === 'roja' ? 'Alta' : 'Media';
-
-            const newOrder = {
-                orderNum: Math.floor(Math.random() * 99999).toString(),
-                item: `REPOSICIÓN: ${itemSeleccionado.descripcion}`,
-                entity: currentUser?.userData?.name || currentUser?.user?.email || "Sistema Depósito",
-                operatorId: currentUser?.user?.uid || "system",
-                sector: "Depósito (Automático)",
-                supplier: "Alerta de Stock",
-                quantity: cant,
-                unit: "Unidades",
-                code: itemSeleccionado.codigo,
-                priority: prioridad,
-                createdAt: new Date().toLocaleDateString('es-AR'),
-                timestamp: serverTimestamp(),
-                deliveryDate: "",
-                status: "Pendiente",
-            };
-
-            await addDoc(collection(dbPedidos, "orders"), newOrder);
-        }
-
         // Éxito
-        showToast(nivel ? 'Pedido generado' : 'Alerta removida');
+        showToast(nivel ? 'Alerta guardada' : 'Alerta removida');
         document.getElementById('item-seleccionado').classList.add('hidden');
         document.getElementById('cantidad-reposicion').value = '';
         itemSeleccionado = null;
