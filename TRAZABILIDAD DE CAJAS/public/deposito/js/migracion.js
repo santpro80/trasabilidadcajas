@@ -250,6 +250,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                         item.entrepiso = data.entrepiso || '';
                         item.material = data.material || '';
                     }
+                    if (data.stockMinimo !== undefined && data.stockMinimo !== null) {
+                        item.stockMinimo = data.stockMinimo;
+                        item.minimo = data.stockMinimo;
+                    }
+                    if (data.alertaStock) {
+                        item.alertaStock = data.alertaStock;
+                    }
                     return item;
                 });
                 await setDoc(doc(db, 'system', getMasterDoc()), { items: allItems });
@@ -381,6 +388,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                     item.entrepiso = data.entrepiso || '';
                     item.material = data.material || '';
                 }
+                if (data.stockMinimo !== undefined && data.stockMinimo !== null) {
+                    item.stockMinimo = data.stockMinimo;
+                    item.minimo = data.stockMinimo;
+                }
+                if (data.alertaStock) {
+                    item.alertaStock = data.alertaStock;
+                }
                 return item;
             });
             await setDoc(doc(db, 'system', getMasterDoc()), { items: allItems });
@@ -457,6 +471,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                         item.entrepiso = data.entrepiso || '';
                         item.material = data.material || '';
                     }
+                    if (data.stockMinimo !== undefined && data.stockMinimo !== null) {
+                        item.stockMinimo = data.stockMinimo;
+                        item.minimo = data.stockMinimo;
+                    }
+                    if (data.alertaStock) {
+                        item.alertaStock = data.alertaStock;
+                    }
                     return item;
                 });
                 await setDoc(doc(db, 'system', getMasterDoc()), { items: allItems });
@@ -466,7 +487,100 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (materialInput) materialInput.value = '';
                 
                 localStorage.removeItem(getCacheKey());
+                localStorage.removeItem(`villalba_items_cache_${selectedWarehouse}`);
                 alert(`Asignación de materiales finalizada: ${updated} ítems actualizados y optimizados.`);
+            });
+        }
+
+        // ASIGNACIÓN / CARGA DE STOCK MÍNIMO POR CÓDIGO
+        const minimoInput = document.getElementById('minimo-input');
+        const minimoBtn = document.getElementById('minimo-import-btn');
+
+        if (minimoBtn) {
+            minimoBtn.addEventListener('click', async () => {
+                const text = minimoInput ? minimoInput.value.trim() : '';
+                if (!text) {
+                    alert("Por favor, ingresá al menos un código con su stock mínimo.");
+                    return;
+                }
+
+                const rows = text.split(/\r?\n/).filter(row => row.trim() !== '');
+                
+                minimoBtn.disabled = true;
+                minimoBtn.innerHTML = '<span class="material-symbols-outlined animate-spin text-[18px]">sync</span> ASIGNANDO STOCK MÍNIMO...';
+                
+                statusLog.classList.remove('hidden');
+                statusLog.innerHTML = `<div class="mb-1 text-amber-500 uppercase font-black">--- INICIANDO ASIGNACIÓN DE STOCK MÍNIMO (${selectedWarehouse.toUpperCase()}) ---</div>`;
+
+                let updated = 0;
+                let errors = 0;
+
+                for (let i = 0; i < rows.length; i++) {
+                    try {
+                        let separator = ';';
+                        if (rows[i].includes('\t')) separator = '\t';
+                        else if (!rows[i].includes(';') && rows[i].includes(',')) separator = ',';
+
+                        const columns = rows[i].split(separator);
+                        const codigo = columns[0]?.replace(/"/g, '')?.trim() || '';
+                        const rawMinimo = columns[1]?.replace(/"/g, '')?.trim() || '';
+
+                        if (!codigo) throw new Error("Código faltante.");
+                        if (!rawMinimo && rawMinimo !== '0') throw new Error("Cantidad mínima faltante.");
+
+                        const stockMinimo = parseInt(rawMinimo, 10);
+                        if (isNaN(stockMinimo) || stockMinimo < 0) {
+                            throw new Error(`Cantidad mínima inválida: "${rawMinimo}"`);
+                        }
+
+                        const itemRef = doc(db, getCatalogCollection(), codigo);
+                        await setDoc(itemRef, { 
+                            codigo: codigo,
+                            stockMinimo: stockMinimo,
+                            minimo: stockMinimo,
+                            ultimaActualizacion: new Date()
+                        }, { merge: true });
+
+                        updated++;
+                        statusLog.innerHTML += `<div>[${updated}] OK: Código [${codigo}] -> Stock Mínimo: <span class="text-amber-400 font-black">${stockMinimo} UDS</span></div>`;
+                    } catch (err) {
+                        errors++;
+                        statusLog.innerHTML += `<div class="bg-rose-500 text-white p-1 rounded mb-1">ERROR [Línea ${i+1}]: ${err.message}</div>`;
+                    }
+                    statusLog.scrollTop = statusLog.scrollHeight;
+                }
+
+                statusLog.innerHTML += `<div class="text-amber-400 italic mt-2">Optimizando base maestra (creando Master Document)...</div>`;
+                const catalogSnap = await getDocs(collection(db, getCatalogCollection()));
+                const allItems = catalogSnap.docs.map(d => {
+                    const data = d.data();
+                    const item = { 
+                        codigo: d.id, 
+                        descripcion: data.descripcion || 'S/N', 
+                        stock: data.stock || 0 
+                    };
+                    if (selectedWarehouse === 'no_esteril_terminado') {
+                        item.entrepiso = data.entrepiso || '';
+                        item.material = data.material || '';
+                    }
+                    if (data.stockMinimo !== undefined && data.stockMinimo !== null) {
+                        item.stockMinimo = data.stockMinimo;
+                        item.minimo = data.stockMinimo;
+                    }
+                    if (data.alertaStock) {
+                        item.alertaStock = data.alertaStock;
+                    }
+                    return item;
+                });
+                await setDoc(doc(db, 'system', getMasterDoc()), { items: allItems });
+
+                minimoBtn.disabled = false;
+                minimoBtn.innerHTML = '<span class="material-symbols-outlined text-[18px]">add_circle</span> ASIGNAR STOCK MÍNIMO';
+                if (minimoInput) minimoInput.value = '';
+                
+                localStorage.removeItem(getCacheKey());
+                localStorage.removeItem(`villalba_items_cache_${selectedWarehouse}`);
+                alert(`Asignación de stock mínimo finalizada: ${updated} ítems actualizados y optimizados.`);
             });
         }
 

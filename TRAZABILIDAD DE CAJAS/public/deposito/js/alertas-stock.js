@@ -153,7 +153,16 @@ const initSearch = () => {
         itemSeleccionado = item;
         
         lblCodigo.textContent = item.codigo;
-        lblDesc.textContent = item.descripcion;
+        
+        const minStock = item.stockMinimo ?? item.minimo;
+        if (minStock !== undefined && minStock !== null) {
+            lblDesc.innerHTML = `${item.descripcion} <span class="block mt-1 text-[10px] font-black text-amber-500 uppercase tracking-wider">STOCK ACTUAL: ${item.stock || 0} UDS | MÍNIMO: ${minStock} UDS</span>`;
+            document.getElementById('cantidad-reposicion').value = minStock;
+        } else {
+            lblDesc.innerHTML = `${item.descripcion} <span class="block mt-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Stock actual: ${item.stock || 0} UDS</span>`;
+            document.getElementById('cantidad-reposicion').value = '';
+        }
+
         panelSeleccionado.classList.remove('hidden');
 
         if (item.alertaStock) {
@@ -184,11 +193,16 @@ const setAlerta = async (nivel) => {
     panel.style.opacity = '0.7';
 
     try {
+        const cantInput = document.getElementById('cantidad-reposicion').value;
+        const cant = parseInt(cantInput, 10) > 0 ? parseInt(cantInput, 10) : 1;
+
         // 1. Actualizar Master Document
         const idx = depositoItemsCache.findIndex(i => i.codigo === itemSeleccionado.codigo);
         if (idx !== -1) {
             if (nivel) {
                 depositoItemsCache[idx].alertaStock = nivel;
+                depositoItemsCache[idx].stockMinimo = cant;
+                depositoItemsCache[idx].minimo = cant;
             } else {
                 delete depositoItemsCache[idx].alertaStock;
             }
@@ -202,12 +216,11 @@ const setAlerta = async (nivel) => {
 
         // 2. Actualizar Documento Individual
         const itemRef = doc(db, `deposito_catalogo_${selectedWarehouse}`, itemSeleccionado.codigo);
-        await setDoc(itemRef, nivel ? { alertaStock: nivel } : { alertaStock: null }, { merge: true });
+        const itemUpdate = nivel ? { alertaStock: nivel, stockMinimo: cant, minimo: cant } : { alertaStock: null };
+        await setDoc(itemRef, itemUpdate, { merge: true });
 
         // 3. Generar Nota de Pedido Automática si es una alerta nueva
         if (nivel) {
-            const cantInput = document.getElementById('cantidad-reposicion').value;
-            const cant = parseInt(cantInput, 10) > 0 ? parseInt(cantInput, 10) : 1;
             const prioridad = nivel === 'roja' ? 'Alta' : 'Media';
 
             const newOrder = {
@@ -252,7 +265,11 @@ const renderAlertasActivas = () => {
     const tbody = document.getElementById('alertas-tbody');
     const contador = document.getElementById('contador-alertas');
     
-    const itemsConAlerta = depositoItemsCache.filter(i => i.alertaStock === 'amarilla' || i.alertaStock === 'roja');
+    const itemsConAlerta = depositoItemsCache.filter(i => {
+        const min = i.stockMinimo ?? i.minimo;
+        const tieneBajoStock = min !== undefined && min !== null && min > 0 && (i.stock || 0) <= min;
+        return i.alertaStock === 'amarilla' || i.alertaStock === 'roja' || tieneBajoStock;
+    });
     
     contador.textContent = `${itemsConAlerta.length} ÍTEMS`;
 
@@ -272,13 +289,17 @@ const renderAlertasActivas = () => {
 
     // Sort: Rojas first, then Amarillas
     itemsConAlerta.sort((a, b) => {
-        if (a.alertaStock === 'roja' && b.alertaStock !== 'roja') return -1;
-        if (a.alertaStock !== 'roja' && b.alertaStock === 'roja') return 1;
+        const nivelA = a.alertaStock || ((a.stock || 0) <= 0 ? 'roja' : 'amarilla');
+        const nivelB = b.alertaStock || ((b.stock || 0) <= 0 ? 'roja' : 'amarilla');
+        if (nivelA === 'roja' && nivelB !== 'roja') return -1;
+        if (nivelA !== 'roja' && nivelB === 'roja') return 1;
         return a.codigo.localeCompare(b.codigo);
     });
 
     tbody.innerHTML = itemsConAlerta.map(item => {
-        const theme = THEME[item.alertaStock] || THEME.amarilla;
+        const min = item.stockMinimo ?? item.minimo;
+        const nivelEfectivo = item.alertaStock || ((item.stock || 0) <= 0 ? 'roja' : 'amarilla');
+        const theme = THEME[nivelEfectivo] || THEME.amarilla;
         
         return `
             <tr class="group hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
@@ -289,7 +310,10 @@ const renderAlertasActivas = () => {
                     </div>
                 </td>
                 <td class="py-4 px-4 border-b border-slate-100 dark:border-slate-800/80">
-                    <p class="text-xs font-black text-slate-800 dark:text-white tracking-widest leading-none">${item.codigo}</p>
+                    <div class="flex items-center justify-between gap-2">
+                        <p class="text-xs font-black text-slate-800 dark:text-white tracking-widest leading-none">${item.codigo}</p>
+                        ${min !== undefined && min !== null ? `<span class="text-[9px] font-black uppercase px-2 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">Stock: ${item.stock || 0} / Mín: ${min}</span>` : ''}
+                    </div>
                     <p class="text-[10px] font-bold text-slate-500 uppercase mt-1 truncate max-w-[200px] sm:max-w-md">${item.descripcion}</p>
                 </td>
             </tr>
