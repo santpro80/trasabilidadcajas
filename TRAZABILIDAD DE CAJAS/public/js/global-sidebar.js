@@ -57,6 +57,7 @@ export function initGlobalSidebar() {
     const path = window.location.pathname;
     const isPedidosContext = path.includes('pedidos-internos');
     const isDepositoContext = path.includes('deposito');
+    const isFlujosContext = path.includes('flujos');
     
     let currentRole;
     if (isPedidosContext) currentRole = userRolePedidos;
@@ -70,11 +71,11 @@ export function initGlobalSidebar() {
     let appsHtml = '';
     if (userApps.includes('trazabilidad')) {
         appsHtml += `
-            <button onclick="window.location.href='${baseRoot}supervisor/menu.html'" class="flex flex-col items-center gap-2 p-3 rounded-xl ${!isPedidosContext && !isDepositoContext ? 'bg-blue-500/20 border-blue-500/40 shadow-lg shadow-blue-500/10' : 'bg-slate-200/50 dark:bg-slate-800/40 border-slate-300 dark:border-slate-800'} border cursor-pointer lg:hover:-translate-y-1 transition-all">
+            <button onclick="window.location.href='${baseRoot}supervisor/menu.html'" class="flex flex-col items-center gap-2 p-3 rounded-xl ${!isPedidosContext && !isDepositoContext && !isFlujosContext ? 'bg-blue-500/20 border-blue-500/40 shadow-lg shadow-blue-500/10' : 'bg-slate-200/50 dark:bg-slate-800/40 border-slate-300 dark:border-slate-800'} border cursor-pointer lg:hover:-translate-y-1 transition-all">
                 <div class="size-10 rounded-xl bg-gradient-to-br from-[#6e8efb] to-[#a777e3] flex items-center justify-center">
                     <span class="text-white font-black text-xs">TZ</span>
                 </div>
-                <span class="text-[8px] font-black ${!isPedidosContext && !isDepositoContext ? 'text-blue-500' : 'text-slate-500'} uppercase tracking-widest text-center">Trazabilidad</span>
+                <span class="text-[8px] font-black ${!isPedidosContext && !isDepositoContext && !isFlujosContext ? 'text-blue-500' : 'text-slate-500'} uppercase tracking-widest text-center">Trazabilidad</span>
             </button>
         `;
     }
@@ -100,10 +101,24 @@ export function initGlobalSidebar() {
         `;
     }
 
+    if (userApps.includes('flujos') || userRoleTrazabilidad === 'supervisor' || isFlujosContext) {
+        appsHtml += `
+            <button onclick="window.location.href='${baseRoot}flujos/index.html'" class="flex flex-col items-center gap-2 p-3 rounded-xl ${isFlujosContext ? 'bg-indigo-500/20 border-indigo-500/40 shadow-lg shadow-indigo-500/10' : 'bg-slate-200/50 dark:bg-slate-800/40 border-slate-300 dark:border-slate-800'} border cursor-pointer lg:hover:-translate-y-1 transition-all">
+                <div class="size-10 rounded-xl bg-gradient-to-br from-indigo-500 to-cyan-500 flex items-center justify-center">
+                    <span class="text-white font-black text-xs">FL</span>
+                </div>
+                <span class="text-[8px] font-black ${isFlujosContext ? 'text-indigo-500' : 'text-slate-500'} uppercase tracking-widest text-center">Flujos</span>
+            </button>
+        `;
+    }
+
     // 4. Quick Access Menu Generation
     const menuItems = [];
 
-    if (isPedidosContext) {
+    if (isFlujosContext) {
+        const base = `${baseRoot}flujos/`;
+        menuItems.push({ label: 'Diagramas de Flujo', icon: 'account_tree', link: base + 'index.html' });
+    } else if (isPedidosContext) {
         const base = `${baseRoot}pedidos-internos/`;
         menuItems.push({ label: 'Mis Pedidos', icon: 'receipt_long', link: base + 'mis-pedidos.html' });
         menuItems.push({ label: 'Gestión Pedidos', icon: 'inventory_2', link: base + 'gestion-pedidos.html' });

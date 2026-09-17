@@ -129,6 +129,21 @@
                                         </div>
                                     </button>
 
+                                    <button id="btn-flujos"
+                                        class="auth-hidden view-card group flex items-center p-4 rounded-2xl glass-card hover:bg-slate-100 dark:hover:bg-slate-800 transition-all text-left border-indigo-500/30">
+                                        <span
+                                            class="material-symbols-outlined text-3xl text-indigo-400 mr-4 group-hover:scale-110 transition-transform">account_tree</span>
+                                        <div>
+                                            <h3
+                                                class="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                                                Flujos y Procesos
+                                            </h3>
+                                            <p
+                                                class="text-[10px] text-slate-500 dark:text-slate-400 mt-1 uppercase tracking-widest">
+                                                Diagramas multinivel sandbox</p>
+                                        </div>
+                                    </button>
+
                                     <button id="btn-tickets"
                                         class="auth-hidden view-card group flex items-center p-4 rounded-2xl glass-card hover:bg-slate-100 dark:hover:bg-slate-800 transition-all text-left">
                                         <span
@@ -360,6 +375,7 @@
             // Básicos (todos los logueados)
             unhide('btn-cuenta');
             unhide('btn-tickets');
+            unhide('btn-flujos');
             if (!isMantenimiento) unhide('btn-cajas');
             unhide('btn-reportar-problema');
             unhide('btn-notifications');
@@ -416,6 +432,7 @@
         }
 
         setupRoute('btn-cajas', 'modelos-de-cajas.html');
+        setupRoute('btn-flujos', '../flujos/index.html');
         setupRoute('btn-historial', 'lista-historial.html');
         setupRoute('btn-informe-diario', 'informe-diario.html');
         setupRoute('btn-cuenta', 'cuenta.html');
