@@ -103,9 +103,23 @@ export class FlowchartUI {
     });
 
     // Cerrar menú al hacer clic en cualquier lado o presionar Escape
-    window.addEventListener('click', () => this.hideContextMenus());
+    window.addEventListener('click', (e) => {
+      if (e.target.closest('#port-quick-picker') || e.target.closest('.flow-port')) {
+        return;
+      }
+      this.hideContextMenus();
+    });
     window.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') this.hideContextMenus();
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'p') {
+        e.preventDefault();
+        this.handlePrint();
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        state.saveToStorage();
+        this.showToast('Diagrama guardado en memoria');
+      }
     });
 
     // Acciones del Menú Contextual de Lienzo (Crear Nodos)
@@ -261,11 +275,11 @@ export class FlowchartUI {
         if (fromPort === 'bottom') {
           newX = fromNode.x;
           newY = fromNode.y + 170;
-        } else if (fromPort === 'right') {
-          newX = fromNode.x + 300;
+        } else if (fromPort === 'left') {
+          newX = fromNode.x - 300;
           newY = fromNode.y;
         } else {
-          newX = fromNode.x + 280;
+          newX = fromNode.x + 300;
           newY = fromNode.y;
         }
 
@@ -304,7 +318,16 @@ export class FlowchartUI {
           edgeLabel = fromPort === 'right' ? 'Sí' : 'No';
         }
 
-        state.addEdge(fromNodeId, newNode.id, edgeLabel, fromPort, 'left');
+        // Conectar adecuadamente según el puerto origen
+        if (fromPort === 'left') {
+          // El nuevo nodo está a la izquierda (anterior), conecta hacia este nodo
+          state.addEdge(newNode.id, fromNodeId, '', 'right', 'left');
+        } else if (fromPort === 'bottom') {
+          state.addEdge(fromNodeId, newNode.id, edgeLabel, 'bottom', 'top');
+        } else {
+          state.addEdge(fromNodeId, newNode.id, edgeLabel, 'right', 'left');
+        }
+
         this.renderer.render();
         this.renderer.selectNode(newNode.id, false);
         this.hidePortQuickPicker();
@@ -395,10 +418,6 @@ export class FlowchartUI {
 
     document.getElementById('btn-print')?.addEventListener('click', () => {
       this.handlePrint();
-    });
-
-    document.getElementById('btn-export-png')?.addEventListener('click', () => {
-      this.handleExportPNG();
     });
 
     document.getElementById('btn-export-json')?.addEventListener('click', () => {
@@ -537,8 +556,37 @@ export class FlowchartUI {
     const origPan = { ...(ws.pan || { x: 0, y: 0 }) };
     const origZoom = ws.zoom || 1;
 
-    // 3. Reencuadrar todo el diagrama centrado para la hoja
-    this.renderer.fitView();
+    if (!ws.nodes || ws.nodes.length === 0) {
+      window.print();
+      return;
+    }
+
+    // 3. Reencuadrar todo el diagrama perfectamente centrado para la hoja A4 horizontal (1020px x 570px)
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    ws.nodes.forEach(n => {
+      minX = Math.min(minX, n.x);
+      minY = Math.min(minY, n.y);
+      maxX = Math.max(maxX, n.x + 240);
+      maxY = Math.max(maxY, n.y + 130);
+    });
+
+    const printW = 1020;
+    const printH = 570;
+    const padding = 40;
+
+    const diagramW = maxX - minX;
+    const diagramH = maxY - minY;
+
+    const scaleX = (printW - padding * 2) / Math.max(diagramW, 100);
+    const scaleY = (printH - padding * 2) / Math.max(diagramH, 100);
+    const printZoom = Math.min(scaleX, scaleY, 1.15);
+
+    const printPanX = Math.round((printW - diagramW * printZoom) / 2 - minX * printZoom);
+    const printPanY = Math.round((printH - diagramH * printZoom) / 2 - minY * printZoom);
+
+    state.setPan(printPanX, printPanY);
+    state.setZoom(printZoom);
+    this.renderer.applyTransform();
 
     // 4. Invocar ventana de impresión
     setTimeout(() => {
@@ -551,158 +599,6 @@ export class FlowchartUI {
         this.renderer.applyTransform();
       }, 500);
     }, 150);
-  }
-
-  handleExportPNG() {
-    const ws = state.getCurrentWorkspace();
-    if (!ws.nodes || ws.nodes.length === 0) {
-      this.showToast('El diagrama está vacío');
-      return;
-    }
-
-    this.showToast('Generando imagen...');
-    
-    // Calcular límites para recortar solo los nodos con margen
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-    ws.nodes.forEach(n => {
-      minX = Math.min(minX, n.x);
-      minY = Math.min(minY, n.y);
-      maxX = Math.max(maxX, n.x + 240);
-      maxY = Math.max(maxY, n.y + 120);
-    });
-
-    const padding = 60;
-    const width = maxX - minX + padding * 2;
-    const height = maxY - minY + padding * 2;
-
-    const canvas = document.createElement('canvas');
-    canvas.width = width * 2; // Retina / High-DPI
-    canvas.height = height * 2;
-    const ctx = canvas.getContext('2d');
-    ctx.scale(2, 2);
-
-    // Fondo oscuro o claro según el tema activo
-    const isDark = document.documentElement.classList.contains('dark');
-    ctx.fillStyle = isDark ? '#070b12' : '#ffffff';
-    ctx.fillRect(0, 0, width, height);
-
-    // Cuadrícula de puntos suave
-    ctx.fillStyle = isDark ? '#1e293b' : '#e2e8f0';
-    for (let x = 12; x < width; x += 24) {
-      for (let y = 12; y < height; y += 24) {
-        ctx.beginPath();
-        ctx.arc(x, y, 1.2, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    }
-
-    // Dibujar aristas / conexiones
-    ws.edges.forEach(edge => {
-      const fromNode = ws.nodes.find(n => n.id === edge.from);
-      const toNode = ws.nodes.find(n => n.id === edge.to);
-      if (!fromNode || !toNode) return;
-
-      const p1 = this.renderer.getPortCoordinates(fromNode, edge.fromPort || 'right');
-      const p2 = this.renderer.getPortCoordinates(toNode, edge.toPort || 'left');
-
-      const startX = p1.x - minX + padding;
-      const startY = p1.y - minY + padding;
-      const endX = p2.x - minX + padding;
-      const endY = p2.y - minY + padding;
-
-      let strokeColor = '#3b82f6';
-      if (fromNode.type === 'decision') strokeColor = '#10b981';
-      else if (fromNode.type === 'warning') strokeColor = '#f59e0b';
-
-      ctx.strokeStyle = strokeColor;
-      ctx.lineWidth = 2.5;
-      ctx.beginPath();
-      ctx.moveTo(startX, startY);
-
-      const dx = Math.abs(endX - startX) * 0.5;
-      ctx.bezierCurveTo(startX + dx, startY, endX - dx, endY, endX, endY);
-      ctx.stroke();
-
-      // Flecha terminal
-      ctx.fillStyle = strokeColor;
-      ctx.beginPath();
-      ctx.moveTo(endX, endY);
-      ctx.lineTo(endX - 8, endY - 5);
-      ctx.lineTo(endX - 8, endY + 5);
-      ctx.closePath();
-      ctx.fill();
-
-      // Etiqueta de decisión
-      if (edge.label) {
-        const midX = (startX + endX) / 2;
-        const midY = (startY + endY) / 2;
-        ctx.fillStyle = isDark ? '#0f172a' : '#ffffff';
-        ctx.strokeStyle = isDark ? '#334155' : '#cbd5e1';
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        if (ctx.roundRect) ctx.roundRect(midX - 22, midY - 10, 44, 20, 6);
-        else ctx.rect(midX - 22, midY - 10, 44, 20);
-        ctx.fill();
-        ctx.stroke();
-
-        ctx.fillStyle = isDark ? '#f8fafc' : '#0f172a';
-        ctx.font = 'bold 10px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(edge.label, midX, midY);
-      }
-    });
-
-    // Dibujar nodos
-    ws.nodes.forEach(node => {
-      const nx = node.x - minX + padding;
-      const ny = node.y - minY + padding;
-      const nw = 240;
-      const nh = 100;
-
-      let bgColor = isDark ? '#0e1726' : '#ffffff';
-      let borderColor = '#3b82f6';
-      if (node.type === 'decision') {
-        bgColor = isDark ? '#07221a' : '#ffffff';
-        borderColor = '#10b981';
-      } else if (node.type === 'warning') {
-        bgColor = isDark ? '#271a09' : '#ffffff';
-        borderColor = '#f59e0b';
-      } else if (node.type === 'note') {
-        bgColor = isDark ? '#111723' : '#f8fafc';
-        borderColor = '#64748b';
-      }
-
-      ctx.fillStyle = bgColor;
-      ctx.strokeStyle = borderColor;
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      if (ctx.roundRect) ctx.roundRect(nx, ny, nw, nh, 16);
-      else ctx.rect(nx, ny, nw, nh);
-      ctx.fill();
-      ctx.stroke();
-
-      // Título
-      ctx.fillStyle = isDark ? '#ffffff' : '#0f172a';
-      ctx.font = 'bold 12px sans-serif';
-      ctx.textAlign = 'left';
-      ctx.textBaseline = 'top';
-      ctx.fillText((node.title || 'Sin Título').toUpperCase(), nx + 16, ny + 16, nw - 32);
-
-      // Descripción
-      ctx.fillStyle = isDark ? '#94a3b8' : '#475569';
-      ctx.font = '11px sans-serif';
-      ctx.fillText(node.text || '', nx + 16, ny + 38, nw - 32);
-    });
-
-    // Descargar archivo PNG
-    const a = document.createElement('a');
-    a.download = `flujo_${ws.name.toLowerCase().replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.png`;
-    a.href = canvas.toDataURL('image/png');
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    this.showToast('Imagen PNG descargada');
   }
 
   // Notificaciones Toast

@@ -244,25 +244,8 @@ export class FlowchartRenderer {
       }
 
       if (this.isConnecting) {
-        if (!this.portDragged && this.connectingFromNodeId) {
-          // Clic directo sobre el circulito -> Abrir Quick-Picker de Puerto!
-          const fromNodeId = this.connectingFromNodeId;
-          const fromPort = this.connectingFromPort;
-          this.isConnecting = false;
-          this.tempEdgePath.setAttribute('class', 'opacity-0 pointer-events-none');
-
-          window.dispatchEvent(new CustomEvent('open-port-quick-picker', {
-            detail: {
-              nodeId: fromNodeId,
-              port: fromPort,
-              screenX: e.clientX,
-              screenY: e.clientY
-            }
-          }));
-        } else {
-          this.isConnecting = false;
-          this.tempEdgePath.setAttribute('class', 'opacity-0 pointer-events-none');
-        }
+        this.isConnecting = false;
+        this.tempEdgePath.setAttribute('class', 'opacity-0 pointer-events-none');
       }
     });
   }
@@ -407,32 +390,50 @@ export class FlowchartRenderer {
       }
     });
 
-    // Drag desde puerto de salida para conectar o Clic para Quick-Picker
-    const outPorts = el.querySelectorAll('.flow-port-out');
-    outPorts.forEach(port => {
+    // Gestión integral de puertos: Drag para conectar & Clic para abrir opciones rápidas
+    const allPorts = el.querySelectorAll('.flow-port');
+    allPorts.forEach(port => {
+      // Iniciar arrastre de cable desde cualquier puerto
       port.addEventListener('pointerdown', (e) => {
         e.stopPropagation();
         this.isConnecting = true;
         this.portDragged = false;
         this.portPointerStart = { x: e.clientX, y: e.clientY };
         this.connectingFromNodeId = node.id;
-        this.connectingFromPort = port.dataset.port || 'right';
+        this.connectingFromPort = port.dataset.port || (port.classList.contains('flow-port-in') ? 'left' : 'right');
         const portRect = port.getBoundingClientRect();
         this.connectingFromPos = this.screenToCanvas(portRect.left + portRect.width / 2, portRect.top + portRect.height / 2);
       });
-    });
 
-    // Soltar sobre puerto de entrada para completar conexión manual
-    const inPorts = el.querySelectorAll('.flow-port-in');
-    inPorts.forEach(port => {
+      // Soltar sobre puerto para completar conexión manual
       port.addEventListener('pointerup', (e) => {
         if (this.isConnecting && this.portDragged && this.connectingFromNodeId && this.connectingFromNodeId !== node.id) {
           e.stopPropagation();
-          state.addEdge(this.connectingFromNodeId, node.id, '', this.connectingFromPort, 'left');
+          const toPort = port.dataset.port || (port.classList.contains('flow-port-in') ? 'left' : 'right');
+          state.addEdge(this.connectingFromNodeId, node.id, '', this.connectingFromPort, toPort);
           this.isConnecting = false;
           this.tempEdgePath.setAttribute('class', 'opacity-0 pointer-events-none');
           this.renderEdges();
         }
+      });
+
+      // Clic directo sobre el circulito -> Abrir Quick-Picker (Acción, Decisión, Comentario...)
+      port.addEventListener('click', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        if (this.portDragged) {
+          this.portDragged = false;
+          return;
+        }
+        const portDir = port.dataset.port || (port.classList.contains('flow-port-in') ? 'left' : 'right');
+        window.dispatchEvent(new CustomEvent('open-port-quick-picker', {
+          detail: {
+            nodeId: node.id,
+            port: portDir,
+            screenX: e.clientX,
+            screenY: e.clientY
+          }
+        }));
       });
     });
 
