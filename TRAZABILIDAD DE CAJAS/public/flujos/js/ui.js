@@ -1,4 +1,4 @@
-﻿// ui.js - Control de Interfaz, Menús Contextuales, Breadcrumbs y Modales
+// ui.js - Control de Interfaz, Menús Contextuales, Breadcrumbs y Modales
 
 import { state } from './state.js';
 
@@ -157,11 +157,9 @@ export class FlowchartUI {
     // Eliminar nodo
     document.getElementById('ctx-node-delete')?.addEventListener('click', () => {
       if (this.contextTargetNodeId) {
-        if (confirm('¿Eliminar este nodo y todas sus conexiones?')) {
-          state.removeNode(this.contextTargetNodeId);
-          this.renderer.render();
-          this.showToast('Nodo eliminado');
-        }
+        state.removeNode(this.contextTargetNodeId);
+        this.renderer.render();
+        this.showToast('Nodo eliminado');
       }
     });
 
