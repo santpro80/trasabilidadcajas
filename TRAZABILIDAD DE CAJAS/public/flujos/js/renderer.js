@@ -1,4 +1,4 @@
-﻿// renderer.js - Motor Gráfico Interactivo para Canvas Infinito, Nodos y Conexiones Bezier
+// renderer.js - Motor Gráfico Interactivo para Canvas Infinito, Nodos y Conexiones Bezier
 
 import { state } from './state.js';
 
@@ -212,7 +212,7 @@ export class FlowchartRenderer {
   createNodeElement(node) {
     const el = document.createElement('div');
     el.id = `node-el-${node.id}`;
-    el.className = `flow-node absolute select-none rounded-2xl shadow-xl transition-shadow cursor-grab active:cursor-grabbing border-2 ${this.getNodeThemeClass(node.type)}`;
+    el.className = `flow-node absolute select-none cursor-grab active:cursor-grabbing ${this.getNodeThemeClass(node.type)}`;
     el.style.left = `${node.x}px`;
     el.style.top = `${node.y}px`;
     el.style.width = '240px';
@@ -329,14 +329,14 @@ export class FlowchartRenderer {
   getNodeThemeClass(type) {
     switch (type) {
       case 'action':
-        return 'bg-white/95 dark:bg-[#121c2e] border-blue-500/60 shadow-blue-500/10 hover:border-blue-500';
+        return 'flow-node-action';
       case 'decision':
-        return 'bg-white/95 dark:bg-[#0f241d] border-emerald-500/60 shadow-emerald-500/10 hover:border-emerald-500';
+        return 'flow-node-decision';
       case 'warning':
-        return 'bg-white/95 dark:bg-[#2b2011] border-amber-500/70 shadow-amber-500/10 hover:border-amber-500';
+        return 'flow-node-warning';
       case 'note':
       default:
-        return 'bg-amber-50/90 dark:bg-[#1c1f26] border-slate-300 dark:border-slate-600 shadow-slate-500/5 hover:border-slate-400';
+        return 'flow-node-note';
     }
   }
 
@@ -352,10 +352,10 @@ export class FlowchartRenderer {
 
   getNodeIconBg(type) {
     switch (type) {
-      case 'action': return 'bg-blue-500/20 text-blue-600 dark:text-blue-400';
-      case 'decision': return 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400';
-      case 'warning': return 'bg-amber-500/20 text-amber-600 dark:text-amber-400';
-      case 'note': return 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300';
+      case 'action': return 'bg-blue-500/20 text-blue-500 dark:text-blue-400';
+      case 'decision': return 'bg-emerald-500/20 text-emerald-500 dark:text-emerald-400';
+      case 'warning': return 'bg-amber-500/20 text-amber-500 dark:text-amber-400';
+      case 'note': return 'bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300';
       default: return 'bg-slate-200 text-slate-600';
     }
   }
@@ -457,13 +457,13 @@ export class FlowchartRenderer {
         labelBg.setAttribute('width', 50);
         labelBg.setAttribute('height', 20);
         labelBg.setAttribute('rx', 6);
-        labelBg.setAttribute('class', 'fill-white dark:fill-slate-900 stroke-slate-300 dark:stroke-slate-700 stroke-1 shadow-sm');
+        labelBg.setAttribute('class', 'edge-label-bg shadow-sm');
 
         const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
         text.setAttribute('x', midX);
         text.setAttribute('y', midY + 4);
         text.setAttribute('text-anchor', 'middle');
-        text.setAttribute('class', 'text-[10px] font-black uppercase fill-slate-700 dark:fill-slate-200 pointer-events-none');
+        text.setAttribute('class', 'edge-label-text');
         text.textContent = edge.label;
 
         g.appendChild(labelBg);
