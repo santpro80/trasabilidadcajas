@@ -9,20 +9,28 @@ export class FlowchartRenderer {
     this.nodesContainer = nodesContainerEl;
 
     // Estado de interacción
+    this.interactionMode = 'pan'; // 'pan' | 'select'
     this.isPanning = false;
     this.panStart = { x: 0, y: 0 };
     
+    this.isMarqueeSelecting = false;
+    this.marqueeStartScreen = { x: 0, y: 0 };
+    this.marqueeStartCanvas = { x: 0, y: 0 };
+
     this.isDraggingNode = false;
     this.draggedNodeId = null;
-    this.dragOffset = { x: 0, y: 0 };
+    this.dragStartCanvas = { x: 0, y: 0 };
+    this.dragInitialNodes = {};
 
     this.isConnecting = false;
     this.connectingFromNodeId = null;
     this.connectingFromPort = 'right';
     this.connectingFromPos = { x: 0, y: 0 };
     this.tempEdgePath = null;
+    this.portPointerStart = { x: 0, y: 0 };
+    this.portDragged = false;
 
-    this.selectedNodeId = null;
+    this.selectedNodeIds = new Set();
 
     this.setupViewportEvents();
     this.setupDefs();
@@ -89,26 +97,84 @@ export class FlowchartRenderer {
       this.applyTransform();
     }, { passive: false });
 
-    // Pan con clic sobre fondo (botón izquierdo o central)
+    // Pan o Selección con clic sobre fondo
     this.container.addEventListener('pointerdown', (e) => {
-      // Si se hizo clic sobre un nodo o puerto, no iniciar pan
-      if (e.target.closest('.flow-node') || e.target.closest('.flow-port') || e.target.closest('.flow-edge-action')) {
+      // Si se hizo clic sobre un nodo, puerto o control flotante, no intervenir
+      if (e.target.closest('.flow-node') || e.target.closest('.flow-port') || e.target.closest('.flow-edge-action') || e.target.closest('.glass-panel')) {
         return;
       }
 
-      if (e.button === 0 || e.button === 1) { // Left or middle click
-        this.isPanning = true;
-        const ws = state.getCurrentWorkspace();
-        this.panStart = {
-          x: e.clientX - (ws.pan.x || 0),
-          y: e.clientY - (ws.pan.y || 0)
-        };
-        this.container.classList.add('cursor-grabbing');
-        this.deselectNode();
+      if (e.button === 0 || e.button === 1) { // Botón izquierdo o central
+        const wantsSelect = (this.interactionMode === 'select' || e.shiftKey) && e.button === 0;
+
+        if (wantsSelect) {
+          this.isMarqueeSelecting = true;
+          this.marqueeStartScreen = { x: e.clientX, y: e.clientY };
+          this.marqueeStartCanvas = this.screenToCanvas(e.clientX, e.clientY);
+          if (!e.shiftKey) {
+            this.deselectAll();
+          }
+        } else {
+          this.isPanning = true;
+          const ws = state.getCurrentWorkspace();
+          this.panStart = {
+            x: e.clientX - (ws.pan.x || 0),
+            y: e.clientY - (ws.pan.y || 0)
+          };
+          this.container.classList.add('cursor-grabbing');
+          if (!e.shiftKey) {
+            this.deselectAll();
+          }
+        }
       }
     });
 
     window.addEventListener('pointermove', (e) => {
+      // 0. Recuadro de Selección Múltiple (Marquee)
+      if (this.isMarqueeSelecting) {
+        const box = document.getElementById('marquee-selection-box');
+        if (box) {
+          const containerRect = this.container.getBoundingClientRect();
+          const minX = Math.min(this.marqueeStartScreen.x, e.clientX);
+          const maxX = Math.max(this.marqueeStartScreen.x, e.clientX);
+          const minY = Math.min(this.marqueeStartScreen.y, e.clientY);
+          const maxY = Math.max(this.marqueeStartScreen.y, e.clientY);
+
+          box.style.left = `${minX - containerRect.left}px`;
+          box.style.top = `${minY - containerRect.top}px`;
+          box.style.width = `${Math.max(2, maxX - minX)}px`;
+          box.style.height = `${Math.max(2, maxY - minY)}px`;
+          box.classList.remove('hidden');
+
+          // Calcular colisión en coordenadas canvas
+          const curCanvas = this.screenToCanvas(e.clientX, e.clientY);
+          const cMinX = Math.min(this.marqueeStartCanvas.x, curCanvas.x);
+          const cMaxX = Math.max(this.marqueeStartCanvas.x, curCanvas.x);
+          const cMinY = Math.min(this.marqueeStartCanvas.y, curCanvas.y);
+          const cMaxY = Math.max(this.marqueeStartCanvas.y, curCanvas.y);
+
+          const ws = state.getCurrentWorkspace();
+          ws.nodes.forEach(node => {
+            const overlaps = (
+              node.x < cMaxX &&
+              node.x + 240 > cMinX &&
+              node.y < cMaxY &&
+              node.y + 110 > cMinY
+            );
+            if (overlaps) {
+              this.selectedNodeIds.add(node.id);
+              const el = document.getElementById(`node-el-${node.id}`);
+              if (el) el.classList.add('node-selected');
+            } else if (!e.shiftKey) {
+              this.selectedNodeIds.delete(node.id);
+              const el = document.getElementById(`node-el-${node.id}`);
+              if (el) el.classList.remove('node-selected');
+            }
+          });
+        }
+        return;
+      }
+
       // 1. Panning
       if (this.isPanning) {
         const newPanX = e.clientX - this.panStart.x;
@@ -118,36 +184,52 @@ export class FlowchartRenderer {
         return;
       }
 
-      // 2. Dragging Nodo
-      if (this.isDraggingNode && this.draggedNodeId) {
+      // 2. Dragging Nodo(s) en Bloque
+      if (this.isDraggingNode && this.selectedNodeIds.size > 0) {
         const canvasCoords = this.screenToCanvas(e.clientX, e.clientY);
-        const node = state.getNode(this.draggedNodeId);
-        if (node) {
-          node.x = Math.round(canvasCoords.x - this.dragOffset.x);
-          node.y = Math.round(canvasCoords.y - this.dragOffset.y);
-          this.updateNodePosition(node);
-          this.renderEdges();
-        }
+        const dx = canvasCoords.x - this.dragStartCanvas.x;
+        const dy = canvasCoords.y - this.dragStartCanvas.y;
+
+        this.selectedNodeIds.forEach(id => {
+          const node = state.getNode(id);
+          const initial = this.dragInitialNodes[id];
+          if (node && initial) {
+            node.x = Math.round(initial.x + dx);
+            node.y = Math.round(initial.y + dy);
+            this.updateNodePosition(node);
+          }
+        });
+        this.renderEdges();
         return;
       }
 
       // 3. Conexión en vivo
       if (this.isConnecting) {
-        const mouseCanvas = this.screenToCanvas(e.clientX, e.clientY);
-        const pathData = this.calculateBezier(
-          this.connectingFromPos.x,
-          this.connectingFromPos.y,
-          mouseCanvas.x,
-          mouseCanvas.y,
-          this.connectingFromPort,
-          'left'
-        );
-        this.tempEdgePath.setAttribute('d', pathData);
-        this.tempEdgePath.setAttribute('class', 'stroke-blue-500 fill-none stroke-[2.5] opacity-90 pointer-events-none');
+        const dist = Math.hypot(e.clientX - this.portPointerStart.x, e.clientY - this.portPointerStart.y);
+        if (dist > 5) {
+          this.portDragged = true;
+          const mouseCanvas = this.screenToCanvas(e.clientX, e.clientY);
+          const pathData = this.calculateBezier(
+            this.connectingFromPos.x,
+            this.connectingFromPos.y,
+            mouseCanvas.x,
+            mouseCanvas.y,
+            this.connectingFromPort,
+            'left'
+          );
+          this.tempEdgePath.setAttribute('d', pathData);
+          this.tempEdgePath.setAttribute('class', 'stroke-blue-500 fill-none stroke-[2.5] opacity-90 pointer-events-none');
+        }
       }
     });
 
     window.addEventListener('pointerup', (e) => {
+      if (this.isMarqueeSelecting) {
+        this.isMarqueeSelecting = false;
+        const box = document.getElementById('marquee-selection-box');
+        if (box) box.classList.add('hidden');
+      }
+
       if (this.isPanning) {
         this.isPanning = false;
         this.container.classList.remove('cursor-grabbing');
@@ -157,12 +239,30 @@ export class FlowchartRenderer {
       if (this.isDraggingNode) {
         this.isDraggingNode = false;
         this.draggedNodeId = null;
+        this.dragInitialNodes = {};
         state.saveToStorage();
       }
 
       if (this.isConnecting) {
-        this.isConnecting = false;
-        this.tempEdgePath.setAttribute('class', 'opacity-0 pointer-events-none');
+        if (!this.portDragged && this.connectingFromNodeId) {
+          // Clic directo sobre el circulito -> Abrir Quick-Picker de Puerto!
+          const fromNodeId = this.connectingFromNodeId;
+          const fromPort = this.connectingFromPort;
+          this.isConnecting = false;
+          this.tempEdgePath.setAttribute('class', 'opacity-0 pointer-events-none');
+
+          window.dispatchEvent(new CustomEvent('open-port-quick-picker', {
+            detail: {
+              nodeId: fromNodeId,
+              port: fromPort,
+              screenX: e.clientX,
+              screenY: e.clientY
+            }
+          }));
+        } else {
+          this.isConnecting = false;
+          this.tempEdgePath.setAttribute('class', 'opacity-0 pointer-events-none');
+        }
       }
     });
   }
@@ -270,14 +370,25 @@ export class FlowchartRenderer {
       if (e.target.closest('.flow-port')) return;
 
       if (e.button === 0) { // Clic izquierdo
-        this.selectNode(node.id);
-        this.isDraggingNode = true;
-        this.draggedNodeId = node.id;
-        const canvasCoords = this.screenToCanvas(e.clientX, e.clientY);
-        this.dragOffset = {
-          x: canvasCoords.x - node.x,
-          y: canvasCoords.y - node.y
-        };
+        if (e.shiftKey) {
+          this.toggleSelectNode(node.id);
+        } else if (!this.isNodeSelected(node.id)) {
+          this.selectNode(node.id, false);
+        }
+
+        // Si este nodo está seleccionado, inicia arrastre grupal
+        if (this.isNodeSelected(node.id)) {
+          this.isDraggingNode = true;
+          this.draggedNodeId = node.id;
+          this.dragStartCanvas = this.screenToCanvas(e.clientX, e.clientY);
+          this.dragInitialNodes = {};
+          this.selectedNodeIds.forEach(id => {
+            const n = state.getNode(id);
+            if (n) {
+              this.dragInitialNodes[id] = { x: n.x, y: n.y };
+            }
+          });
+        }
         e.stopPropagation();
       }
     });
@@ -296,12 +407,14 @@ export class FlowchartRenderer {
       }
     });
 
-    // Drag desde puerto de salida para conectar
+    // Drag desde puerto de salida para conectar o Clic para Quick-Picker
     const outPorts = el.querySelectorAll('.flow-port-out');
     outPorts.forEach(port => {
       port.addEventListener('pointerdown', (e) => {
         e.stopPropagation();
         this.isConnecting = true;
+        this.portDragged = false;
+        this.portPointerStart = { x: e.clientX, y: e.clientY };
         this.connectingFromNodeId = node.id;
         this.connectingFromPort = port.dataset.port || 'right';
         const portRect = port.getBoundingClientRect();
@@ -309,11 +422,11 @@ export class FlowchartRenderer {
       });
     });
 
-    // Soltar sobre puerto de entrada para completar conexión
+    // Soltar sobre puerto de entrada para completar conexión manual
     const inPorts = el.querySelectorAll('.flow-port-in');
     inPorts.forEach(port => {
       port.addEventListener('pointerup', (e) => {
-        if (this.isConnecting && this.connectingFromNodeId && this.connectingFromNodeId !== node.id) {
+        if (this.isConnecting && this.portDragged && this.connectingFromNodeId && this.connectingFromNodeId !== node.id) {
           e.stopPropagation();
           state.addEdge(this.connectingFromNodeId, node.id, '', this.connectingFromPort, 'left');
           this.isConnecting = false;
@@ -368,23 +481,68 @@ export class FlowchartRenderer {
     }
   }
 
-  selectNode(nodeId) {
-    this.deselectNode();
-    this.selectedNodeId = nodeId;
-    const el = document.getElementById(`node-el-${nodeId}`);
-    if (el) {
-      el.classList.add('ring-4', 'ring-blue-500/40', '!border-blue-500');
+  setInteractionMode(mode) {
+    this.interactionMode = mode;
+    const btnPan = document.getElementById('btn-mode-pan');
+    const btnSelect = document.getElementById('btn-mode-select');
+    if (mode === 'pan') {
+      btnPan?.classList.add('hud-mode-active');
+      btnSelect?.classList.remove('hud-mode-active');
+      this.container.classList.remove('cursor-crosshair');
+    } else {
+      btnSelect?.classList.add('hud-mode-active');
+      btnPan?.classList.remove('hud-mode-active');
+      this.container.classList.add('cursor-crosshair');
     }
   }
 
-  deselectNode() {
-    if (this.selectedNodeId) {
-      const el = document.getElementById(`node-el-${this.selectedNodeId}`);
-      if (el) {
-        el.classList.remove('ring-4', 'ring-blue-500/40', '!border-blue-500');
-      }
-      this.selectedNodeId = null;
+  selectNode(nodeId, multi = false) {
+    if (!multi) {
+      this.deselectAll();
     }
+    this.selectedNodeIds.add(nodeId);
+    const el = document.getElementById(`node-el-${nodeId}`);
+    if (el) {
+      el.classList.add('node-selected');
+    }
+  }
+
+  toggleSelectNode(nodeId) {
+    if (this.selectedNodeIds.has(nodeId)) {
+      this.selectedNodeIds.delete(nodeId);
+      const el = document.getElementById(`node-el-${nodeId}`);
+      if (el) el.classList.remove('node-selected');
+    } else {
+      this.selectedNodeIds.add(nodeId);
+      const el = document.getElementById(`node-el-${nodeId}`);
+      if (el) el.classList.add('node-selected');
+    }
+  }
+
+  deselectAll() {
+    this.selectedNodeIds.forEach(id => {
+      const el = document.getElementById(`node-el-${id}`);
+      if (el) el.classList.remove('node-selected');
+    });
+    this.selectedNodeIds.clear();
+  }
+
+  deselectNode(nodeId) {
+    if (nodeId) {
+      this.selectedNodeIds.delete(nodeId);
+      const el = document.getElementById(`node-el-${nodeId}`);
+      if (el) el.classList.remove('node-selected');
+    } else {
+      this.deselectAll();
+    }
+  }
+
+  isNodeSelected(nodeId) {
+    return this.selectedNodeIds.has(nodeId);
+  }
+
+  getSelectedNodeIds() {
+    return Array.from(this.selectedNodeIds);
   }
 
   // Renderizado de Aristas / Conexiones Bezier con Flechas
