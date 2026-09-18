@@ -170,27 +170,36 @@
             transition: transform 0.15s;
         }
 
-        /* Labels SVG en Aristas */
+        /* Labels SVG en Aristas (Siempre por delante de las líneas con fondo opaco y sombra) */
+        .edge-label-group {
+            transition: transform 0.15s ease;
+        }
+        .edge-label-group:hover {
+            transform: scale(1.08);
+        }
         .edge-label-bg {
-            fill: #ffffff;
-            stroke: #cbd5e1;
+            fill: #ffffff !important;
+            stroke: #94a3b8;
             stroke-width: 1.5;
+            filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.15));
         }
         html.dark .edge-label-bg {
-            fill: #0f172a !important;
-            stroke: #334155 !important;
+            fill: #0d1522 !important;
+            stroke: #475569 !important;
             stroke-width: 1.5;
+            filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.6));
         }
         .edge-label-text {
-            fill: #334155;
+            fill: #0f172a;
             font-size: 10px;
             font-weight: 800;
+            letter-spacing: 0.05em;
             text-transform: uppercase;
             pointer-events: none;
             font-family: inherit;
         }
         html.dark .edge-label-text {
-            fill: #f1f5f9 !important;
+            fill: #f8fafc !important;
         }
 
         /* ==========================================================================

@@ -1,4 +1,4 @@
-﻿// state.js - Modelo de Estado Jerárquico para Flujos Sandbox
+// state.js - Modelo de Estado Jerárquico para Flujos Sandbox
 
 const STORAGE_KEY = 'flujos_sandbox_data_v1';
 
@@ -302,6 +302,15 @@ class FlowchartState {
     if (idx === -1) return false;
     ws.edges.splice(idx, 1);
     this.notify('delete_edge');
+    return true;
+  }
+
+  updateEdgeLabel(id, label) {
+    const ws = this.getCurrentWorkspace();
+    const edge = ws.edges.find(e => e.id === id);
+    if (!edge) return false;
+    edge.label = label;
+    this.notify('update_edge');
     return true;
   }
 

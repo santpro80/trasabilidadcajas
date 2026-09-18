@@ -558,6 +558,15 @@ export class FlowchartRenderer {
     }
     group.innerHTML = '';
 
+    // Subcapas separadas: Primero todas las líneas (fondo), luego todos los labels (frente)
+    const linesGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    linesGroup.setAttribute('class', 'canvas-lines-sublayer');
+    const labelsGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    labelsGroup.setAttribute('class', 'canvas-labels-sublayer');
+
+    group.appendChild(linesGroup);
+    group.appendChild(labelsGroup);
+
     const ws = state.getCurrentWorkspace();
 
     ws.edges.forEach(edge => {
@@ -586,8 +595,8 @@ export class FlowchartRenderer {
       let strokeClass = 'stroke-blue-500 dark:stroke-blue-400';
       let markerId = 'url(#arrowhead)';
       if (fromNode.type === 'decision') {
-        strokeClass = 'stroke-emerald-500 dark:stroke-emerald-400';
-        markerId = 'url(#arrowhead-emerald)';
+        strokeClass = edge.fromPort === 'bottom' ? 'stroke-amber-500 dark:stroke-amber-400' : 'stroke-emerald-500 dark:stroke-emerald-400';
+        markerId = edge.fromPort === 'bottom' ? 'url(#arrowhead-amber)' : 'url(#arrowhead-emerald)';
       } else if (fromNode.type === 'warning') {
         strokeClass = 'stroke-amber-500 dark:stroke-amber-400';
         markerId = 'url(#arrowhead-amber)';
@@ -605,33 +614,62 @@ export class FlowchartRenderer {
         }
       });
 
-      // Label en el centro de la arista si existe
-      if (edge.label) {
-        const midX = (p1.x + p2.x) / 2;
-        const midY = (p1.y + p2.y) / 2;
-        
+      g.appendChild(hitPath);
+      g.appendChild(path);
+      linesGroup.appendChild(g);
+
+      // Label en primer plano (adelante de la línea)
+      if (edge.label && String(edge.label).trim()) {
+        let midX = (p1.x + p2.x) / 2;
+        let midY = (p1.y + p2.y) / 2;
+
+        try {
+          const totalLen = path.getTotalLength();
+          if (totalLen > 0) {
+            const pt = path.getPointAtLength(totalLen * 0.5);
+            midX = pt.x;
+            midY = pt.y;
+          }
+        } catch (err) {}
+
+        const labelGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        labelGroup.setAttribute('class', 'edge-label-group cursor-pointer');
+
+        const labelText = String(edge.label).trim();
+        // Ancho calculado dinámicamente con margen generoso
+        const textWidth = Math.max(labelText.length * 8.5 + 26, 60);
+        const textHeight = 24;
+
         const labelBg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-        labelBg.setAttribute('x', midX - 25);
-        labelBg.setAttribute('y', midY - 10);
-        labelBg.setAttribute('width', 50);
-        labelBg.setAttribute('height', 20);
-        labelBg.setAttribute('rx', 6);
-        labelBg.setAttribute('class', 'edge-label-bg shadow-sm');
+        labelBg.setAttribute('x', midX - textWidth / 2);
+        labelBg.setAttribute('y', midY - textHeight / 2);
+        labelBg.setAttribute('width', textWidth);
+        labelBg.setAttribute('height', textHeight);
+        labelBg.setAttribute('rx', 8);
+        labelBg.setAttribute('class', 'edge-label-bg shadow-md');
 
         const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
         text.setAttribute('x', midX);
         text.setAttribute('y', midY + 4);
         text.setAttribute('text-anchor', 'middle');
         text.setAttribute('class', 'edge-label-text');
-        text.textContent = edge.label;
+        text.textContent = labelText;
 
-        g.appendChild(labelBg);
-        g.appendChild(text);
+        labelGroup.appendChild(labelBg);
+        labelGroup.appendChild(text);
+
+        // Click en la etiqueta para editarla rápidamente
+        labelGroup.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const newLabel = prompt('Editar etiqueta de conexión:', edge.label);
+          if (newLabel !== null) {
+            state.updateEdgeLabel(edge.id, newLabel.trim());
+            this.renderEdges();
+          }
+        });
+
+        labelsGroup.appendChild(labelGroup);
       }
-
-      g.appendChild(hitPath);
-      g.appendChild(path);
-      group.appendChild(g);
     });
   }
 
