@@ -420,6 +420,10 @@ export class FlowchartUI {
       this.handlePrint();
     });
 
+    document.getElementById('btn-export-png')?.addEventListener('click', () => {
+      this.handleExportPNG();
+    });
+
     document.getElementById('btn-export-json')?.addEventListener('click', () => {
       const json = state.exportJSON();
       const blob = new Blob([json], { type: 'application/json' });
@@ -455,16 +459,6 @@ export class FlowchartUI {
       };
       reader.readAsText(file);
       fileInput.value = '';
-    });
-
-    // Limpiar / Reiniciar
-    document.getElementById('btn-reset-diagram')?.addEventListener('click', () => {
-      if (confirm('¿Deseas restablecer el diagrama a la plantilla inicial de ejemplo? Se perderán los cambios actuales no exportados.')) {
-        state.resetToDefault();
-        this.renderer.render();
-        this.renderer.fitView();
-        this.showToast('Diagrama restablecido');
-      }
     });
   }
 
@@ -599,6 +593,361 @@ export class FlowchartUI {
         this.renderer.applyTransform();
       }, 500);
     }, 150);
+  }
+
+  // 6. Exportar Imagen PNG en Alta Resolución con Iconos Vectoriales
+  handleExportPNG() {
+    const ws = state.getCurrentWorkspace();
+    if (!ws.nodes || ws.nodes.length === 0) {
+      this.showToast('El diagrama está vacío');
+      return;
+    }
+
+    this.showToast('Generando imagen de alta resolución...');
+
+    // Calcular límites de todos los nodos
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    ws.nodes.forEach(n => {
+      minX = Math.min(minX, n.x);
+      minY = Math.min(minY, n.y);
+      maxX = Math.max(maxX, n.x + 240);
+      maxY = Math.max(maxY, n.y + 130);
+    });
+
+    const paddingX = 80;
+    const paddingTop = 110; // Espacio para el membrete superior
+    const paddingBottom = 70;
+    const width = maxX - minX + paddingX * 2;
+    const height = maxY - minY + paddingTop + paddingBottom;
+
+    const scale = 2; // Alta resolución (Retina 2x)
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(width * scale);
+    canvas.height = Math.round(height * scale);
+    const ctx = canvas.getContext('2d');
+    ctx.scale(scale, scale);
+
+    const isDark = document.documentElement.classList.contains('dark');
+
+    // 1. Fondo general
+    ctx.fillStyle = isDark ? '#0a0f16' : '#f8fafc';
+    ctx.fillRect(0, 0, width, height);
+
+    // 2. Cuadrícula sutil de puntos
+    ctx.fillStyle = isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.07)';
+    for (let x = 16; x < width; x += 24) {
+      for (let y = 16; y < height; y += 24) {
+        ctx.beginPath();
+        ctx.arc(x, y, 1.2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    // 3. Membrete institucional superior
+    ctx.fillStyle = isDark ? '#0f172a' : '#ffffff';
+    ctx.strokeStyle = isDark ? '#1e293b' : '#e2e8f0';
+    ctx.lineWidth = 1;
+    if (ctx.roundRect) ctx.roundRect(paddingX, 24, width - paddingX * 2, 54, 14);
+    else ctx.rect(paddingX, 24, width - paddingX * 2, 54);
+    ctx.fill();
+    ctx.stroke();
+
+    // Título institucional
+    ctx.fillStyle = isDark ? '#f8fafc' : '#0f172a';
+    ctx.font = 'bold 13px system-ui, -apple-system, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('VILLALBA SYSTEMS • FLUJOS DE PROCESO', paddingX + 16, 42);
+
+    // Breadcrumbs y Fecha
+    const crumbs = state.getBreadcrumbs();
+    const breadcrumbsStr = crumbs.map(c => c.name).join(' > ');
+    ctx.fillStyle = isDark ? '#94a3b8' : '#64748b';
+    ctx.font = 'bold 11px system-ui, -apple-system, sans-serif';
+    ctx.fillText(breadcrumbsStr, paddingX + 16, 61);
+
+    const dateStr = new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    ctx.textAlign = 'right';
+    ctx.fillText(dateStr, width - paddingX - 16, 51);
+
+    // 4. Dibujar conexiones (aristas Bezier)
+    ws.edges.forEach(edge => {
+      const fromNode = ws.nodes.find(n => n.id === edge.from);
+      const toNode = ws.nodes.find(n => n.id === edge.to);
+      if (!fromNode || !toNode) return;
+
+      const p1 = this.renderer.getPortCoordinates(fromNode, edge.fromPort || 'right');
+      const p2 = this.renderer.getPortCoordinates(toNode, edge.toPort || 'left');
+
+      const startX = p1.x - minX + paddingX;
+      const startY = p1.y - minY + paddingTop;
+      const endX = p2.x - minX + paddingX;
+      const endY = p2.y - minY + paddingTop;
+
+      let strokeColor = '#3b82f6';
+      if (fromNode.type === 'decision') strokeColor = edge.fromPort === 'bottom' ? '#f59e0b' : '#10b981';
+      else if (fromNode.type === 'warning') strokeColor = '#f59e0b';
+
+      ctx.strokeStyle = strokeColor;
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(startX, startY);
+
+      const dx = Math.abs(endX - startX) * 0.5;
+      ctx.bezierCurveTo(startX + dx, startY, endX - dx, endY, endX, endY);
+      ctx.stroke();
+
+      // Flecha terminal
+      ctx.fillStyle = strokeColor;
+      ctx.beginPath();
+      ctx.moveTo(endX, endY);
+      ctx.lineTo(endX - 8, endY - 5);
+      ctx.lineTo(endX - 8, endY + 5);
+      ctx.closePath();
+      ctx.fill();
+
+      // Etiqueta de la arista (ej: Sí / No)
+      if (edge.label) {
+        const midX = (startX + endX) / 2;
+        const midY = (startY + endY) / 2;
+
+        ctx.fillStyle = isDark ? '#0f172a' : '#ffffff';
+        ctx.strokeStyle = isDark ? '#334155' : '#cbd5e1';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        if (ctx.roundRect) ctx.roundRect(midX - 20, midY - 10, 40, 20, 6);
+        else ctx.rect(midX - 20, midY - 10, 40, 20);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = isDark ? '#f8fafc' : '#0f172a';
+        ctx.font = 'bold 10px system-ui, -apple-system, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(edge.label, midX, midY);
+      }
+    });
+
+    // 5. Dibujar cada uno de los Nodos con sus iconos vectoriales
+    ws.nodes.forEach(node => {
+      const nx = node.x - minX + paddingX;
+      const ny = node.y - minY + paddingTop;
+      const nw = 240;
+      const nh = node.type === 'action' ? 122 : 106;
+
+      // Colores de borde y fondo
+      let borderColor = '#3b82f6';
+      let iconBg = 'rgba(59, 130, 246, 0.15)';
+      let cardBg = isDark ? '#0e1726' : '#ffffff';
+
+      if (node.type === 'decision') {
+        borderColor = '#10b981';
+        iconBg = 'rgba(16, 185, 129, 0.15)';
+        cardBg = isDark ? '#07221a' : '#ffffff';
+      } else if (node.type === 'warning') {
+        borderColor = '#f59e0b';
+        iconBg = 'rgba(245, 158, 11, 0.15)';
+        cardBg = isDark ? '#271a09' : '#ffffff';
+      } else if (node.type === 'note') {
+        borderColor = '#64748b';
+        iconBg = isDark ? '#1e293b' : '#e2e8f0';
+        cardBg = isDark ? '#111723' : '#f8fafc';
+      }
+
+      // Sombra suave de la tarjeta
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.15)';
+      ctx.shadowBlur = 10;
+      ctx.shadowOffsetY = 4;
+
+      // Tarjeta base
+      ctx.fillStyle = cardBg;
+      ctx.strokeStyle = borderColor;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      if (ctx.roundRect) ctx.roundRect(nx, ny, nw, nh, 16);
+      else ctx.rect(nx, ny, nw, nh);
+      ctx.fill();
+      ctx.stroke();
+
+      // Reset sombra para elementos internos
+      ctx.shadowColor = 'transparent';
+      ctx.shadowBlur = 0;
+      ctx.shadowOffsetY = 0;
+
+      // Contenedor del Icono
+      const iconX = nx + 14;
+      const iconY = ny + 14;
+      const iconSize = 28;
+      ctx.fillStyle = iconBg;
+      ctx.beginPath();
+      if (ctx.roundRect) ctx.roundRect(iconX, iconY, iconSize, iconSize, 8);
+      else ctx.rect(iconX, iconY, iconSize, iconSize);
+      ctx.fill();
+
+      // Dibujar Icono Vectorial Real
+      this.drawVectorIcon(ctx, node.type, iconX + 4, iconY + 4, 20);
+
+      // Título del Nodo
+      ctx.fillStyle = isDark ? '#ffffff' : '#0f172a';
+      ctx.font = 'bold 12px system-ui, -apple-system, sans-serif';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'top';
+      ctx.fillText((node.title || 'Sin Título').toUpperCase(), nx + 48, ny + 20, nw - 60);
+
+      // Texto de descripción multilínea
+      ctx.fillStyle = isDark ? '#94a3b8' : '#475569';
+      ctx.font = '11px system-ui, -apple-system, sans-serif';
+      this.drawWrappedText(ctx, node.text || 'Sin descripción...', nx + 16, ny + 50, nw - 32, 15, 2);
+
+      // Badge de Sub-diagrama en acciones
+      if (node.type === 'action') {
+        ctx.strokeStyle = isDark ? 'rgba(59, 130, 246, 0.25)' : 'rgba(59, 130, 246, 0.2)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(nx + 14, ny + 88);
+        ctx.lineTo(nx + nw - 14, ny + 88);
+        ctx.stroke();
+
+        ctx.fillStyle = isDark ? '#60a5fa' : '#2563eb';
+        ctx.font = 'bold 9px system-ui, -apple-system, sans-serif';
+        ctx.fillText('SUB-DIAGRAMA (DOBLE CLIC)', nx + 16, ny + 96);
+      }
+
+      // Puntos de puerto en los extremos
+      ctx.fillStyle = cardBg;
+      ctx.strokeStyle = borderColor;
+      ctx.lineWidth = 1.5;
+
+      // Puerto Izquierdo
+      ctx.beginPath();
+      ctx.arc(nx, ny + nh / 2, 5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      // Puerto Derecho
+      ctx.beginPath();
+      ctx.arc(nx + nw, ny + nh / 2, 5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      // Puerto Inferior si es Decisión
+      if (node.type === 'decision') {
+        ctx.beginPath();
+        ctx.arc(nx + nw / 2, ny + nh, 5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+      }
+    });
+
+    // 6. Descargar el archivo PNG generado
+    const link = document.createElement('a');
+    const safeName = ws.name ? ws.name.toLowerCase().replace(/\s+/g, '_') : 'diagrama';
+    link.download = `flujo_${safeName}_${new Date().toISOString().split('T')[0]}.png`;
+    link.href = canvas.toDataURL('image/png');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    this.showToast('Imagen descargada con éxito');
+  }
+
+  // Helper para dibujar iconos vectoriales nítidos en el canvas de exportación
+  drawVectorIcon(ctx, type, x, y, size) {
+    const s = size / 24;
+    ctx.save();
+    if (type === 'action') {
+      // Rayo / Bolt
+      ctx.fillStyle = '#3b82f6';
+      ctx.beginPath();
+      ctx.moveTo(x + 12 * s, y + 2 * s);
+      ctx.lineTo(x + 4 * s, y + 13 * s);
+      ctx.lineTo(x + 11 * s, y + 13 * s);
+      ctx.lineTo(x + 10 * s, y + 22 * s);
+      ctx.lineTo(x + 20 * s, y + 10 * s);
+      ctx.lineTo(x + 13 * s, y + 10 * s);
+      ctx.closePath();
+      ctx.fill();
+    } else if (type === 'decision') {
+      // Bifurcación / Call Split
+      ctx.strokeStyle = '#10b981';
+      ctx.lineWidth = 2.2 * s;
+      ctx.beginPath();
+      ctx.moveTo(x + 12 * s, y + 21 * s);
+      ctx.lineTo(x + 12 * s, y + 14 * s);
+      ctx.lineTo(x + 6 * s, y + 8 * s);
+      ctx.lineTo(x + 6 * s, y + 4 * s);
+      ctx.moveTo(x + 12 * s, y + 14 * s);
+      ctx.lineTo(x + 18 * s, y + 8 * s);
+      ctx.lineTo(x + 18 * s, y + 4 * s);
+      ctx.stroke();
+
+      ctx.fillStyle = '#10b981';
+      ctx.beginPath();
+      ctx.moveTo(x + 6 * s, y + 2 * s);
+      ctx.lineTo(x + 2 * s, y + 7 * s);
+      ctx.lineTo(x + 10 * s, y + 7 * s);
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.moveTo(x + 18 * s, y + 2 * s);
+      ctx.lineTo(x + 14 * s, y + 7 * s);
+      ctx.lineTo(x + 22 * s, y + 7 * s);
+      ctx.fill();
+    } else if (type === 'warning') {
+      // Triángulo de alerta
+      ctx.fillStyle = '#f59e0b';
+      ctx.beginPath();
+      ctx.moveTo(x + 12 * s, y + 3 * s);
+      ctx.lineTo(x + 22 * s, y + 20 * s);
+      ctx.lineTo(x + 2 * s, y + 20 * s);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.fillStyle = '#1e1b18';
+      ctx.fillRect(x + 11 * s, y + 8 * s, 2 * s, 6 * s);
+      ctx.beginPath();
+      ctx.arc(x + 12 * s, y + 17 * s, 1.2 * s, 0, Math.PI * 2);
+      ctx.fill();
+    } else {
+      // Documento / Nota
+      ctx.fillStyle = '#64748b';
+      ctx.beginPath();
+      ctx.moveTo(x + 5 * s, y + 3 * s);
+      ctx.lineTo(x + 15 * s, y + 3 * s);
+      ctx.lineTo(x + 19 * s, y + 7 * s);
+      ctx.lineTo(x + 19 * s, y + 21 * s);
+      ctx.lineTo(x + 5 * s, y + 21 * s);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(x + 8 * s, y + 10 * s, 8 * s, 1.8 * s);
+      ctx.fillRect(x + 8 * s, y + 14 * s, 8 * s, 1.8 * s);
+      ctx.fillRect(x + 8 * s, y + 17 * s, 5 * s, 1.8 * s);
+    }
+    ctx.restore();
+  }
+
+  // Helper para dibujar texto multilínea truncado con elipsis si excede
+  drawWrappedText(ctx, text, x, y, maxWidth, lineHeight, maxLines = 2) {
+    if (!text) return;
+    const words = text.split(' ');
+    let line = '';
+    let linesDrawn = 0;
+    for (let n = 0; n < words.length; n++) {
+      const testLine = line + words[n] + ' ';
+      const metrics = ctx.measureText(testLine);
+      if (metrics.width > maxWidth && n > 0) {
+        ctx.fillText(line.trim(), x, y + linesDrawn * lineHeight);
+        line = words[n] + ' ';
+        linesDrawn++;
+        if (linesDrawn >= maxLines) return;
+      } else {
+        line = testLine;
+      }
+    }
+    if (linesDrawn < maxLines) {
+      ctx.fillText(line.trim(), x, y + linesDrawn * lineHeight);
+    }
   }
 
   // Notificaciones Toast

@@ -193,11 +193,66 @@
             fill: #f1f5f9 !important;
         }
 
-        /* Nodos Seleccionados */
+        /* ==========================================================================
+           ESTILOS DE SELECCIÓN DE CELDAS / NODOS (ALTO CONTRASTE Y RESALTADO)
+           ========================================================================== */
         .flow-node.node-selected {
-            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.5), 0 20px 35px -5px rgba(59, 130, 246, 0.3) !important;
-            border-color: #3b82f6 !important;
-            z-index: 25 !important;
+            outline: 3px solid #38bdf8 !important;
+            outline-offset: 3px !important;
+            border-color: #38bdf8 !important;
+            z-index: 30 !important;
+            transform: scale(1.02);
+            transition: transform 0.15s ease, outline 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        /* En modo claro */
+        html:not(.dark) .flow-node.node-selected {
+            outline-color: #2563eb !important;
+            border-color: #2563eb !important;
+            background-color: #eff6ff !important;
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.25), 0 15px 35px -5px rgba(37, 99, 235, 0.4) !important;
+        }
+
+        /* En modo oscuro */
+        html.dark .flow-node.node-selected {
+            outline-color: #38bdf8 !important;
+            border-color: #38bdf8 !important;
+            background-color: #112239 !important;
+            box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.35), 0 0 35px 5px rgba(56, 189, 248, 0.45) !important;
+        }
+
+        /* Badge indicador de selección activa en la esquina superior derecha */
+        .flow-node.node-selected::after {
+            content: '✓';
+            position: absolute;
+            top: -9px;
+            right: -9px;
+            width: 22px;
+            height: 22px;
+            background-color: #38bdf8;
+            color: #04101e;
+            font-size: 12px;
+            font-weight: 900;
+            border-radius: 9999px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+            border: 2px solid #ffffff;
+            z-index: 40;
+            pointer-events: none;
+            animation: pulse-badge 1.8s infinite;
+        }
+
+        html:not(.dark) .flow-node.node-selected::after {
+            background-color: #2563eb;
+            color: #ffffff;
+            border-color: #ffffff;
+        }
+
+        @keyframes pulse-badge {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.12); }
         }
 
         /* Recuadro de Selección Múltiple (Marquee) */
@@ -375,14 +430,14 @@
                 <button id="btn-print" class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors flex items-center justify-center cursor-pointer" title="Imprimir / Guardar como PDF (Ctrl+P)">
                     <span class="material-symbols-outlined text-[19px]">print</span>
                 </button>
+                <button id="btn-export-png" class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors flex items-center justify-center cursor-pointer" title="Descargar como Imagen PNG">
+                    <span class="material-symbols-outlined text-[19px]">image</span>
+                </button>
                 <button id="btn-export-json" class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors flex items-center justify-center cursor-pointer" title="Exportar Diagrama a JSON">
                     <span class="material-symbols-outlined text-[19px]">download</span>
                 </button>
                 <button id="btn-import-json" class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors flex items-center justify-center cursor-pointer" title="Importar Diagrama desde JSON">
                     <span class="material-symbols-outlined text-[19px]">upload</span>
-                </button>
-                <button id="btn-reset-diagram" class="p-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 transition-colors flex items-center justify-center cursor-pointer" title="Restablecer plantilla de ejemplo">
-                    <span class="material-symbols-outlined text-[19px]">restart_alt</span>
                 </button>
                 <input type="file" id="import-file-input" accept=".json" class="hidden" />
             </div>
