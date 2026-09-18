@@ -4,7 +4,7 @@ import { state } from './state.js';
 import { FlowchartRenderer } from './renderer.js';
 import { FlowchartUI } from './ui.js';
 
-document.addEventListener('DOMContentLoaded', () => {
+function initFlujos() {
   const container = document.getElementById('canvas-container');
   const svg = document.getElementById('canvas-svg');
   const nodesContainer = document.getElementById('canvas-nodes-layer');
@@ -27,9 +27,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Render inicial
   renderer.render();
-  setTimeout(() => {
+  requestAnimationFrame(() => {
     renderer.fitView();
-  }, 100);
+    setTimeout(() => {
+      renderer.fitView();
+    }, 200);
+  });
 
   // Atajos de teclado
   window.addEventListener('keydown', (e) => {
@@ -84,4 +87,10 @@ document.addEventListener('DOMContentLoaded', () => {
   window.addEventListener('resize', () => {
     renderer.applyTransform();
   });
-});
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initFlujos);
+} else {
+  initFlujos();
+}

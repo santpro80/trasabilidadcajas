@@ -145,7 +145,7 @@ class FlowchartState {
       onSnapshot(this.cloudDocRef, (snap) => {
         if (snap.exists()) {
           const remote = snap.data();
-          if (remote && remote.data) {
+          if (remote && remote.data && remote.data.workspaces && remote.data.workspaces.root) {
             const remoteStr = JSON.stringify(remote.data);
             const localStr = JSON.stringify(this.data);
             if (remoteStr !== localStr) {
@@ -156,6 +156,9 @@ class FlowchartState {
               this.notify('cloud_sync');
               this.isRemoteUpdate = false;
             }
+            this.setSyncStatus('synced');
+          } else {
+            this.saveToCloud(true);
             this.setSyncStatus('synced');
           }
         } else {
@@ -221,12 +224,18 @@ class FlowchartState {
 
   // Workspace actual
   getCurrentWorkspace() {
-    const wsId = this.data.currentWorkspaceId;
+    if (!this.data || !this.data.workspaces) {
+      this.data = JSON.parse(JSON.stringify(DEFAULT_INITIAL_DATA));
+    }
+    const wsId = this.data.currentWorkspaceId || 'root';
     if (!this.data.workspaces[wsId]) {
       this.data.currentWorkspaceId = 'root';
       this.rebuildBreadcrumbs();
     }
-    return this.data.workspaces[this.data.currentWorkspaceId];
+    const ws = this.data.workspaces[this.data.currentWorkspaceId];
+    if (!ws.nodes) ws.nodes = [];
+    if (!ws.edges) ws.edges = [];
+    return ws;
   }
 
   getBreadcrumbs() {

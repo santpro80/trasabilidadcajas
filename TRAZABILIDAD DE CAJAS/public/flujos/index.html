@@ -20,12 +20,36 @@
     <link rel="stylesheet" href="../css/dark-theme.css">
 
     <style>
+        html, body {
+            height: 100% !important;
+            height: 100vh !important;
+            height: 100dvh !important;
+            min-height: 100% !important;
+            min-height: 100vh !important;
+            min-height: 100dvh !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            overflow: hidden !important;
+            width: 100% !important;
+        }
+
         body {
             font-family: 'Public Sans', sans-serif;
             opacity: 0;
             animation: fadeIn 0.3s ease forwards;
             overflow: hidden;
             user-select: none;
+            display: flex !important;
+            flex-direction: column !important;
+        }
+
+        #canvas-container {
+            flex: 1 1 0% !important;
+            height: 100% !important;
+            width: 100% !important;
+            position: relative !important;
+            overflow: hidden !important;
+            min-height: 0 !important;
         }
 
         @keyframes fadeIn {
@@ -380,7 +404,7 @@
     </style>
 </head>
 
-<body class="bg-slate-50 dark:bg-[#0a0f16] text-slate-900 dark:text-[#f1f5f9] antialiased min-h-[100dvh] h-[100dvh] flex flex-col transition-colors duration-300 overflow-hidden">
+<body class="bg-slate-50 dark:bg-[#0a0f16] text-slate-900 dark:text-[#f1f5f9] antialiased min-h-screen h-screen flex flex-col transition-colors duration-300 overflow-hidden" style="height: 100dvh; min-height: 100dvh; width: 100%; display: flex; flex-direction: column;">
 
     <!-- Top Navigation Bar -->
     <header class="h-14 sm:h-16 flujos-header px-2 sm:px-4 lg:px-6 flex items-center justify-between gap-2 shrink-0 z-30 shadow-sm relative">
@@ -488,7 +512,7 @@
     </header>
 
     <!-- Main Canvas Viewport (Infinite Sandbox) -->
-    <main class="flex-1 relative overflow-hidden canvas-bg-grid" id="canvas-container" style="touch-action: none;">
+    <main class="flex-1 relative overflow-hidden canvas-bg-grid" id="canvas-container" style="flex: 1 1 0%; height: 100%; width: 100%; min-height: 0; position: relative; overflow: hidden; touch-action: none;">
         
         <!-- Membrete exclusivo para Impresión / PDF -->
         <div id="print-banner" class="hidden print:flex print-banner">

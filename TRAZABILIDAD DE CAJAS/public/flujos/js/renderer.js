@@ -637,7 +637,7 @@ export class FlowchartRenderer {
       group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
       group.id = 'canvas-edges-group';
       const mainGroup = this.svg.querySelector('#canvas-transform-group');
-      if (mainGroup) mainGroup.insertBefore(group, this.tempEdgePath);
+      if (mainGroup) mainGroup.appendChild(group);
       else this.svg.appendChild(group);
     }
     group.innerHTML = '';
@@ -823,15 +823,18 @@ export class FlowchartRenderer {
     });
 
     const rect = this.container.getBoundingClientRect();
-    const diagramWidth = maxX - minX + 160;
-    const diagramHeight = maxY - minY + 160;
+    const width = (rect && rect.width > 50) ? rect.width : (window.innerWidth || 360);
+    const height = (rect && rect.height > 50) ? rect.height : ((window.innerHeight || 640) - 60);
 
-    const zoomX = rect.width / diagramWidth;
-    const zoomY = rect.height / diagramHeight;
-    const newZoom = Math.min(Math.max(Math.min(zoomX, zoomY), 0.5), 1.3);
+    const diagramWidth = Math.max(maxX - minX + 160, 100);
+    const diagramHeight = Math.max(maxY - minY + 160, 100);
 
-    const panX = (rect.width - (maxX + minX) * newZoom) / 2;
-    const panY = (rect.height - (maxY + minY) * newZoom) / 2;
+    const zoomX = width / diagramWidth;
+    const zoomY = height / diagramHeight;
+    const newZoom = Math.min(Math.max(Math.min(zoomX, zoomY), 0.35), 1.2);
+
+    const panX = (width - (maxX + minX) * newZoom) / 2;
+    const panY = (height - (maxY + minY) * newZoom) / 2;
 
     state.setPan(panX, panY);
     state.setZoom(newZoom);
