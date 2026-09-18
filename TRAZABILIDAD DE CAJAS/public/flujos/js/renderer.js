@@ -32,6 +32,13 @@ export class FlowchartRenderer {
 
     this.selectedNodeIds = new Set();
 
+    // Gestos táctiles multitáctiles (Pinch-to-zoom en celulares)
+    this.activePointers = new Map();
+    this.isPinching = false;
+    this.initialPinchDistance = null;
+    this.initialPinchZoom = 1;
+    this.initialPinchCenter = { x: 0, y: 0 };
+
     this.setupViewportEvents();
     this.setupDefs();
   }
@@ -75,7 +82,7 @@ export class FlowchartRenderer {
   }
 
   setupViewportEvents() {
-    // Zoom con rueda centrado en el cursor
+    // Zoom con rueda centrado en el cursor (Desktop)
     this.container.addEventListener('wheel', (e) => {
       e.preventDefault();
       const ws = state.getCurrentWorkspace();
@@ -97,17 +104,38 @@ export class FlowchartRenderer {
       this.applyTransform();
     }, { passive: false });
 
-    // Pan o Selección con clic sobre fondo
+    // Pan o Selección con clic / toque sobre fondo
     this.container.addEventListener('pointerdown', (e) => {
+      this.activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+      // Si hay 2 dedos en pantalla -> Iniciar gesto Pinch-to-Zoom (móvil)
+      if (this.activePointers.size === 2) {
+        this.isPinching = true;
+        this.isPanning = false;
+        this.isDraggingNode = false;
+        this.isMarqueeSelecting = false;
+        const pts = Array.from(this.activePointers.values());
+        this.initialPinchDistance = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
+        const ws = state.getCurrentWorkspace();
+        this.initialPinchZoom = ws.zoom || 1;
+        this.initialPinchCenter = {
+          x: (pts[0].x + pts[1].x) / 2,
+          y: (pts[0].y + pts[1].y) / 2
+        };
+        return;
+      }
+
+      if (this.isPinching) return;
+
       // Si se hizo clic sobre un nodo, puerto o control flotante, no intervenir
       if (e.target.closest('.flow-node') || e.target.closest('.flow-port') || e.target.closest('.flow-edge-action') || e.target.closest('.glass-panel')) {
         return;
       }
 
-      if (e.button === 0 || e.button === 1) { // Botón izquierdo o central
-        const wantsSelect = (this.interactionMode === 'select' || e.shiftKey) && e.button === 0;
+      if (e.button === 0 || e.button === 1 || e.pointerType === 'touch') {
+        const wantsSelect = (this.interactionMode === 'select' || e.shiftKey) && (e.button === 0 || e.pointerType === 'touch');
 
-        if (wantsSelect) {
+        if (wantsSelect && this.interactionMode === 'select') {
           this.isMarqueeSelecting = true;
           this.marqueeStartScreen = { x: e.clientX, y: e.clientY };
           this.marqueeStartCanvas = this.screenToCanvas(e.clientX, e.clientY);
@@ -130,6 +158,36 @@ export class FlowchartRenderer {
     });
 
     window.addEventListener('pointermove', (e) => {
+      if (this.activePointers.has(e.pointerId)) {
+        this.activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      }
+
+      // Gestos de Pinch-to-zoom con dos dedos (Celulares)
+      if (this.isPinching && this.activePointers.size === 2) {
+        const pts = Array.from(this.activePointers.values());
+        const currentDist = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
+        if (this.initialPinchDistance > 10) {
+          const ratio = currentDist / this.initialPinchDistance;
+          const newZoom = Math.min(Math.max(0.25, this.initialPinchZoom * ratio), 2.5);
+
+          const rect = this.container.getBoundingClientRect();
+          const centerX = this.initialPinchCenter.x - rect.left;
+          const centerY = this.initialPinchCenter.y - rect.top;
+
+          const ws = state.getCurrentWorkspace();
+          const pan = ws.pan || { x: 0, y: 0 };
+          const currentZoom = ws.zoom || 1;
+
+          pan.x = centerX - (centerX - pan.x) * (newZoom / currentZoom);
+          pan.y = centerY - (centerY - pan.y) * (newZoom / currentZoom);
+
+          state.setPan(pan.x, pan.y);
+          state.setZoom(newZoom);
+          this.applyTransform();
+        }
+        return;
+      }
+
       // 0. Recuadro de Selección Múltiple (Marquee)
       if (this.isMarqueeSelecting) {
         const box = document.getElementById('marquee-selection-box');
@@ -159,7 +217,7 @@ export class FlowchartRenderer {
               node.x < cMaxX &&
               node.x + 240 > cMinX &&
               node.y < cMaxY &&
-              node.y + 110 > cMinY
+              node.y + 130 > cMinY
             );
             if (overlaps) {
               this.selectedNodeIds.add(node.id);
@@ -223,7 +281,12 @@ export class FlowchartRenderer {
       }
     });
 
-    window.addEventListener('pointerup', (e) => {
+    const onPointerEnd = (e) => {
+      this.activePointers.delete(e.pointerId);
+      if (this.activePointers.size < 2) {
+        this.isPinching = false;
+      }
+
       if (this.isMarqueeSelecting) {
         this.isMarqueeSelecting = false;
         const box = document.getElementById('marquee-selection-box');
@@ -247,7 +310,10 @@ export class FlowchartRenderer {
         this.isConnecting = false;
         this.tempEdgePath.setAttribute('class', 'opacity-0 pointer-events-none');
       }
-    });
+    };
+
+    window.addEventListener('pointerup', onPointerEnd);
+    window.addEventListener('pointercancel', onPointerEnd);
   }
 
   // Aplicar transformación pan/zoom al contenedor de nodos y al SVG
@@ -337,6 +403,9 @@ export class FlowchartRenderer {
           <h4 class="node-title text-xs font-black uppercase tracking-wider text-slate-800 dark:text-white truncate flex-1" title="${node.title}">
             ${node.title || 'Sin Título'}
           </h4>
+          <button type="button" class="btn-node-edit size-7 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700/60 text-slate-400 hover:text-blue-500 transition-colors flex items-center justify-center cursor-pointer shrink-0" title="Editar bloque">
+            <span class="material-symbols-outlined text-[15px]">edit</span>
+          </button>
         </div>
 
         <p class="node-text text-[11px] font-medium text-slate-600 dark:text-slate-300 leading-snug line-clamp-3">
@@ -347,12 +416,27 @@ export class FlowchartRenderer {
       </div>
     `;
 
+    // Click en botón de editar (para celular y desktop)
+    el.querySelector('.btn-node-edit')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      window.dispatchEvent(new CustomEvent('open-edit-node-modal', { detail: { nodeId: node.id } }));
+    });
+
+    // Click en sub-diagrama (para celular y desktop)
+    el.querySelector('.sub-workspace-hint')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const ok = state.enterSubWorkspace(node.id);
+      if (ok) {
+        window.dispatchEvent(new CustomEvent('workspace-navigated', { detail: { workspaceId: node.childWorkspaceId } }));
+      }
+    });
+
     // Interacción Drag del Nodo
     el.addEventListener('pointerdown', (e) => {
-      // Ignorar si se hace click en puertos
-      if (e.target.closest('.flow-port')) return;
+      // Ignorar si se hace click en puertos o botones
+      if (e.target.closest('.flow-port') || e.target.closest('.btn-node-edit') || e.target.closest('.sub-workspace-hint')) return;
 
-      if (e.button === 0) { // Clic izquierdo
+      if (e.button === 0 || e.pointerType === 'touch') { // Clic izquierdo o toque móvil
         if (e.shiftKey) {
           this.toggleSelectNode(node.id);
         } else if (!this.isNodeSelected(node.id)) {

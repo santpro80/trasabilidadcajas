@@ -16,6 +16,8 @@ export class FlowchartUI {
     this.setupToolbar();
     this.setupEditModal();
     this.setupModeSwitcher();
+    this.setupCloudSyncBadge();
+    this.setupMobileControls();
   }
 
   // 1. Breadcrumbs de Navegación Multinivel
@@ -25,8 +27,11 @@ export class FlowchartUI {
 
     this.renderBreadcrumbs();
     state.subscribe((type) => {
-      if (type === 'navigate' || type === 'import' || type === 'reset' || type === 'update_node') {
+      if (type === 'navigate' || type === 'import' || type === 'reset' || type === 'update_node' || type === 'cloud_sync') {
         this.renderBreadcrumbs();
+      }
+      if (type === 'cloud_sync') {
+        this.renderer.render();
       }
     });
 
@@ -411,9 +416,10 @@ export class FlowchartUI {
     });
 
     // Guardar / Exportar / Importar / Imprimir
-    document.getElementById('btn-save')?.addEventListener('click', () => {
+    document.getElementById('btn-save')?.addEventListener('click', async () => {
       state.saveToStorage();
-      this.showToast('Diagrama guardado en memoria');
+      await state.saveToCloud(true);
+      this.showToast('Diagrama guardado y sincronizado en la nube');
     });
 
     document.getElementById('btn-print')?.addEventListener('click', () => {
@@ -528,6 +534,99 @@ export class FlowchartUI {
     btnSelect?.addEventListener('click', () => {
       this.renderer.setInteractionMode('select');
       this.showToast('Modo Selección: Arrastra para recuadro');
+    });
+  }
+
+  // 4.1 Sincronización en la Nube (Badge en Header)
+  setupCloudSyncBadge() {
+    const badge = document.getElementById('cloud-sync-badge');
+    if (!badge) return;
+
+    state.onSyncStatusChange((status) => {
+      badge.className = 'flex items-center gap-1.5 px-2 sm:px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border transition-all';
+      if (status === 'saving' || status === 'syncing') {
+        badge.classList.add('bg-amber-500/10', 'text-amber-600', 'dark:text-amber-400', 'border-amber-500/20');
+        badge.innerHTML = `<span class="size-2 rounded-full bg-amber-500 animate-ping"></span><span id="cloud-sync-text" class="hidden sm:inline">Guardando...</span>`;
+      } else if (status === 'synced') {
+        badge.classList.add('bg-emerald-500/10', 'text-emerald-600', 'dark:text-emerald-400', 'border-emerald-500/20');
+        badge.innerHTML = `<span class="size-2 rounded-full bg-emerald-500 animate-pulse"></span><span id="cloud-sync-text" class="hidden sm:inline">En la nube</span>`;
+      } else if (status === 'error') {
+        badge.classList.add('bg-rose-500/10', 'text-rose-600', 'dark:text-rose-400', 'border-rose-500/20');
+        badge.innerHTML = `<span class="size-2 rounded-full bg-rose-500"></span><span id="cloud-sync-text" class="hidden sm:inline">Error de sincronización</span>`;
+      }
+    });
+  }
+
+  // 4.2 Controles Móviles (Botón Agregar y Menú Más Opciones)
+  setupMobileControls() {
+    const btnMobileAdd = document.getElementById('btn-mobile-add');
+    const modalMobileAdd = document.getElementById('modal-mobile-add-node');
+    const btnCloseMobileAdd = document.getElementById('btn-close-mobile-add');
+
+    btnMobileAdd?.addEventListener('click', () => {
+      modalMobileAdd?.classList.remove('hidden');
+      modalMobileAdd?.classList.add('flex');
+    });
+
+    btnCloseMobileAdd?.addEventListener('click', () => {
+      modalMobileAdd?.classList.add('hidden');
+      modalMobileAdd?.classList.remove('flex');
+    });
+
+    modalMobileAdd?.addEventListener('click', (e) => {
+      if (e.target === modalMobileAdd) {
+        modalMobileAdd.classList.add('hidden');
+        modalMobileAdd.classList.remove('flex');
+      }
+    });
+
+    // Cerrar bottom sheet al pulsar cualquiera de los tipos de nodo
+    modalMobileAdd?.querySelectorAll('[data-quick-add]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        modalMobileAdd.classList.add('hidden');
+        modalMobileAdd.classList.remove('flex');
+      });
+    });
+
+    // Menú desplegable móvil (⋮)
+    const btnMobileMore = document.getElementById('btn-mobile-more');
+    const mobileMoreMenu = document.getElementById('mobile-more-menu');
+
+    btnMobileMore?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      mobileMoreMenu?.classList.toggle('hidden');
+      mobileMoreMenu?.classList.toggle('flex');
+    });
+
+    window.addEventListener('click', (e) => {
+      if (!e.target.closest('#btn-mobile-more') && !e.target.closest('#mobile-more-menu')) {
+        mobileMoreMenu?.classList.add('hidden');
+        mobileMoreMenu?.classList.remove('flex');
+      }
+    });
+
+    document.getElementById('btn-mobile-print')?.addEventListener('click', () => {
+      mobileMoreMenu?.classList.add('hidden');
+      mobileMoreMenu?.classList.remove('flex');
+      this.handlePrint();
+    });
+
+    document.getElementById('btn-mobile-export-png')?.addEventListener('click', () => {
+      mobileMoreMenu?.classList.add('hidden');
+      mobileMoreMenu?.classList.remove('flex');
+      this.handleExportPNG();
+    });
+
+    document.getElementById('btn-mobile-export-json')?.addEventListener('click', () => {
+      mobileMoreMenu?.classList.add('hidden');
+      mobileMoreMenu?.classList.remove('flex');
+      document.getElementById('btn-export-json')?.click();
+    });
+
+    document.getElementById('btn-mobile-import-json')?.addEventListener('click', () => {
+      mobileMoreMenu?.classList.add('hidden');
+      mobileMoreMenu?.classList.remove('flex');
+      document.getElementById('btn-import-json')?.click();
     });
   }
 

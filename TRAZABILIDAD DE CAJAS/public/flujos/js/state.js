@@ -1,4 +1,6 @@
-// state.js - Modelo de Estado Jerárquico para Flujos Sandbox
+// state.js - Modelo de Estado Jerárquico para Flujos Sandbox con Sincronización en la Nube (Firestore)
+
+import { db, doc, setDoc, onSnapshot } from '../../supervisor/js/firebase-config.js';
 
 const STORAGE_KEY = 'flujos_sandbox_data_v1';
 
@@ -113,6 +115,92 @@ class FlowchartState {
   constructor() {
     this.data = this.loadFromStorage() || JSON.parse(JSON.stringify(DEFAULT_INITIAL_DATA));
     this.listeners = new Set();
+    this.syncStatusListeners = new Set();
+    this.cloudSyncStatus = 'syncing'; // 'syncing' | 'synced' | 'saving' | 'offline' | 'error'
+    this.cloudDocRef = null;
+    this.isRemoteUpdate = false;
+    this.cloudSaveTimer = null;
+
+    this.initCloud();
+  }
+
+  onSyncStatusChange(callback) {
+    this.syncStatusListeners.add(callback);
+    callback(this.cloudSyncStatus);
+    return () => this.syncStatusListeners.delete(callback);
+  }
+
+  setSyncStatus(status) {
+    this.cloudSyncStatus = status;
+    for (const cb of this.syncStatusListeners) {
+      cb(status);
+    }
+  }
+
+  initCloud() {
+    try {
+      this.cloudDocRef = doc(db, 'flujos_sandbox', 'diagrama_principal');
+      this.setSyncStatus('syncing');
+
+      onSnapshot(this.cloudDocRef, (snap) => {
+        if (snap.exists()) {
+          const remote = snap.data();
+          if (remote && remote.data) {
+            const remoteStr = JSON.stringify(remote.data);
+            const localStr = JSON.stringify(this.data);
+            if (remoteStr !== localStr) {
+              this.isRemoteUpdate = true;
+              this.data = remote.data;
+              this.saveToStorage();
+              this.rebuildBreadcrumbs();
+              this.notify('cloud_sync');
+              this.isRemoteUpdate = false;
+            }
+            this.setSyncStatus('synced');
+          }
+        } else {
+          // Documento inicial en Firestore
+          this.saveToCloud(true);
+        }
+      }, (err) => {
+        console.warn('Error en conexión con Firestore en flujos:', err);
+        this.setSyncStatus('offline');
+      });
+    } catch (e) {
+      console.warn('Firebase no disponible para Flujos:', e);
+      this.setSyncStatus('offline');
+    }
+  }
+
+  async saveToCloud(immediate = false) {
+    if (!this.cloudDocRef || this.isRemoteUpdate) return;
+
+    if (this.cloudSaveTimer) {
+      clearTimeout(this.cloudSaveTimer);
+      this.cloudSaveTimer = null;
+    }
+
+    const doSave = async () => {
+      try {
+        this.setSyncStatus('saving');
+        const user = localStorage.getItem('userName') || 'Usuario';
+        await setDoc(this.cloudDocRef, {
+          data: this.data,
+          updatedAt: Date.now(),
+          updatedBy: user
+        }, { merge: true });
+        this.setSyncStatus('synced');
+      } catch (err) {
+        console.error('Error guardando en Firestore:', err);
+        this.setSyncStatus('error');
+      }
+    };
+
+    if (immediate) {
+      await doSave();
+    } else {
+      this.cloudSaveTimer = setTimeout(doSave, 800);
+    }
   }
 
   // Suscripción a cambios
@@ -123,6 +211,9 @@ class FlowchartState {
 
   notify(changeType = 'update') {
     this.saveToStorage();
+    if (changeType !== 'cloud_sync') {
+      this.saveToCloud(false);
+    }
     for (const listener of this.listeners) {
       listener(changeType, this);
     }
