@@ -259,10 +259,10 @@ export const FLOW_SHAPES = {
     width: 220,
     height: 120,
     ports: {
-      left: (w, h) => ({ x: w * 0.25, y: h / 2 }),
-      right: (w, h) => ({ x: w * 0.75, y: h / 2 }),
-      top: (w, h) => ({ x: w / 2, y: 0 }),
-      bottom: (w, h) => ({ x: w / 2, y: h })
+      left: (w, h) => ({ x: 6, y: 8 }),
+      right: (w, h) => ({ x: w - 6, y: 8 }),
+      top: (w, h) => ({ x: w / 2, y: 2 }),
+      bottom: (w, h) => ({ x: w / 2, y: h - 4 })
     },
     renderSvg: (w, h) => `
       <polygon points="4,4 ${w - 4},4 ${w / 2},${h - 4}" class="shape-fill" stroke-width="2.5" />

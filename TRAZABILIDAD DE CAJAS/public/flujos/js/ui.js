@@ -599,27 +599,9 @@ export class FlowchartUI {
     const titleInput = document.getElementById('edit-node-title');
     const textInput = document.getElementById('edit-node-text');
 
-    const shape = node.shape || (node.type === 'decision' ? 'decision' : node.type === 'note' ? 'comment' : node.type === 'warning' ? 'preparation' : (node.type || 'process'));
-    const shapeCfg = getShapeConfig(shape);
-    const colorCfg = getColorConfig(shapeCfg.color);
-
     if (idInput) idInput.value = node.id;
     if (titleInput) titleInput.value = node.title || '';
     if (textInput) textInput.value = node.text || '';
-
-    // Actualizar badge visual de la forma geométrica fija
-    const iconEl = document.getElementById('edit-node-shape-icon');
-    const iconWrapper = document.getElementById('edit-node-shape-icon-wrapper');
-    const nameEl = document.getElementById('edit-node-shape-name');
-    const catEl = document.getElementById('edit-node-shape-category');
-
-    if (iconEl) iconEl.textContent = shapeCfg.icon || 'crop_landscape';
-    if (iconWrapper) {
-      iconWrapper.style.backgroundColor = `${colorCfg.hex}22`;
-      iconWrapper.style.color = colorCfg.hex;
-    }
-    if (nameEl) nameEl.textContent = shapeCfg.name;
-    if (catEl) catEl.textContent = shapeCfg.category || 'Estándar';
 
     modal?.classList.remove('hidden');
     modal?.classList.add('flex');

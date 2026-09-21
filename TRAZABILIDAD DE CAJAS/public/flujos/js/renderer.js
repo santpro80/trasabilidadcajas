@@ -465,22 +465,14 @@ export class FlowchartRenderer {
     const pRight = shapeCfg.ports.right(w, h);
     const pBottom = shapeCfg.ports.bottom ? shapeCfg.ports.bottom(w, h) : null;
 
-    // Padding según geometría
-    let paddingClass = 'p-3.5';
-    if (shapeCfg.id === 'decision') {
-      paddingClass = 'px-9 py-4';
-    } else if (shapeCfg.id === 'circle') {
-      paddingClass = 'p-3';
-    } else if (shapeCfg.id === 'data' || shapeCfg.id === 'manual_op') {
-      paddingClass = 'px-8 py-3';
-    } else if (shapeCfg.id === 'terminal') {
-      paddingClass = 'px-7 py-3';
-    } else if (shapeCfg.id === 'document') {
-      paddingClass = 'px-4 pt-3 pb-6';
-    } else if (shapeCfg.id === 'database') {
-      paddingClass = 'px-4 pt-6 pb-3';
-    } else if (shapeCfg.id === 'storage') {
-      paddingClass = 'px-8 pt-3 pb-8';
+    // Padding según geometría para formas rectangulares
+    let paddingClass = 'px-4 py-3';
+    if (shapeCfg.id === 'data' || shapeCfg.id === 'manual_op') {
+      paddingClass = 'px-9 py-3';
+    } else if (shapeCfg.id === 'delay') {
+      paddingClass = 'pl-5 pr-11 py-3';
+    } else if (shapeCfg.id === 'comment') {
+      paddingClass = 'pl-6 pr-4 py-3';
     }
 
     const svgBackground = `
@@ -491,10 +483,11 @@ export class FlowchartRenderer {
       </svg>
     `;
 
-    // Renderizado específico según la geometría para que el texto nunca sobresalga
+    // Renderizado específico según la geometría para que el contenido quede perfectamente enmarcado
     let bodyHtml = '';
+
     if (shapeCfg.id === 'decision') {
-      // En el rombo el área más ancha es el centro horizontal/vertical
+      // 1. Rombo / Decisión: Centrado en el punto medio del rombo
       bodyHtml = `
         <div class="relative z-10 w-full h-full flex flex-col items-center justify-center text-center px-10 py-2 select-none">
           <div class="flex items-center justify-center gap-1.5 mb-1">
@@ -515,7 +508,7 @@ export class FlowchartRenderer {
         </div>
       `;
     } else if (shapeCfg.id === 'circle') {
-      // En el conector circular centramos el contenido
+      // 2. Círculo / Conector: Centrado concéntrico
       bodyHtml = `
         <div class="relative z-10 w-full h-full flex flex-col items-center justify-center text-center px-3 py-2 select-none">
           <div class="flex items-center justify-center gap-1 mb-0.5">
@@ -535,21 +528,128 @@ export class FlowchartRenderer {
           ${subFlujoBadge}
         </div>
       `;
-    } else if (shapeCfg.id === 'storage') {
-      // En el triángulo invertido el área ancha está arriba
+    } else if (shapeCfg.id === 'terminal') {
+      // 3. Terminal / Inicio-Fin (Cápsula): Centrado en la sección central de la cápsula
       bodyHtml = `
-        <div class="relative z-10 w-full h-full flex flex-col items-center text-center px-6 pt-3 pb-8 select-none">
+        <div class="relative z-10 w-full h-full flex flex-col items-center justify-center text-center px-12 py-2 select-none">
           <div class="flex items-center justify-center gap-1.5 mb-1">
             <span class="material-symbols-outlined text-[15px]" style="color: ${colorCfg.hex};">${icon}</span>
             <button type="button" class="btn-node-edit size-5 rounded hover:bg-slate-200/70 dark:hover:bg-slate-700/70 text-slate-400 hover:text-blue-500 transition-colors flex items-center justify-center cursor-pointer" title="Editar bloque">
               <span class="material-symbols-outlined text-[12px]">edit</span>
             </button>
           </div>
-          <h4 class="node-title text-[11px] font-black uppercase tracking-wider text-slate-800 dark:text-white line-clamp-2 max-w-[140px] leading-tight" title="${node.title}">
-            ${node.title || 'Almacén'}
+          <h4 class="node-title text-[11px] font-black uppercase tracking-wider text-slate-800 dark:text-white line-clamp-2 max-w-[135px] leading-tight" title="${node.title}">
+            ${node.title || 'Inicio / Fin'}
           </h4>
           ${node.text ? `
-            <p class="node-text text-[9.5px] font-medium text-slate-600 dark:text-slate-300 leading-tight line-clamp-2 max-w-[110px] mt-0.5">
+            <p class="node-text text-[9.5px] font-medium text-slate-600 dark:text-slate-300 leading-tight line-clamp-2 max-w-[125px] mt-0.5">
+              ${node.text}
+            </p>
+          ` : ''}
+          ${subFlujoBadge}
+        </div>
+      `;
+    } else if (shapeCfg.id === 'database') {
+      // 4. Base de Datos (Cilindro): Centrado en el cuerpo cilíndrico, protegido bajo la tapa elíptica
+      bodyHtml = `
+        <div class="relative z-10 w-full h-full flex flex-col items-center justify-center text-center pt-8 pb-3 px-6 select-none">
+          <div class="flex items-center justify-center gap-1.5 mb-1">
+            <span class="material-symbols-outlined text-[15px]" style="color: ${colorCfg.hex};">${icon}</span>
+            <button type="button" class="btn-node-edit size-5 rounded hover:bg-slate-200/70 dark:hover:bg-slate-700/70 text-slate-400 hover:text-blue-500 transition-colors flex items-center justify-center cursor-pointer" title="Editar bloque">
+              <span class="material-symbols-outlined text-[12px]">edit</span>
+            </button>
+          </div>
+          <h4 class="node-title text-[11px] font-black uppercase tracking-wider text-slate-800 dark:text-white line-clamp-2 max-w-[155px] leading-tight" title="${node.title}">
+            ${node.title || 'Base de Datos'}
+          </h4>
+          ${node.text ? `
+            <p class="node-text text-[9.5px] font-medium text-slate-600 dark:text-slate-300 leading-tight line-clamp-2 max-w-[145px] mt-0.5">
+              ${node.text}
+            </p>
+          ` : ''}
+          ${subFlujoBadge}
+        </div>
+      `;
+    } else if (shapeCfg.id === 'preparation') {
+      // 5. Preparación (Hexágono): Centrado entre los dos vértices laterales
+      bodyHtml = `
+        <div class="relative z-10 w-full h-full flex flex-col items-center justify-center text-center px-10 py-2 select-none">
+          <div class="flex items-center justify-center gap-1.5 mb-1">
+            <span class="material-symbols-outlined text-[15px]" style="color: ${colorCfg.hex};">${icon}</span>
+            <button type="button" class="btn-node-edit size-5 rounded hover:bg-slate-200/70 dark:hover:bg-slate-700/70 text-slate-400 hover:text-blue-500 transition-colors flex items-center justify-center cursor-pointer" title="Editar bloque">
+              <span class="material-symbols-outlined text-[12px]">edit</span>
+            </button>
+          </div>
+          <h4 class="node-title text-[11px] font-black uppercase tracking-wider text-slate-800 dark:text-white line-clamp-2 max-w-[155px] leading-tight" title="${node.title}">
+            ${node.title || 'Preparación'}
+          </h4>
+          ${node.text ? `
+            <p class="node-text text-[9.5px] font-medium text-slate-600 dark:text-slate-300 leading-tight line-clamp-2 max-w-[145px] mt-0.5">
+              ${node.text}
+            </p>
+          ` : ''}
+          ${subFlujoBadge}
+        </div>
+      `;
+    } else if (shapeCfg.id === 'display') {
+      // 6. Pantalla / Visualización: Centrado en el cuerpo de pantalla
+      bodyHtml = `
+        <div class="relative z-10 w-full h-full flex flex-col items-center justify-center text-center pl-10 pr-8 py-2 select-none">
+          <div class="flex items-center justify-center gap-1.5 mb-1">
+            <span class="material-symbols-outlined text-[15px]" style="color: ${colorCfg.hex};">${icon}</span>
+            <button type="button" class="btn-node-edit size-5 rounded hover:bg-slate-200/70 dark:hover:bg-slate-700/70 text-slate-400 hover:text-blue-500 transition-colors flex items-center justify-center cursor-pointer" title="Editar bloque">
+              <span class="material-symbols-outlined text-[12px]">edit</span>
+            </button>
+          </div>
+          <h4 class="node-title text-[11px] font-black uppercase tracking-wider text-slate-800 dark:text-white line-clamp-2 max-w-[150px] leading-tight" title="${node.title}">
+            ${node.title || 'Pantalla / Aviso'}
+          </h4>
+          ${node.text ? `
+            <p class="node-text text-[9.5px] font-medium text-slate-600 dark:text-slate-300 leading-tight line-clamp-2 max-w-[140px] mt-0.5">
+              ${node.text}
+            </p>
+          ` : ''}
+          ${subFlujoBadge}
+        </div>
+      `;
+    } else if (shapeCfg.id === 'storage') {
+      // 7. Almacenamiento (Triángulo Invertido): Centrado en la parte superior ancha
+      bodyHtml = `
+        <div class="relative z-10 w-full h-full flex flex-col items-center justify-start text-center pt-4 px-10 select-none">
+          <div class="flex items-center justify-center gap-1.5 mb-1">
+            <span class="material-symbols-outlined text-[15px]" style="color: ${colorCfg.hex};">${icon}</span>
+            <button type="button" class="btn-node-edit size-5 rounded hover:bg-slate-200/70 dark:hover:bg-slate-700/70 text-slate-400 hover:text-blue-500 transition-colors flex items-center justify-center cursor-pointer" title="Editar bloque">
+              <span class="material-symbols-outlined text-[12px]">edit</span>
+            </button>
+          </div>
+          <h4 class="node-title text-[10.5px] font-black uppercase tracking-wider text-slate-800 dark:text-white line-clamp-2 max-w-[125px] leading-tight" title="${node.title}">
+            ${node.title || 'Depósito / Almacén'}
+          </h4>
+          ${node.text ? `
+            <p class="node-text text-[9px] font-medium text-slate-600 dark:text-slate-300 leading-tight line-clamp-2 max-w-[110px] mt-0.5">
+              ${node.text}
+            </p>
+          ` : ''}
+          ${subFlujoBadge}
+        </div>
+      `;
+    } else if (shapeCfg.id === 'document' || shapeCfg.id === 'multidocument') {
+      // 8. Documentos: Centrado vertical con margen inferior para la onda SVG
+      bodyHtml = `
+        <div class="relative z-10 w-full h-full flex flex-col justify-center px-6 pt-2 pb-6 select-none">
+          <div class="flex items-center gap-2 mb-1">
+            <div class="size-6 rounded-md flex items-center justify-center shrink-0 shadow-xs" style="background-color: ${colorCfg.hex}22; color: ${colorCfg.hex};">
+              <span class="material-symbols-outlined text-[14px]">${icon}</span>
+            </div>
+            <h4 class="node-title text-xs font-black uppercase tracking-wider text-slate-800 dark:text-white line-clamp-2 flex-1 leading-snug" title="${node.title}">
+              ${node.title || 'Documento'}
+            </h4>
+            <button type="button" class="btn-node-edit size-6 rounded-md hover:bg-slate-200/70 dark:hover:bg-slate-700/70 text-slate-400 hover:text-blue-500 transition-colors flex items-center justify-center cursor-pointer shrink-0" title="Editar bloque">
+              <span class="material-symbols-outlined text-[14px]">edit</span>
+            </button>
+          </div>
+          ${node.text ? `
+            <p class="node-text text-[10.5px] font-medium text-slate-600 dark:text-slate-300 leading-snug line-clamp-2 mt-0.5">
               ${node.text}
             </p>
           ` : ''}
@@ -557,28 +657,26 @@ export class FlowchartRenderer {
         </div>
       `;
     } else {
-      // Bloques rectangulares / estándar
+      // 9. Formas Rectangulares, Paralelogramos y Otras: Centrado vertical dentro de su margen
       bodyHtml = `
-        <div class="relative z-10 w-full h-full flex flex-col justify-between ${paddingClass}">
-          <div>
-            <div class="flex items-center gap-1.5 mb-1">
-              <div class="size-6 rounded-md flex items-center justify-center shrink-0 shadow-xs" style="background-color: ${colorCfg.hex}22; color: ${colorCfg.hex};">
-                <span class="material-symbols-outlined text-[14px]">${icon}</span>
-              </div>
-              <h4 class="node-title text-xs font-black uppercase tracking-wider text-slate-800 dark:text-white truncate flex-1" title="${node.title}">
-                ${node.title || 'Sin Título'}
-              </h4>
-              <button type="button" class="btn-node-edit size-6 rounded-md hover:bg-slate-200/70 dark:hover:bg-slate-700/70 text-slate-400 hover:text-blue-500 transition-colors flex items-center justify-center cursor-pointer shrink-0" title="Editar bloque">
-                <span class="material-symbols-outlined text-[14px]">edit</span>
-              </button>
+        <div class="relative z-10 w-full h-full flex flex-col justify-center ${paddingClass} select-none">
+          <div class="flex items-center gap-2 mb-1">
+            <div class="size-6 rounded-md flex items-center justify-center shrink-0 shadow-xs" style="background-color: ${colorCfg.hex}22; color: ${colorCfg.hex};">
+              <span class="material-symbols-outlined text-[14px]">${icon}</span>
             </div>
-
-            ${node.text ? `
-              <p class="node-text text-[11px] font-medium text-slate-600 dark:text-slate-300 leading-snug line-clamp-2">
-                ${node.text}
-              </p>
-            ` : ''}
+            <h4 class="node-title text-xs font-black uppercase tracking-wider text-slate-800 dark:text-white line-clamp-2 flex-1 leading-snug" title="${node.title}">
+              ${node.title || 'Sin Título'}
+            </h4>
+            <button type="button" class="btn-node-edit size-6 rounded-md hover:bg-slate-200/70 dark:hover:bg-slate-700/70 text-slate-400 hover:text-blue-500 transition-colors flex items-center justify-center cursor-pointer shrink-0" title="Editar bloque">
+              <span class="material-symbols-outlined text-[14px]">edit</span>
+            </button>
           </div>
+
+          ${node.text ? `
+            <p class="node-text text-[10.5px] font-medium text-slate-600 dark:text-slate-300 leading-snug line-clamp-2 mt-0.5">
+              ${node.text}
+            </p>
+          ` : ''}
 
           ${subFlujoBadge}
         </div>
