@@ -769,38 +769,19 @@
 
             <div class="space-y-4">
                 <div>
-                    <label class="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1.5">Forma Geométrica Estándar</label>
-                    <select id="edit-node-shape" class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold text-slate-800 dark:text-white outline-none focus:border-blue-500 transition-colors">
-                        <optgroup label="Principales">
-                            <option value="process">Proceso (Rectángulo)</option>
-                            <option value="decision">Decisión (Rombo)</option>
-                            <option value="terminal">Terminal / Inicio-Fin (Cápsula)</option>
-                            <option value="subprocess">Proceso Predefinido / Sub-diagrama</option>
-                            <option value="circle">Conector / Operación (Círculo)</option>
-                        </optgroup>
-                        <optgroup label="Datos y Documentos">
-                            <option value="data">Datos / Entrada-Salida (Paralelogramo)</option>
-                            <option value="document">Documento (Base ondulada)</option>
-                            <option value="multidocument">Múltiples Documentos</option>
-                            <option value="database">Base de Datos (Cilindro)</option>
-                        </optgroup>
-                        <optgroup label="Especializados">
-                            <option value="manual_op">Operación Manual (Trapecio)</option>
-                            <option value="preparation">Preparación / Setup (Hexágono)</option>
-                            <option value="delay">Retraso / Espera (Forma de D)</option>
-                            <option value="storage">Almacenamiento (Triángulo)</option>
-                            <option value="display">Visualización / Display (Pantalla)</option>
-                            <option value="comment">Comentario / Anotación (Corchete)</option>
-                        </optgroup>
-                    </select>
-                </div>
-
-                <div>
-                    <label class="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1.5">Color de Forma</label>
-                    <div id="edit-node-colors-palette" class="flex items-center gap-2 flex-wrap py-1">
-                        <!-- Swatches de color inyectados dinámicamente -->
+                    <label class="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1.5">Tipo / Forma de Bloque</label>
+                    <div class="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                        <div class="flex items-center gap-3">
+                            <div id="edit-node-shape-icon-wrapper" class="size-8 rounded-lg flex items-center justify-center shrink-0">
+                                <span id="edit-node-shape-icon" class="material-symbols-outlined text-[18px]"></span>
+                            </div>
+                            <div>
+                                <div id="edit-node-shape-name" class="text-xs font-black uppercase tracking-wide text-slate-800 dark:text-white"></div>
+                                <div id="edit-node-shape-category" class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider"></div>
+                            </div>
+                        </div>
+                        <span class="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md bg-slate-200 dark:bg-slate-800 text-slate-500">Forma Fija</span>
                     </div>
-                    <input type="hidden" id="edit-node-color" value="" />
                 </div>
 
                 <div>

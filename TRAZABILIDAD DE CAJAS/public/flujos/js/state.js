@@ -312,7 +312,7 @@ class FlowchartState {
     const id = nodeData.id || ('node_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6));
     const shape = nodeData.shape || (nodeData.type === 'decision' ? 'decision' : nodeData.type === 'note' ? 'comment' : nodeData.type === 'warning' ? 'preparation' : (nodeData.type || 'process'));
     const shapeCfg = getShapeConfig(shape);
-    const color = nodeData.color || shapeCfg.color || '#3b82f6';
+    const color = shapeCfg.color || '#3b82f6';
 
     const newNode = {
       id,
@@ -335,8 +335,8 @@ class FlowchartState {
     const node = ws.nodes.find(n => n.id === id);
     if (!node) return null;
 
-    // Si cambia shape y no se especificó un nuevo color, adaptar al color predeterminado de la forma
-    if (props.shape && !props.color && props.shape !== node.shape) {
+    // Si cambia shape, el color se actualiza al color predeterminado de la nueva forma
+    if (props.shape && props.shape !== node.shape) {
       const cfg = getShapeConfig(props.shape);
       props.color = cfg.color;
     }
