@@ -116,6 +116,18 @@ class FlowchartState {
   constructor() {
     this.data = this.loadFromStorage() || JSON.parse(JSON.stringify(DEFAULT_INITIAL_DATA));
     this.applyLocalViewports();
+
+    // Si es pantalla grande de escritorio y el zoom guardado previamente quedó degradado (< 0.65) por sincronizaciones viejas, recuperar a 1.0 (100%)
+    if (typeof window !== 'undefined' && window.innerWidth >= 1024 && this.data && this.data.workspaces) {
+      for (const ws of Object.values(this.data.workspaces)) {
+        if (!ws.zoom || ws.zoom < 0.65) {
+          ws.zoom = 1;
+          ws.pan = { x: 120, y: 100 };
+        }
+      }
+      this.saveLocalViewports();
+    }
+
     this.listeners = new Set();
     this.syncStatusListeners = new Set();
     this.cloudSyncStatus = 'syncing'; // 'syncing' | 'synced' | 'saving' | 'offline' | 'error'
@@ -275,12 +287,20 @@ class FlowchartState {
               if (this.data && this.data.workspaces) {
                 for (const [wsId, ws] of Object.entries(this.data.workspaces)) {
                   localViewports[wsId] = {
-                    pan: ws.pan ? { ...ws.pan } : null,
-                    zoom: ws.zoom || null
+                    pan: ws.pan ? { ...ws.pan } : { x: 120, y: 100 },
+                    zoom: ws.zoom || 1
                   };
                 }
               }
               const localCurrentWsId = this.data?.currentWorkspaceId;
+
+              // Eliminar pan y zoom de remoteData para que nunca jamás contamine el cliente local
+              if (remoteData && remoteData.workspaces) {
+                for (const ws of Object.values(remoteData.workspaces)) {
+                  delete ws.pan;
+                  delete ws.zoom;
+                }
+              }
 
               this.data = remoteData;
 
@@ -288,8 +308,11 @@ class FlowchartState {
               if (this.data && this.data.workspaces) {
                 for (const [wsId, ws] of Object.entries(this.data.workspaces)) {
                   if (localViewports[wsId]) {
-                    if (localViewports[wsId].pan) ws.pan = localViewports[wsId].pan;
-                    if (localViewports[wsId].zoom) ws.zoom = localViewports[wsId].zoom;
+                    ws.pan = localViewports[wsId].pan;
+                    ws.zoom = localViewports[wsId].zoom;
+                  } else {
+                    ws.pan = { x: 120, y: 100 };
+                    ws.zoom = 1;
                   }
                 }
                 if (localCurrentWsId && this.data.workspaces[localCurrentWsId]) {
@@ -334,8 +357,18 @@ class FlowchartState {
       try {
         this.setSyncStatus('saving');
         const user = localStorage.getItem('userName') || 'Usuario';
+        
+        // Sanitizar datos para la nube: la cámara (pan y zoom) es 100% privada de cada pantalla y nunca se sube a Firestore
+        const cloudData = JSON.parse(JSON.stringify(this.data));
+        if (cloudData && cloudData.workspaces) {
+          for (const ws of Object.values(cloudData.workspaces)) {
+            delete ws.pan;
+            delete ws.zoom;
+          }
+        }
+
         await setDoc(this.cloudDocRef, {
-          data: this.data,
+          data: cloudData,
           updatedAt: Date.now(),
           updatedBy: user
         }, { merge: true });
@@ -645,6 +678,9 @@ class FlowchartState {
         if (local[id]) {
           if (local[id].pan) ws.pan = { ...local[id].pan };
           if (local[id].zoom) ws.zoom = local[id].zoom;
+        } else {
+          ws.pan = ws.pan || { x: 120, y: 100 };
+          ws.zoom = ws.zoom || 1;
         }
       }
     }

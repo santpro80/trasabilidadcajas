@@ -30,7 +30,9 @@ export class FlowchartUI {
         this.renderBreadcrumbs();
       }
       if (type === 'cloud_sync') {
-        this.renderer.render();
+        // En sincronización remota: actualizar solo nodos y cables sin tocar jamás la cámara/zoom del usuario local
+        this.renderer.renderNodes();
+        this.renderer.renderEdges();
       }
     });
 
