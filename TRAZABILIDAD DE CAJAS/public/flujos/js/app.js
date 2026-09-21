@@ -104,6 +104,7 @@ function initFlujos() {
       renderer.deselectEdge();
       renderer.cancelConnectingMode();
       ui.closeEditModal();
+      ui.closeEditEdgeModal();
       ui.hideContextMenus();
       ui.hidePortQuickPicker();
     }

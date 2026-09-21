@@ -572,6 +572,11 @@ class FlowchartState {
     return ws.nodes.find(n => n.id === id);
   }
 
+  getEdge(id) {
+    const ws = this.getCurrentWorkspace();
+    return ws.edges.find(e => e.id === id);
+  }
+
   // Operaciones con Conexiones / Aristas
   addEdge(fromId, toId, label = '', fromPort = 'right', toPort = 'left') {
     const ws = this.getCurrentWorkspace();

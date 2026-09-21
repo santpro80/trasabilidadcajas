@@ -14,6 +14,7 @@ export class FlowchartUI {
     this.setupPortQuickPicker();
     this.setupToolbar();
     this.setupEditModal();
+    this.setupEditEdgeModal();
     this.setupModeSwitcher();
     this.setupCloudSyncBadge();
     this.setupMobileControls();
@@ -298,11 +299,22 @@ export class FlowchartUI {
                 <span class="material-symbols-outlined text-[13px] text-slate-400 shrink-0">${dirIcon}</span>
                 <span class="truncate text-[11px] font-bold text-slate-700 dark:text-slate-200" title="${targetTitle}${labelText}">${targetTitle}${labelText}</span>
               </div>
-              <button type="button" class="btn-disconnect-edge shrink-0 px-2 py-1 rounded-lg bg-rose-500/15 hover:bg-rose-500 text-rose-600 hover:text-white dark:text-rose-400 text-[10px] font-black uppercase tracking-wider transition-colors flex items-center gap-0.5 cursor-pointer" title="Desvincular conexión">
-                <span class="material-symbols-outlined text-[12px]">link_off</span>
-                <span>Quitar</span>
-              </button>
+              <div class="flex items-center gap-1 shrink-0">
+                <button type="button" class="btn-edit-edge-label px-2 py-1 rounded-lg bg-blue-500/15 hover:bg-blue-500 text-blue-600 hover:text-white dark:text-blue-400 text-[10px] font-black uppercase tracking-wider transition-colors flex items-center gap-0.5 cursor-pointer" title="Editar condición / texto">
+                  <span class="material-symbols-outlined text-[12px]">edit</span>
+                  <span>Texto</span>
+                </button>
+                <button type="button" class="btn-disconnect-edge px-2 py-1 rounded-lg bg-rose-500/15 hover:bg-rose-500 text-rose-600 hover:text-white dark:text-rose-400 text-[10px] font-black uppercase tracking-wider transition-colors flex items-center gap-0.5 cursor-pointer" title="Desvincular conexión">
+                  <span class="material-symbols-outlined text-[12px]">link_off</span>
+                  <span>Quitar</span>
+                </button>
+              </div>
             `;
+            item.querySelector('.btn-edit-edge-label')?.addEventListener('click', (ev) => {
+              ev.stopPropagation();
+              this.hidePortQuickPicker();
+              this.openEditEdgeModal(edge.id);
+            });
             item.querySelector('.btn-disconnect-edge').addEventListener('click', (ev) => {
               ev.stopPropagation();
               state.removeEdge(edge.id);
@@ -699,6 +711,100 @@ export class FlowchartUI {
 
   closeEditModal() {
     const modal = document.getElementById('edit-node-modal');
+    modal?.classList.add('hidden');
+    modal?.classList.remove('flex');
+  }
+
+  // 4b. Modal para Editar Texto / Condición de Conexión
+  setupEditEdgeModal() {
+    const modal = document.getElementById('edit-edge-modal');
+    const closeBtn = document.getElementById('btn-close-edge-modal');
+    const cancelBtn = document.getElementById('btn-cancel-edge-modal');
+    const saveBtn = document.getElementById('btn-save-edge-label');
+    const removeBtn = document.getElementById('btn-remove-edge-label');
+    const labelInput = document.getElementById('edit-edge-label-input');
+
+    if (!modal) return;
+
+    const close = () => this.closeEditEdgeModal();
+
+    closeBtn?.addEventListener('click', close);
+    cancelBtn?.addEventListener('click', close);
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) close();
+    });
+
+    // Chips de opciones rápidas (Sí, No, Cumple, No Cumple, etc.)
+    modal.querySelectorAll('[data-edge-chip]').forEach(chip => {
+      chip.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const text = chip.getAttribute('data-edge-chip');
+        if (labelInput) {
+          labelInput.value = text;
+          labelInput.focus();
+        }
+      });
+    });
+
+    const doSave = () => {
+      const edgeId = document.getElementById('edit-edge-id')?.value;
+      const text = labelInput?.value.trim() || '';
+      if (edgeId) {
+        state.updateEdgeLabel(edgeId, text);
+        this.renderer.renderEdges();
+        close();
+        this.showToast(text ? `Condición "${text}" guardada` : 'Texto de conexión eliminado');
+      }
+    };
+
+    saveBtn?.addEventListener('click', doSave);
+
+    removeBtn?.addEventListener('click', () => {
+      const edgeId = document.getElementById('edit-edge-id')?.value;
+      if (edgeId) {
+        state.updateEdgeLabel(edgeId, '');
+        this.renderer.renderEdges();
+        close();
+        this.showToast('Texto de conexión eliminado');
+      }
+    });
+
+    labelInput?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        doSave();
+      }
+    });
+
+    window.addEventListener('open-edit-edge-modal', (e) => {
+      if (e.detail?.edgeId) {
+        this.openEditEdgeModal(e.detail.edgeId);
+      }
+    });
+  }
+
+  openEditEdgeModal(edgeId) {
+    const edge = state.getEdge(edgeId);
+    if (!edge) return;
+
+    const modal = document.getElementById('edit-edge-modal');
+    const idInput = document.getElementById('edit-edge-id');
+    const labelInput = document.getElementById('edit-edge-label-input');
+
+    if (idInput) idInput.value = edge.id;
+    if (labelInput) labelInput.value = edge.label || '';
+
+    modal?.classList.remove('hidden');
+    modal?.classList.add('flex');
+
+    setTimeout(() => {
+      labelInput?.focus();
+      labelInput?.select();
+    }, 60);
+  }
+
+  closeEditEdgeModal() {
+    const modal = document.getElementById('edit-edge-modal');
     modal?.classList.add('hidden');
     modal?.classList.remove('flex');
   }

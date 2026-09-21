@@ -822,6 +822,60 @@
         </div>
     </div>
 
+    <!-- Modal para Editar Texto de Conexión / Condición -->
+    <div id="edit-edge-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+        <div class="glass-panel rounded-3xl max-w-sm w-full p-5 shadow-2xl border border-slate-200 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-200">
+            <div class="flex items-center justify-between mb-3 pb-2.5 border-b border-slate-200 dark:border-slate-800">
+                <h3 class="text-sm font-black uppercase tracking-wider text-slate-900 dark:text-white flex items-center gap-2">
+                    <span class="material-symbols-outlined text-amber-500 text-[18px]">label</span>
+                    Texto de Conexión
+                </h3>
+                <button id="btn-close-edge-modal" class="size-8 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center text-slate-500 cursor-pointer">
+                    <span class="material-symbols-outlined text-[18px]">close</span>
+                </button>
+            </div>
+
+            <input type="hidden" id="edit-edge-id" />
+
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1.5">Condición o Etiqueta</label>
+                    <input type="text" id="edit-edge-label-input" placeholder="Ej: Sí, No, Cumple, Conforme, Mayor a..." class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold text-slate-800 dark:text-white outline-none focus:border-amber-500 transition-colors" />
+                </div>
+
+                <!-- Chips de Atajos / Opciones Rápidas Frecuentes -->
+                <div>
+                    <span class="block text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1.5">Opciones Rápidas</span>
+                    <div class="flex flex-wrap gap-1.5" id="edge-quick-chips">
+                        <button type="button" data-edge-chip="Sí" class="px-2.5 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[10px] font-black uppercase transition-colors cursor-pointer border border-emerald-500/20">Sí</button>
+                        <button type="button" data-edge-chip="No" class="px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 text-[10px] font-black uppercase transition-colors cursor-pointer border border-rose-500/20">No</button>
+                        <button type="button" data-edge-chip="Cumple" class="px-2.5 py-1 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 text-[10px] font-black uppercase transition-colors cursor-pointer border border-blue-500/20">Cumple</button>
+                        <button type="button" data-edge-chip="No Cumple" class="px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 text-[10px] font-black uppercase transition-colors cursor-pointer border border-amber-500/20">No Cumple</button>
+                        <button type="button" data-edge-chip="Aprobado" class="px-2.5 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[10px] font-black uppercase transition-colors cursor-pointer border border-emerald-500/20">Aprobado</button>
+                        <button type="button" data-edge-chip="Rechazado" class="px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 text-[10px] font-black uppercase transition-colors cursor-pointer border border-rose-500/20">Rechazado</button>
+                        <button type="button" data-edge-chip="Revisión" class="px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 text-[10px] font-black uppercase transition-colors cursor-pointer border border-amber-500/20">Revisión</button>
+                        <button type="button" data-edge-chip="Conforme" class="px-2.5 py-1 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 text-[10px] font-black uppercase transition-colors cursor-pointer border border-indigo-500/20">Conforme</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-5 flex items-center justify-between pt-3.5 border-t border-slate-200 dark:border-slate-800">
+                <button type="button" id="btn-remove-edge-label" class="px-2.5 py-1.5 rounded-xl text-[11px] font-bold text-rose-500 hover:bg-rose-500/10 transition-colors cursor-pointer flex items-center gap-1">
+                    <span class="material-symbols-outlined text-[15px]">backspace</span>
+                    <span>Sin texto</span>
+                </button>
+                <div class="flex items-center gap-2">
+                    <button type="button" id="btn-cancel-edge-modal" class="px-3 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer">
+                        Cancelar
+                    </button>
+                    <button type="button" id="btn-save-edge-label" class="px-4 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-black uppercase tracking-wider transition-colors shadow-lg shadow-blue-500/25 cursor-pointer">
+                        Guardar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal Móvil (Bottom Sheet) para Agregar Bloque -->
     <div id="modal-mobile-add-node" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden items-end sm:items-center justify-center p-0 sm:p-4">
         <div class="glass-panel rounded-t-3xl sm:rounded-3xl max-w-sm w-full p-5 shadow-2xl border border-slate-200 dark:border-slate-800">

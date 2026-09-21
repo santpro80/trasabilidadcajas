@@ -1160,53 +1160,93 @@ export class FlowchartRenderer {
         labelGroup.appendChild(labelBg);
         labelGroup.appendChild(text);
 
-        // Click en la etiqueta para editarla
+        // Click en la etiqueta para abrir modal de edición
         labelGroup.addEventListener('click', (e) => {
           e.stopPropagation();
-          const newLabel = prompt('Editar etiqueta de conexión:', edge.label);
-          if (newLabel !== null) {
-            state.updateEdgeLabel(edge.id, newLabel.trim());
-            this.renderEdges();
-          }
+          window.dispatchEvent(new CustomEvent('open-edit-edge-modal', { detail: { edgeId: edge.id, label: edge.label || '' } }));
         });
 
         labelsGroup.appendChild(labelGroup);
       }
 
-      // Botón / Badge de desvincular (visible al seleccionar o al pasar el cursor)
+      // Botón / Badge de acciones (visible al seleccionar o al pasar el cursor)
       const actionGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
       actionGroup.setAttribute('class', `edge-action-group cursor-pointer ${isSelected ? 'opacity-100' : 'opacity-0 hover:opacity-100 transition-opacity'}`);
       actionGroup.style.pointerEvents = 'all';
 
-      // Posición del badge de desvinculación:
+      // Posición de los botones:
       const btnY = hasLabel ? (isSelected ? midY - 26 : midY) : midY;
       const btnX = hasLabel && !isSelected ? midX + (Math.max(String(edge.label).trim().length * 8.5 + 26, 60) / 2) + 16 : midX;
 
       if (isSelected) {
-        // Píldora visible y destacada: "✕ Desvincular"
-        const pillWidth = 104;
-        const pillHeight = 24;
-        const pillBg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-        pillBg.setAttribute('x', btnX - pillWidth / 2);
-        pillBg.setAttribute('y', btnY - pillHeight / 2);
-        pillBg.setAttribute('width', pillWidth);
-        pillBg.setAttribute('height', pillHeight);
-        pillBg.setAttribute('rx', 12);
-        pillBg.setAttribute('fill', '#f43f5e');
-        pillBg.setAttribute('class', 'shadow-lg');
+        // Dos píldoras visibles al seleccionar: [ ✎ Texto ] y [ ✕ Desvincular ]
+        const editBtnGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        editBtnGroup.setAttribute('class', 'cursor-pointer hover:scale-105 transition-transform');
+        const editX = midX - 52;
+        const editW = 86;
+        const editH = 24;
 
-        const pillText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-        pillText.setAttribute('x', btnX);
-        pillText.setAttribute('y', btnY + 4);
-        pillText.setAttribute('text-anchor', 'middle');
-        pillText.setAttribute('fill', '#ffffff');
-        pillText.setAttribute('font-size', '11px');
-        pillText.setAttribute('font-weight', 'bold');
-        pillText.setAttribute('letter-spacing', '0.5px');
-        pillText.textContent = '✕ Desvincular';
+        const editBg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        editBg.setAttribute('x', editX - editW / 2);
+        editBg.setAttribute('y', btnY - editH / 2);
+        editBg.setAttribute('width', editW);
+        editBg.setAttribute('height', editH);
+        editBg.setAttribute('rx', 12);
+        editBg.setAttribute('fill', '#3b82f6');
+        editBg.setAttribute('class', 'shadow-lg');
 
-        actionGroup.appendChild(pillBg);
-        actionGroup.appendChild(pillText);
+        const editText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        editText.setAttribute('x', editX);
+        editText.setAttribute('y', btnY + 4);
+        editText.setAttribute('text-anchor', 'middle');
+        editText.setAttribute('fill', '#ffffff');
+        editText.setAttribute('font-size', '11px');
+        editText.setAttribute('font-weight', 'bold');
+        editText.textContent = hasLabel ? '✎ Editar' : '+ Texto';
+
+        editBtnGroup.appendChild(editBg);
+        editBtnGroup.appendChild(editText);
+        editBtnGroup.addEventListener('click', (e) => {
+          e.stopPropagation();
+          window.dispatchEvent(new CustomEvent('open-edit-edge-modal', { detail: { edgeId: edge.id, label: edge.label || '' } }));
+        });
+
+        const delBtnGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        delBtnGroup.setAttribute('class', 'cursor-pointer hover:scale-105 transition-transform');
+        const delX = midX + 50;
+        const delW = 104;
+        const delH = 24;
+
+        const delBg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        delBg.setAttribute('x', delX - delW / 2);
+        delBg.setAttribute('y', btnY - delH / 2);
+        delBg.setAttribute('width', delW);
+        delBg.setAttribute('height', delH);
+        delBg.setAttribute('rx', 12);
+        delBg.setAttribute('fill', '#f43f5e');
+        delBg.setAttribute('class', 'shadow-lg');
+
+        const delText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        delText.setAttribute('x', delX);
+        delText.setAttribute('y', btnY + 4);
+        delText.setAttribute('text-anchor', 'middle');
+        delText.setAttribute('fill', '#ffffff');
+        delText.setAttribute('font-size', '11px');
+        delText.setAttribute('font-weight', 'bold');
+        delText.textContent = '✕ Desvincular';
+
+        delBtnGroup.appendChild(delBg);
+        delBtnGroup.appendChild(delText);
+        delBtnGroup.addEventListener('click', (e) => {
+          e.stopPropagation();
+          state.removeEdge(edge.id);
+          this.deselectEdge();
+          this.renderEdges();
+          window.dispatchEvent(new CustomEvent('show-toast', { detail: { message: 'Conexión desvinculada' } }));
+        });
+
+        actionGroup.appendChild(editBtnGroup);
+        actionGroup.appendChild(delBtnGroup);
       } else {
         // Círculo flotante sutil que aparece al hacer hover sobre la línea: "✕"
         const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
@@ -1227,15 +1267,15 @@ export class FlowchartRenderer {
 
         actionGroup.appendChild(circle);
         actionGroup.appendChild(cross);
-      }
 
-      actionGroup.addEventListener('click', (e) => {
-        e.stopPropagation();
-        state.removeEdge(edge.id);
-        this.deselectEdge();
-        this.renderEdges();
-        window.dispatchEvent(new CustomEvent('show-toast', { detail: { message: 'Conexión desvinculada' } }));
-      });
+        actionGroup.addEventListener('click', (e) => {
+          e.stopPropagation();
+          state.removeEdge(edge.id);
+          this.deselectEdge();
+          this.renderEdges();
+          window.dispatchEvent(new CustomEvent('show-toast', { detail: { message: 'Conexión desvinculada' } }));
+        });
+      }
 
       labelsGroup.appendChild(actionGroup);
     });
