@@ -63,10 +63,11 @@ export class FlowchartRenderer {
       </marker>
     `;
 
-    // Path temporal para cable en vivo
+    // Path temporal para cable en vivo dentro del grupo transformado para respetar pan y zoom
     this.tempEdgePath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    this.tempEdgePath.setAttribute('class', 'stroke-blue-400 dark:stroke-blue-500 fill-none stroke-[2.5] stroke-dasharray-[4_4] opacity-0 pointer-events-none');
-    this.svg.appendChild(this.tempEdgePath);
+    this.tempEdgePath.setAttribute('class', 'stroke-indigo-500 fill-none stroke-[2.5] stroke-dasharray-[4_4] opacity-0 pointer-events-none');
+    const transformGroup = this.svg.querySelector('#canvas-transform-group') || this.svg;
+    transformGroup.appendChild(this.tempEdgePath);
   }
 
   // Conversión de coordenadas de pantalla a coordenadas del canvas
@@ -315,7 +316,10 @@ export class FlowchartRenderer {
 
       if (this.isConnecting && !this.isInteractiveConnecting) {
         this.isConnecting = false;
-        this.tempEdgePath.setAttribute('class', 'opacity-0 pointer-events-none');
+        if (this.tempEdgePath) {
+          this.tempEdgePath.setAttribute('d', '');
+          this.tempEdgePath.setAttribute('class', 'opacity-0 pointer-events-none');
+        }
       }
     };
 
@@ -378,6 +382,7 @@ export class FlowchartRenderer {
     }
 
     if (this.tempEdgePath) {
+      this.tempEdgePath.setAttribute('d', `M ${this.connectingFromPos.x} ${this.connectingFromPos.y} L ${this.connectingFromPos.x} ${this.connectingFromPos.y}`);
       this.tempEdgePath.setAttribute('class', 'stroke-indigo-500 dark:stroke-indigo-400 fill-none stroke-[3] stroke-dasharray-[6_4] opacity-90 pointer-events-none');
     }
   }
@@ -389,6 +394,7 @@ export class FlowchartRenderer {
     this.connectingFromNodeId = null;
 
     if (this.tempEdgePath) {
+      this.tempEdgePath.setAttribute('d', '');
       this.tempEdgePath.setAttribute('class', 'opacity-0 pointer-events-none');
     }
 
@@ -551,7 +557,10 @@ export class FlowchartRenderer {
         }
         state.addEdge(this.connectingFromNodeId, node.id, label, this.connectingFromPort, 'left');
         this.isConnecting = false;
-        this.tempEdgePath.setAttribute('class', 'opacity-0 pointer-events-none');
+        if (this.tempEdgePath) {
+          this.tempEdgePath.setAttribute('d', '');
+          this.tempEdgePath.setAttribute('class', 'opacity-0 pointer-events-none');
+        }
         this.renderEdges();
         window.dispatchEvent(new CustomEvent('node-connected-toast', { detail: { title: node.title } }));
       }
@@ -598,7 +607,10 @@ export class FlowchartRenderer {
           const toPort = port.dataset.port || (port.classList.contains('flow-port-in') ? 'left' : 'right');
           state.addEdge(this.connectingFromNodeId, node.id, label, this.connectingFromPort, toPort);
           this.isConnecting = false;
-          this.tempEdgePath.setAttribute('class', 'opacity-0 pointer-events-none');
+          if (this.tempEdgePath) {
+            this.tempEdgePath.setAttribute('d', '');
+            this.tempEdgePath.setAttribute('class', 'opacity-0 pointer-events-none');
+          }
           this.renderEdges();
           window.dispatchEvent(new CustomEvent('node-connected-toast', { detail: { title: node.title } }));
         }
@@ -878,8 +890,9 @@ export class FlowchartRenderer {
   }
 
   getPortCoordinates(node, port) {
+    const el = this.nodesContainer ? this.nodesContainer.querySelector(`.flow-node[data-node-id="${node.id}"]`) : null;
     const nodeWidth = 240;
-    const nodeHeight = 110; // Altura aproximada promedio
+    const nodeHeight = (el && el.offsetHeight) ? el.offsetHeight : 110;
 
     switch (port) {
       case 'right':
@@ -905,7 +918,10 @@ export class FlowchartRenderer {
     let cx2 = x2 - offset;
     let cy2 = y2;
 
-    if (fromPort === 'bottom') {
+    if (fromPort === 'left') {
+      cx1 = x1 - offset;
+      cy1 = y1;
+    } else if (fromPort === 'bottom') {
       cx1 = x1;
       cy1 = y1 + Math.max(dy * 0.5, 40);
     } else if (fromPort === 'top') {
@@ -913,7 +929,10 @@ export class FlowchartRenderer {
       cy1 = y1 - Math.max(dy * 0.5, 40);
     }
 
-    if (toPort === 'top') {
+    if (toPort === 'right') {
+      cx2 = x2 + offset;
+      cy2 = y2;
+    } else if (toPort === 'top') {
       cx2 = x2;
       cy2 = y2 - Math.max(dy * 0.5, 40);
     } else if (toPort === 'bottom') {
