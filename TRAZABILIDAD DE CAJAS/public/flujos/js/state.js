@@ -122,7 +122,104 @@ class FlowchartState {
     this.isRemoteUpdate = false;
     this.cloudSaveTimer = null;
 
+    // Historial para Deshacer (Undo) y Rehacer (Redo)
+    this.undoStack = [];
+    this.redoStack = [];
+    this.historyListeners = new Set();
+    this.isHistoryAction = false;
+
     this.initCloud();
+  }
+
+  onHistoryChange(callback) {
+    this.historyListeners.add(callback);
+    callback(this.canUndo(), this.canRedo());
+    return () => this.historyListeners.delete(callback);
+  }
+
+  notifyHistoryChange() {
+    for (const cb of this.historyListeners) {
+      cb(this.canUndo(), this.canRedo());
+    }
+  }
+
+  canUndo() {
+    return this.undoStack.length > 0;
+  }
+
+  canRedo() {
+    return this.redoStack.length > 0;
+  }
+
+  takeSnapshot() {
+    if (this.isRemoteUpdate || this.isHistoryAction) return;
+    try {
+      const snap = JSON.stringify(this.data);
+      if (this.undoStack.length > 0 && this.undoStack[this.undoStack.length - 1] === snap) {
+        return;
+      }
+      this.undoStack.push(snap);
+      if (this.undoStack.length > 50) this.undoStack.shift();
+      this.redoStack = [];
+      this.notifyHistoryChange();
+    } catch (e) {
+      console.warn('Error en takeSnapshot:', e);
+    }
+  }
+
+  pushSnapshot(snapshotJson) {
+    if (this.isRemoteUpdate || this.isHistoryAction || !snapshotJson) return;
+    try {
+      if (this.undoStack.length > 0 && this.undoStack[this.undoStack.length - 1] === snapshotJson) {
+        return;
+      }
+      this.undoStack.push(snapshotJson);
+      if (this.undoStack.length > 50) this.undoStack.shift();
+      this.redoStack = [];
+      this.notifyHistoryChange();
+    } catch (e) {
+      console.warn('Error en pushSnapshot:', e);
+    }
+  }
+
+  undo() {
+    if (!this.canUndo()) return false;
+    try {
+      const currentSnap = JSON.stringify(this.data);
+      this.redoStack.push(currentSnap);
+      const prevSnap = this.undoStack.pop();
+      this.isHistoryAction = true;
+      this.data = JSON.parse(prevSnap);
+      this.rebuildBreadcrumbs();
+      this.isHistoryAction = false;
+      this.notify('undo');
+      this.notifyHistoryChange();
+      return true;
+    } catch (e) {
+      console.error('Error al deshacer:', e);
+      this.isHistoryAction = false;
+      return false;
+    }
+  }
+
+  redo() {
+    if (!this.canRedo()) return false;
+    try {
+      const currentSnap = JSON.stringify(this.data);
+      this.undoStack.push(currentSnap);
+      const nextSnap = this.redoStack.pop();
+      this.isHistoryAction = true;
+      this.data = JSON.parse(nextSnap);
+      this.rebuildBreadcrumbs();
+      this.isHistoryAction = false;
+      this.notify('redo');
+      this.notifyHistoryChange();
+      return true;
+    } catch (e) {
+      console.error('Error al rehacer:', e);
+      this.isHistoryAction = false;
+      return false;
+    }
   }
 
   onSyncStatusChange(callback) {
@@ -308,6 +405,7 @@ class FlowchartState {
 
   // Operaciones con Nodos
   addNode(nodeData) {
+    this.takeSnapshot();
     const ws = this.getCurrentWorkspace();
     const id = nodeData.id || ('node_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6));
     const shape = nodeData.shape || (nodeData.type === 'decision' ? 'decision' : nodeData.type === 'note' ? 'comment' : nodeData.type === 'warning' ? 'preparation' : (nodeData.type || 'process'));
@@ -331,6 +429,7 @@ class FlowchartState {
   }
 
   updateNode(id, props) {
+    this.takeSnapshot();
     const ws = this.getCurrentWorkspace();
     const node = ws.nodes.find(n => n.id === id);
     if (!node) return null;
@@ -354,6 +453,7 @@ class FlowchartState {
   }
 
   removeNode(id) {
+    this.takeSnapshot();
     const ws = this.getCurrentWorkspace();
     const nodeIndex = ws.nodes.findIndex(n => n.id === id);
     if (nodeIndex === -1) return false;
@@ -398,11 +498,15 @@ class FlowchartState {
     // Evitar aristas duplicadas exactas
     const existing = ws.edges.find(e => e.from === fromId && e.to === toId);
     if (existing) {
-      existing.label = label || existing.label;
-      this.notify('update_edge');
+      if (label && existing.label !== label) {
+        this.takeSnapshot();
+        existing.label = label;
+        this.notify('update_edge');
+      }
       return existing;
     }
 
+    this.takeSnapshot();
     const id = 'edge_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
     const newEdge = { id, from: fromId, to: toId, label, fromPort, toPort };
     ws.edges.push(newEdge);
@@ -411,6 +515,7 @@ class FlowchartState {
   }
 
   removeEdge(id) {
+    this.takeSnapshot();
     const ws = this.getCurrentWorkspace();
     const idx = ws.edges.findIndex(e => e.id === id);
     if (idx === -1) return false;
@@ -420,6 +525,7 @@ class FlowchartState {
   }
 
   updateEdgeLabel(id, label) {
+    this.takeSnapshot();
     const ws = this.getCurrentWorkspace();
     const edge = ws.edges.find(e => e.id === id);
     if (!edge) return false;

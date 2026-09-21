@@ -36,9 +36,10 @@ function initFlujos() {
 
   // Atajos de teclado
   window.addEventListener('keydown', (e) => {
-    // Tecla Supr o Backspace para eliminar todos los nodos seleccionados
+    // Tecla Supr o Backspace para eliminar todos los nodos seleccionados o la arista seleccionada
     if (e.key === 'Delete' || e.key === 'Backspace') {
-      if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) return;
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)) return;
+      
       const selectedIds = renderer.getSelectedNodeIds();
       if (selectedIds.length > 0) {
         e.preventDefault();
@@ -46,17 +47,50 @@ function initFlujos() {
         renderer.deselectAll();
         renderer.render();
         ui.showToast(selectedIds.length > 1 ? `${selectedIds.length} bloques eliminados` : 'Bloque eliminado');
+        return;
+      }
+
+      const selectedEdgeId = renderer.getSelectedEdgeId();
+      if (selectedEdgeId) {
+        e.preventDefault();
+        state.removeEdge(selectedEdgeId);
+        renderer.deselectEdge();
+        renderer.renderEdges();
+        ui.showToast('Conexión desvinculada');
+        return;
       }
     }
 
+    // Ctrl+Z para Deshacer
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !e.shiftKey) {
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)) return;
+      e.preventDefault();
+      if (state.undo()) {
+        renderer.render();
+        ui.showToast('Acción deshecha (Ctrl+Z)');
+      }
+      return;
+    }
+
+    // Ctrl+Y o Ctrl+Shift+Z para Rehacer
+    if ((e.ctrlKey || e.metaKey) && (e.key.toLowerCase() === 'y' || (e.key.toLowerCase() === 'z' && e.shiftKey))) {
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)) return;
+      e.preventDefault();
+      if (state.redo()) {
+        renderer.render();
+        ui.showToast('Acción rehecha (Ctrl+Y)');
+      }
+      return;
+    }
+
     // V para modo Selección
-    if (e.key.toLowerCase() === 'v' && !['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
+    if (e.key.toLowerCase() === 'v' && !['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)) {
       renderer.setInteractionMode('select');
       ui.showToast('Modo Selección');
     }
 
     // H para modo Mano (Pan)
-    if (e.key.toLowerCase() === 'h' && !['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
+    if (e.key.toLowerCase() === 'h' && !['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)) {
       renderer.setInteractionMode('pan');
       ui.showToast('Modo Mano');
     }
@@ -64,6 +98,7 @@ function initFlujos() {
     // Escape para deseleccionar y cerrar menús
     if (e.key === 'Escape') {
       renderer.deselectAll();
+      renderer.deselectEdge();
       renderer.cancelConnectingMode();
       ui.closeEditModal();
       ui.hideContextMenus();

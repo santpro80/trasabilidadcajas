@@ -506,6 +506,16 @@
                 <span class="material-symbols-outlined text-[19px]">add</span>
             </button>
 
+            <!-- Botones de Deshacer y Rehacer -->
+            <div class="flex items-center gap-0.5 bg-slate-100 dark:bg-slate-900/60 p-0.5 sm:p-1 rounded-2xl border border-slate-200 dark:border-slate-800">
+                <button id="btn-undo" type="button" class="size-8 sm:size-9 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-not-allowed transition-all flex items-center justify-center cursor-pointer" title="Deshacer (Ctrl+Z)" disabled>
+                    <span class="material-symbols-outlined text-[18px] sm:text-[19px]">undo</span>
+                </button>
+                <button id="btn-redo" type="button" class="size-8 sm:size-9 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-not-allowed transition-all flex items-center justify-center cursor-pointer" title="Rehacer (Ctrl+Y)" disabled>
+                    <span class="material-symbols-outlined text-[18px] sm:text-[19px]">redo</span>
+                </button>
+            </div>
+
             <!-- Botón Guardar -->
             <button id="btn-save" class="size-8 sm:size-9 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors flex items-center justify-center cursor-pointer" title="Guardar cambios (Ctrl+S)">
                 <span class="material-symbols-outlined text-[18px] sm:text-[19px]">save</span>
@@ -611,12 +621,14 @@
         </div>
 
         <!-- Floating Instructions (Abajo a la izquierda) -->
-        <div class="absolute bottom-6 left-6 z-30 hidden md:flex items-center gap-3 glass-panel px-4 py-2 rounded-2xl shadow-xl text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-            <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px] text-blue-500">ads_click</span> Clic en circulito: Conectar</span>
+        <div class="absolute bottom-6 left-6 z-30 hidden md:flex items-center gap-2.5 glass-panel px-4 py-2 rounded-2xl shadow-xl text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+            <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px] text-blue-500">ads_click</span> Conectar: Clic circulito</span>
             <span>•</span>
-            <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px] text-indigo-500">highlight_alt</span> Shift + Arrastrar: Selección múltiple</span>
+            <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px] text-rose-500">link_off</span> Desvincular: Clic en línea</span>
             <span>•</span>
-            <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px] text-emerald-500">mouse</span> Rueda: Zoom</span>
+            <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px] text-indigo-500">undo</span> Ctrl+Z: Deshacer</span>
+            <span>•</span>
+            <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px] text-indigo-500">redo</span> Ctrl+Y: Rehacer</span>
             <span>•</span>
             <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px] text-amber-500">print</span> Ctrl+P: Imprimir</span>
         </div>
@@ -722,6 +734,18 @@
             <span class="size-2.5 rounded-full bg-slate-400 shrink-0"></span>
             <span>Nota / Comentario</span>
         </button>
+
+        <!-- Conexiones Activas (para Desvincular directamente desde el circulito) -->
+        <div id="port-active-connections-wrapper" class="hidden flex-col gap-1 mt-0.5">
+            <div class="h-px bg-slate-200 dark:bg-slate-800 my-0.5"></div>
+            <div class="px-2.5 py-1 text-[9px] font-black uppercase tracking-widest text-rose-500 dark:text-rose-400 flex items-center justify-between">
+                <span>Desvincular Conexión</span>
+                <span class="material-symbols-outlined text-[14px]">link_off</span>
+            </div>
+            <div id="port-active-connections-container" class="flex flex-col gap-1 max-h-28 overflow-y-auto hide-scrollbar">
+                <!-- Conexiones activas inyectadas dinámicamente -->
+            </div>
+        </div>
 
         <!-- Conectar a Bloque Existente -->
         <div class="h-px bg-slate-200 dark:bg-slate-800 my-1"></div>

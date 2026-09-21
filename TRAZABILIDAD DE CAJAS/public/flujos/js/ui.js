@@ -264,6 +264,58 @@ export class FlowchartUI {
 
       // Cargar lista de otros bloques existentes en el nivel actual
       const currentWs = state.getCurrentWorkspace();
+
+      // Cargar conexiones activas asociadas a este nodo/puerto para permitir desvincular
+      const activeWrapper = document.getElementById('port-active-connections-wrapper');
+      const activeContainer = document.getElementById('port-active-connections-container');
+      if (activeWrapper && activeContainer) {
+        activeContainer.innerHTML = '';
+        let relevantEdges = (currentWs.edges || []).filter(edge => 
+          (edge.from === e.detail.nodeId && (edge.fromPort || 'right') === e.detail.port) ||
+          (edge.to === e.detail.nodeId && (edge.toPort || 'left') === e.detail.port)
+        );
+        if (relevantEdges.length === 0) {
+          relevantEdges = (currentWs.edges || []).filter(edge => edge.from === e.detail.nodeId || edge.to === e.detail.nodeId);
+        }
+
+        if (relevantEdges.length > 0) {
+          activeWrapper.classList.remove('hidden');
+          activeWrapper.classList.add('flex');
+          relevantEdges.forEach(edge => {
+            const isOutgoing = edge.from === e.detail.nodeId;
+            const targetNodeId = isOutgoing ? edge.to : edge.from;
+            const targetNode = state.getNode(targetNodeId);
+            const targetTitle = targetNode ? targetNode.title : 'Bloque';
+            const labelText = edge.label ? ` [${edge.label}]` : '';
+            const dirIcon = isOutgoing ? 'arrow_forward' : 'arrow_back';
+
+            const item = document.createElement('div');
+            item.className = 'flex items-center justify-between gap-1.5 px-2 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 text-xs';
+            item.innerHTML = `
+              <div class="flex items-center gap-1.5 min-w-0 flex-1">
+                <span class="material-symbols-outlined text-[13px] text-slate-400 shrink-0">${dirIcon}</span>
+                <span class="truncate text-[11px] font-bold text-slate-700 dark:text-slate-200" title="${targetTitle}${labelText}">${targetTitle}${labelText}</span>
+              </div>
+              <button type="button" class="btn-disconnect-edge shrink-0 px-2 py-1 rounded-lg bg-rose-500/15 hover:bg-rose-500 text-rose-600 hover:text-white dark:text-rose-400 text-[10px] font-black uppercase tracking-wider transition-colors flex items-center gap-0.5 cursor-pointer" title="Desvincular conexión">
+                <span class="material-symbols-outlined text-[12px]">link_off</span>
+                <span>Quitar</span>
+              </button>
+            `;
+            item.querySelector('.btn-disconnect-edge').addEventListener('click', (ev) => {
+              ev.stopPropagation();
+              state.removeEdge(edge.id);
+              this.renderer.renderEdges();
+              this.hidePortQuickPicker();
+              this.showToast('Conexión desvinculada');
+            });
+            activeContainer.appendChild(item);
+          });
+        } else {
+          activeWrapper.classList.add('hidden');
+          activeWrapper.classList.remove('flex');
+        }
+      }
+
       const otherNodes = (currentWs.nodes || []).filter(n => n.id !== e.detail.nodeId);
       const existingContainer = document.getElementById('port-existing-nodes-container');
 
@@ -490,6 +542,36 @@ export class FlowchartUI {
 
     document.getElementById('btn-zoom-reset')?.addEventListener('click', () => {
       this.renderer.fitView();
+    });
+
+    // Deshacer y Rehacer
+    const btnUndo = document.getElementById('btn-undo');
+    const btnRedo = document.getElementById('btn-redo');
+
+    btnUndo?.addEventListener('click', () => {
+      if (state.undo()) {
+        this.renderer.render();
+        this.showToast('Acción deshecha (Ctrl+Z)');
+      }
+    });
+
+    btnRedo?.addEventListener('click', () => {
+      if (state.redo()) {
+        this.renderer.render();
+        this.showToast('Acción rehecha (Ctrl+Y)');
+      }
+    });
+
+    state.onHistoryChange((canUndo, canRedo) => {
+      if (btnUndo) btnUndo.disabled = !canUndo;
+      if (btnRedo) btnRedo.disabled = !canRedo;
+    });
+
+    // Escuchar toasts globales
+    window.addEventListener('show-toast', (e) => {
+      if (e.detail?.message) {
+        this.showToast(e.detail.message);
+      }
     });
 
     // Guardar / Exportar / Importar / Imprimir

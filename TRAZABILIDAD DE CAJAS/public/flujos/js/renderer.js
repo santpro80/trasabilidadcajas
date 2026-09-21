@@ -33,6 +33,8 @@ export class FlowchartRenderer {
     this.portDragged = false;
 
     this.selectedNodeIds = new Set();
+    this.selectedEdgeId = null;
+    this.preDragSnapshot = null;
 
     // Gestos táctiles multitáctiles (Pinch-to-zoom en celulares)
     this.activePointers = new Map();
@@ -61,6 +63,9 @@ export class FlowchartRenderer {
       </marker>
       <marker id="arrowhead-emerald" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
         <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#10b981" />
+      </marker>
+      <marker id="arrowhead-rose" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#f43f5e" />
       </marker>
     `;
 
@@ -136,10 +141,12 @@ export class FlowchartRenderer {
         return;
       }
 
-      // Si se hizo clic sobre un nodo, puerto o control flotante, no intervenir
-      if (e.target.closest('.flow-node') || e.target.closest('.flow-port') || e.target.closest('.flow-edge-action') || e.target.closest('.glass-panel')) {
+      // Si se hizo clic sobre un nodo, puerto, arista o control flotante, no intervenir
+      if (e.target.closest('.flow-node') || e.target.closest('.flow-port') || e.target.closest('.flow-edge-action') || e.target.closest('.glass-panel') || e.target.closest('.edge-item') || e.target.closest('.edge-label-group') || e.target.closest('.edge-action-group')) {
         return;
       }
+
+      this.deselectEdge();
 
       if (e.button === 0 || e.button === 1 || e.pointerType === 'touch') {
         const wantsSelect = (this.interactionMode === 'select' || e.shiftKey) && (e.button === 0 || e.pointerType === 'touch');
@@ -309,10 +316,27 @@ export class FlowchartRenderer {
       }
 
       if (this.isDraggingNode) {
+        let hasMoved = false;
+        if (this.dragInitialNodes) {
+          for (const [id, initPos] of Object.entries(this.dragInitialNodes)) {
+            const n = state.getNode(id);
+            if (n && (Math.abs(n.x - initPos.x) > 2 || Math.abs(n.y - initPos.y) > 2)) {
+              hasMoved = true;
+              break;
+            }
+          }
+        }
         this.isDraggingNode = false;
         this.draggedNodeId = null;
         this.dragInitialNodes = {};
-        state.saveToStorage();
+        if (hasMoved && this.preDragSnapshot) {
+          state.pushSnapshot(this.preDragSnapshot);
+          this.preDragSnapshot = null;
+          state.notify('move_nodes');
+        } else {
+          this.preDragSnapshot = null;
+          state.saveToStorage();
+        }
       }
 
       if (this.isConnecting && !this.isInteractiveConnecting) {
@@ -753,6 +777,7 @@ export class FlowchartRenderer {
 
         // Si este nodo está seleccionado, inicia arrastre grupal
         if (this.isNodeSelected(node.id)) {
+          this.preDragSnapshot = JSON.stringify(state.data);
           this.isDraggingNode = true;
           this.draggedNodeId = node.id;
           this.dragStartCanvas = this.screenToCanvas(e.clientX, e.clientY);
@@ -938,6 +963,7 @@ export class FlowchartRenderer {
   }
 
   selectNode(nodeId, multi = false) {
+    this.deselectEdge();
     if (!multi) {
       this.deselectAll();
     }
@@ -986,6 +1012,23 @@ export class FlowchartRenderer {
     return Array.from(this.selectedNodeIds);
   }
 
+  selectEdge(edgeId) {
+    this.selectedEdgeId = edgeId;
+    this.deselectAll();
+    this.renderEdges();
+  }
+
+  deselectEdge() {
+    if (this.selectedEdgeId) {
+      this.selectedEdgeId = null;
+      this.renderEdges();
+    }
+  }
+
+  getSelectedEdgeId() {
+    return this.selectedEdgeId;
+  }
+
   // Renderizado de Aristas / Conexiones Bezier con Flechas
   renderEdges() {
     let group = this.svg.querySelector('#canvas-edges-group');
@@ -1018,15 +1061,16 @@ export class FlowchartRenderer {
       const p2 = this.getPortCoordinates(toNode, edge.toPort || 'left');
 
       const pathData = this.calculateBezier(p1.x, p1.y, p2.x, p2.y, edge.fromPort || 'right', edge.toPort || 'left');
+      const isSelected = this.selectedEdgeId === edge.id;
 
       const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-      g.setAttribute('class', 'edge-item group cursor-pointer');
+      g.setAttribute('class', `edge-item group cursor-pointer ${isSelected ? 'edge-selected' : ''}`);
       g.dataset.edgeId = edge.id;
 
-      // Path invisible ancho para facilitar clic / hover
+      // Path invisible ancho para facilitar clic / hover táctil y de ratón
       const hitPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
       hitPath.setAttribute('d', pathData);
-      hitPath.setAttribute('class', 'stroke-transparent fill-none stroke-[20]');
+      hitPath.setAttribute('class', 'stroke-transparent fill-none stroke-[22] cursor-pointer');
 
       // Path visible
       const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
@@ -1034,7 +1078,10 @@ export class FlowchartRenderer {
       
       let strokeClass = 'stroke-blue-500 dark:stroke-blue-400';
       let markerId = 'url(#arrowhead)';
-      if (fromNode.type === 'decision') {
+      if (isSelected) {
+        strokeClass = 'stroke-rose-500 dark:stroke-rose-400';
+        markerId = 'url(#arrowhead-rose)';
+      } else if (fromNode.type === 'decision') {
         strokeClass = edge.fromPort === 'bottom' ? 'stroke-amber-500 dark:stroke-amber-400' : 'stroke-emerald-500 dark:stroke-emerald-400';
         markerId = edge.fromPort === 'bottom' ? 'url(#arrowhead-amber)' : 'url(#arrowhead-emerald)';
       } else if (fromNode.type === 'warning') {
@@ -1042,15 +1089,28 @@ export class FlowchartRenderer {
         markerId = 'url(#arrowhead-amber)';
       }
 
-      path.setAttribute('class', `${strokeClass} fill-none stroke-[2.5] transition-all group-hover:stroke-[4] group-hover:stroke-rose-500`);
+      const strokeWidth = isSelected ? 'stroke-[3.5]' : 'stroke-[2.5]';
+      path.setAttribute('class', `${strokeClass} fill-none ${strokeWidth} transition-all group-hover:stroke-[3.5] group-hover:stroke-rose-500`);
       path.setAttribute('marker-end', markerId);
+      if (isSelected) {
+        path.style.filter = 'drop-shadow(0 0 6px rgba(244, 63, 94, 0.75))';
+      }
 
-      // Botón de eliminar al hacer click en la arista
+      // Clic en la arista: selecciona la arista (o si ya estaba seleccionada, la desvincula)
+      g.addEventListener('pointerdown', (e) => {
+        e.stopPropagation();
+      });
+
       g.addEventListener('click', (e) => {
         e.stopPropagation();
-        if (confirm('¿Eliminar esta conexión?')) {
+        if (this.selectedEdgeId === edge.id) {
           state.removeEdge(edge.id);
+          this.deselectEdge();
           this.renderEdges();
+          window.dispatchEvent(new CustomEvent('show-toast', { detail: { message: 'Conexión desvinculada' } }));
+        } else {
+          this.selectEdge(edge.id);
+          window.dispatchEvent(new CustomEvent('show-toast', { detail: { message: 'Conexión seleccionada (Supr o clic para desvincular)' } }));
         }
       });
 
@@ -1058,25 +1118,27 @@ export class FlowchartRenderer {
       g.appendChild(path);
       linesGroup.appendChild(g);
 
-      // Label en primer plano (adelante de la línea)
-      if (edge.label && String(edge.label).trim()) {
-        let midX = (p1.x + p2.x) / 2;
-        let midY = (p1.y + p2.y) / 2;
+      // Calcular punto medio
+      let midX = (p1.x + p2.x) / 2;
+      let midY = (p1.y + p2.y) / 2;
 
-        try {
-          const totalLen = path.getTotalLength();
-          if (totalLen > 0) {
-            const pt = path.getPointAtLength(totalLen * 0.5);
-            midX = pt.x;
-            midY = pt.y;
-          }
-        } catch (err) {}
+      try {
+        const totalLen = path.getTotalLength();
+        if (totalLen > 0) {
+          const pt = path.getPointAtLength(totalLen * 0.5);
+          midX = pt.x;
+          midY = pt.y;
+        }
+      } catch (err) {}
 
+      const hasLabel = edge.label && String(edge.label).trim();
+
+      // Si tiene etiqueta, renderizarla en primer plano
+      if (hasLabel) {
         const labelGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
         labelGroup.setAttribute('class', 'edge-label-group cursor-pointer');
 
         const labelText = String(edge.label).trim();
-        // Ancho calculado dinámicamente con margen generoso
         const textWidth = Math.max(labelText.length * 8.5 + 26, 60);
         const textHeight = 24;
 
@@ -1098,7 +1160,7 @@ export class FlowchartRenderer {
         labelGroup.appendChild(labelBg);
         labelGroup.appendChild(text);
 
-        // Click en la etiqueta para editarla rápidamente
+        // Click en la etiqueta para editarla
         labelGroup.addEventListener('click', (e) => {
           e.stopPropagation();
           const newLabel = prompt('Editar etiqueta de conexión:', edge.label);
@@ -1110,6 +1172,72 @@ export class FlowchartRenderer {
 
         labelsGroup.appendChild(labelGroup);
       }
+
+      // Botón / Badge de desvincular (visible al seleccionar o al pasar el cursor)
+      const actionGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      actionGroup.setAttribute('class', `edge-action-group cursor-pointer ${isSelected ? 'opacity-100' : 'opacity-0 hover:opacity-100 transition-opacity'}`);
+      actionGroup.style.pointerEvents = 'all';
+
+      // Posición del badge de desvinculación:
+      const btnY = hasLabel ? (isSelected ? midY - 26 : midY) : midY;
+      const btnX = hasLabel && !isSelected ? midX + (Math.max(String(edge.label).trim().length * 8.5 + 26, 60) / 2) + 16 : midX;
+
+      if (isSelected) {
+        // Píldora visible y destacada: "✕ Desvincular"
+        const pillWidth = 104;
+        const pillHeight = 24;
+        const pillBg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        pillBg.setAttribute('x', btnX - pillWidth / 2);
+        pillBg.setAttribute('y', btnY - pillHeight / 2);
+        pillBg.setAttribute('width', pillWidth);
+        pillBg.setAttribute('height', pillHeight);
+        pillBg.setAttribute('rx', 12);
+        pillBg.setAttribute('fill', '#f43f5e');
+        pillBg.setAttribute('class', 'shadow-lg');
+
+        const pillText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        pillText.setAttribute('x', btnX);
+        pillText.setAttribute('y', btnY + 4);
+        pillText.setAttribute('text-anchor', 'middle');
+        pillText.setAttribute('fill', '#ffffff');
+        pillText.setAttribute('font-size', '11px');
+        pillText.setAttribute('font-weight', 'bold');
+        pillText.setAttribute('letter-spacing', '0.5px');
+        pillText.textContent = '✕ Desvincular';
+
+        actionGroup.appendChild(pillBg);
+        actionGroup.appendChild(pillText);
+      } else {
+        // Círculo flotante sutil que aparece al hacer hover sobre la línea: "✕"
+        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        circle.setAttribute('cx', btnX);
+        circle.setAttribute('cy', btnY);
+        circle.setAttribute('r', '11');
+        circle.setAttribute('fill', '#f43f5e');
+        circle.setAttribute('class', 'shadow-md hover:scale-110 transition-transform');
+
+        const cross = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        cross.setAttribute('x', btnX);
+        cross.setAttribute('y', btnY + 3.5);
+        cross.setAttribute('text-anchor', 'middle');
+        cross.setAttribute('fill', '#ffffff');
+        cross.setAttribute('font-size', '12px');
+        cross.setAttribute('font-weight', '900');
+        cross.textContent = '✕';
+
+        actionGroup.appendChild(circle);
+        actionGroup.appendChild(cross);
+      }
+
+      actionGroup.addEventListener('click', (e) => {
+        e.stopPropagation();
+        state.removeEdge(edge.id);
+        this.deselectEdge();
+        this.renderEdges();
+        window.dispatchEvent(new CustomEvent('show-toast', { detail: { message: 'Conexión desvinculada' } }));
+      });
+
+      labelsGroup.appendChild(actionGroup);
     });
   }
 
