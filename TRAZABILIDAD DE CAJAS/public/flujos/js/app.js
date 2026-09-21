@@ -27,12 +27,15 @@ function initFlujos() {
 
   // Render inicial
   renderer.render();
-  requestAnimationFrame(() => {
-    renderer.fitView();
-    setTimeout(() => {
+
+  // Solo centrar automáticamente con fitView si es la primera vez que se carga en este dispositivo
+  const localViewports = state.loadLocalViewports ? state.loadLocalViewports() : {};
+  const currentWsId = state.getCurrentWorkspace().id;
+  if (!localViewports[currentWsId]) {
+    requestAnimationFrame(() => {
       renderer.fitView();
-    }, 200);
-  });
+    });
+  }
 
   // Atajos de teclado
   window.addEventListener('keydown', (e) => {

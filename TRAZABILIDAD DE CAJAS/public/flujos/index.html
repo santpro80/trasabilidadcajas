@@ -399,6 +399,13 @@
                 margin: 0 auto !important;
             }
         }
+
+        /* Ocultar tips de teclado en cualquier dispositivo táctil o celular */
+        @media (hover: none) and (pointer: coarse) {
+            #desktop-shortcuts-bar {
+                display: none !important;
+            }
+        }
     </style>
 </head>
 
@@ -620,8 +627,8 @@
             </button>
         </div>
 
-        <!-- Floating Instructions (Abajo a la izquierda) -->
-        <div class="absolute bottom-6 left-6 z-30 hidden md:flex items-center gap-2.5 glass-panel px-4 py-2 rounded-2xl shadow-xl text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+        <!-- Floating Instructions (Abajo a la izquierda, solo visible en computadoras con mouse/teclado) -->
+        <div id="desktop-shortcuts-bar" class="absolute bottom-6 left-6 z-30 hidden lg:flex items-center gap-2.5 glass-panel px-4 py-2 rounded-2xl shadow-xl text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 select-none pointer-events-none">
             <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px] text-blue-500">ads_click</span> Conectar: Clic circulito</span>
             <span>•</span>
             <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px] text-rose-500">link_off</span> Desvincular: Clic en línea</span>
@@ -772,7 +779,7 @@
             <span id="connecting-mode-text">Haz clic en el bloque o circulito de destino</span>
         </div>
         <button id="btn-cancel-connecting" class="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-bold uppercase transition-colors cursor-pointer ml-2 border border-slate-700">
-            Cancelar (Esc)
+            Cancelar <span class="hidden md:inline">(Esc)</span>
         </button>
     </div>
 

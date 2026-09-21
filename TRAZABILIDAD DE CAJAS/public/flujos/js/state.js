@@ -115,6 +115,7 @@ const DEFAULT_INITIAL_DATA = {
 class FlowchartState {
   constructor() {
     this.data = this.loadFromStorage() || JSON.parse(JSON.stringify(DEFAULT_INITIAL_DATA));
+    this.applyLocalViewports();
     this.listeners = new Set();
     this.syncStatusListeners = new Set();
     this.cloudSyncStatus = 'syncing'; // 'syncing' | 'synced' | 'saving' | 'offline' | 'error'
@@ -244,11 +245,59 @@ class FlowchartState {
         if (snap.exists()) {
           const remote = snap.data();
           if (remote && remote.data && remote.data.workspaces && remote.data.workspaces.root) {
-            const remoteStr = JSON.stringify(remote.data);
-            const localStr = JSON.stringify(this.data);
-            if (remoteStr !== localStr) {
+            const remoteData = remote.data;
+
+            // Comparar solo contenido real ignorando pan y zoom específicos de cada pantalla/dispositivo
+            const cleanContent = (data) => {
+              if (!data || !data.workspaces) return '';
+              const cleaned = {};
+              for (const [id, ws] of Object.entries(data.workspaces)) {
+                cleaned[id] = {
+                  id: ws.id,
+                  name: ws.name,
+                  parentId: ws.parentId,
+                  parentNodeId: ws.parentNodeId,
+                  nodes: ws.nodes,
+                  edges: ws.edges
+                };
+              }
+              return JSON.stringify(cleaned);
+            };
+
+            const remoteContentStr = cleanContent(remoteData);
+            const localContentStr = cleanContent(this.data);
+
+            if (remoteContentStr !== localContentStr) {
               this.isRemoteUpdate = true;
-              this.data = remote.data;
+
+              // 1. Guardar la cámara actual de este dispositivo (pan y zoom de cada workspace)
+              const localViewports = {};
+              if (this.data && this.data.workspaces) {
+                for (const [wsId, ws] of Object.entries(this.data.workspaces)) {
+                  localViewports[wsId] = {
+                    pan: ws.pan ? { ...ws.pan } : null,
+                    zoom: ws.zoom || null
+                  };
+                }
+              }
+              const localCurrentWsId = this.data?.currentWorkspaceId;
+
+              this.data = remoteData;
+
+              // 2. Restaurar los viewports de este dispositivo para que NUNCA se altere la cámara por la edición de otra persona
+              if (this.data && this.data.workspaces) {
+                for (const [wsId, ws] of Object.entries(this.data.workspaces)) {
+                  if (localViewports[wsId]) {
+                    if (localViewports[wsId].pan) ws.pan = localViewports[wsId].pan;
+                    if (localViewports[wsId].zoom) ws.zoom = localViewports[wsId].zoom;
+                  }
+                }
+                if (localCurrentWsId && this.data.workspaces[localCurrentWsId]) {
+                  this.data.currentWorkspaceId = localCurrentWsId;
+                }
+              }
+              this.applyLocalViewports();
+
               this.saveToStorage();
               this.rebuildBreadcrumbs();
               this.notify('cloud_sync');
@@ -562,15 +611,55 @@ class FlowchartState {
     return newNode;
   }
 
-  // Pan y Zoom por workspace
+  // Pan y Zoom por workspace (locales e independientes por pantalla/dispositivo)
+  saveLocalViewports() {
+    try {
+      const viewports = {};
+      if (this.data && this.data.workspaces) {
+        for (const [id, ws] of Object.entries(this.data.workspaces)) {
+          if (ws.pan || ws.zoom) {
+            viewports[id] = {
+              pan: ws.pan ? { ...ws.pan } : { x: 120, y: 100 },
+              zoom: ws.zoom || 1
+            };
+          }
+        }
+      }
+      localStorage.setItem('flujos_local_viewports', JSON.stringify(viewports));
+    } catch (e) {}
+  }
+
+  loadLocalViewports() {
+    try {
+      const raw = localStorage.getItem('flujos_local_viewports');
+      return raw ? JSON.parse(raw) : {};
+    } catch (e) {
+      return {};
+    }
+  }
+
+  applyLocalViewports() {
+    const local = this.loadLocalViewports();
+    if (this.data && this.data.workspaces) {
+      for (const [id, ws] of Object.entries(this.data.workspaces)) {
+        if (local[id]) {
+          if (local[id].pan) ws.pan = { ...local[id].pan };
+          if (local[id].zoom) ws.zoom = local[id].zoom;
+        }
+      }
+    }
+  }
+
   setPan(x, y) {
     const ws = this.getCurrentWorkspace();
     ws.pan = { x, y };
+    this.saveLocalViewports();
   }
 
   setZoom(zoom) {
     const ws = this.getCurrentWorkspace();
     ws.zoom = zoom;
+    this.saveLocalViewports();
   }
 
   // Persistencia
