@@ -1,6 +1,5 @@
-// ui.js - Control de Interfaz, Menús Contextuales, Breadcrumbs y Modales
-
 import { state } from './state.js';
+import { FLOW_SHAPES, SHAPE_COLORS, getShapeConfig, getColorConfig } from './shapes.js';
 
 export class FlowchartUI {
   constructor(renderer) {
@@ -338,7 +337,8 @@ export class FlowchartUI {
         e.stopPropagation();
         if (!this.portTarget) return;
 
-        const type = btn.dataset.quickSpawn;
+        const shapeId = btn.dataset.quickSpawn;
+        const shapeCfg = getShapeConfig(shapeId);
         const fromNodeId = this.portTarget.nodeId;
         const fromPort = this.portTarget.port;
         const fromNode = state.getNode(fromNodeId);
@@ -352,12 +352,12 @@ export class FlowchartUI {
         let newX, newY;
         if (fromPort === 'bottom') {
           newX = fromNode.x;
-          newY = fromNode.y + 170;
+          newY = fromNode.y + 160;
         } else if (fromPort === 'left') {
-          newX = fromNode.x - 300;
+          newX = fromNode.x - 280;
           newY = fromNode.y;
         } else {
-          newX = fromNode.x + 300;
+          newX = fromNode.x + 280;
           newY = fromNode.y;
         }
 
@@ -368,31 +368,18 @@ export class FlowchartUI {
           newY += 35;
         }
 
-        const titles = {
-          action: 'Nueva Acción',
-          decision: '¿Condición?',
-          warning: 'Punto de Control',
-          note: 'Nota'
-        };
-
-        const texts = {
-          action: 'Sin descripción...',
-          decision: 'Evaluar bifurcación...',
-          warning: 'Verificar tolerancia y seguridad.',
-          note: 'Comentario explicativo...'
-        };
-
         const newNode = state.addNode({
-          type,
-          title: titles[type] || 'Nuevo Paso',
-          text: texts[type] || '',
+          shape: shapeId,
+          type: shapeId === 'decision' ? 'decision' : shapeId === 'comment' ? 'note' : 'action',
+          title: shapeCfg.defaultTitle || 'Nuevo Bloque',
+          text: '',
           x: Math.round(newX),
           y: Math.round(newY)
         });
 
         // Etiqueta de la arista
         let edgeLabel = '';
-        if (fromNode.type === 'decision') {
+        if (fromNode.type === 'decision' || fromNode.shape === 'decision') {
           edgeLabel = fromPort === 'right' ? 'Sí' : 'No';
         }
 
@@ -430,34 +417,29 @@ export class FlowchartUI {
     this.portTarget = null;
   }
 
-  createNodeAtCoords(type, coords) {
-    const titles = {
-      action: 'Nueva Acción',
-      decision: '¿Condición?',
-      warning: 'Alerta / Riesgo',
-      note: 'Nota'
-    };
-
+  createNodeAtCoords(shapeId, coords) {
+    const shapeCfg = getShapeConfig(shapeId);
     const node = state.addNode({
-      type,
-      title: titles[type] || 'Nuevo Paso',
+      shape: shapeId,
+      type: shapeId === 'decision' ? 'decision' : shapeId === 'comment' ? 'note' : 'action',
+      title: shapeCfg.defaultTitle || 'Nuevo Bloque',
       text: '',
-      x: Math.round(coords.x - 120),
-      y: Math.round(coords.y - 40)
+      x: Math.round(coords.x - (shapeCfg.width || 240) / 2),
+      y: Math.round(coords.y - (shapeCfg.height || 100) / 2)
     });
 
     this.renderer.render();
     this.renderer.selectNode(node.id);
-    this.showToast(`Nodo "${node.title}" creado`);
+    this.showToast(`Bloque "${node.title}" creado`);
     this.openEditModal(node.id);
   }
 
   // 3. Barra de Herramientas
   setupToolbar() {
-    // Botones rápidos de agregar nodo (+ Acción, + Decisión, etc.)
+    // Botones rápidos de agregar nodo (+ Proceso, + Decisión, etc.)
     document.querySelectorAll('[data-quick-add]').forEach(btn => {
       btn.addEventListener('click', (e) => {
-        const type = e.currentTarget.dataset.quickAdd;
+        const shape = e.currentTarget.dataset.quickAdd;
         const ws = state.getCurrentWorkspace();
         const pan = ws.pan || { x: 0, y: 0 };
         const zoom = ws.zoom || 1;
@@ -469,8 +451,28 @@ export class FlowchartUI {
           y: (rect.height / 2 - pan.y) / zoom
         };
 
-        this.createNodeAtCoords(type, centerCanvas);
+        this.createNodeAtCoords(shape, centerCanvas);
+
+        // Ocultar menú desplegable de más formas si estaba abierto
+        const moreMenu = document.getElementById('more-shapes-menu');
+        if (moreMenu) moreMenu.classList.add('hidden');
       });
+    });
+
+    // Menú Desplegable "+ Formas" en Toolbar
+    const btnMoreShapes = document.getElementById('btn-more-shapes-dropdown');
+    const moreShapesMenu = document.getElementById('more-shapes-menu');
+    btnMoreShapes?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      moreShapesMenu?.classList.toggle('hidden');
+      moreShapesMenu?.classList.toggle('flex');
+    });
+
+    window.addEventListener('click', (e) => {
+      if (!e.target.closest('#btn-more-shapes-dropdown') && !e.target.closest('#more-shapes-menu')) {
+        moreShapesMenu?.classList.add('hidden');
+        moreShapesMenu?.classList.remove('flex');
+      }
     });
 
     // Zoom Controls
@@ -548,6 +550,9 @@ export class FlowchartUI {
     const modal = document.getElementById('edit-node-modal');
     const closeBtn = document.getElementById('btn-close-edit-modal');
     const saveBtn = document.getElementById('btn-save-node-edit');
+    const shapeSelect = document.getElementById('edit-node-shape');
+    const colorInput = document.getElementById('edit-node-color');
+    const paletteContainer = document.getElementById('edit-node-colors-palette');
 
     if (!modal) return;
 
@@ -556,17 +561,50 @@ export class FlowchartUI {
       if (e.target === modal) this.closeEditModal();
     });
 
+    // Inyectar swatches de colores en la paleta interactiva
+    if (paletteContainer) {
+      paletteContainer.innerHTML = SHAPE_COLORS.map(c => `
+        <button type="button" data-color-hex="${c.hex}" class="btn-color-swatch size-7 rounded-full transition-all hover:scale-115 flex items-center justify-center cursor-pointer border-2 border-white dark:border-slate-800 shadow-sm" style="background-color: ${c.hex};" title="${c.name}">
+          <span class="material-symbols-outlined text-[13px] text-white hidden font-black">check</span>
+        </button>
+      `).join('');
+
+      paletteContainer.querySelectorAll('.btn-color-swatch').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const hex = btn.dataset.colorHex;
+          if (colorInput) colorInput.value = hex;
+          paletteContainer.querySelectorAll('.btn-color-swatch span').forEach(s => s.classList.add('hidden'));
+          btn.querySelector('span')?.classList.remove('hidden');
+        });
+      });
+    }
+
+    // Al cambiar la forma geométrica, si no se eligió un color personalizado, sugerir el color por defecto de la forma
+    shapeSelect?.addEventListener('change', () => {
+      const shapeId = shapeSelect.value;
+      const cfg = getShapeConfig(shapeId);
+      if (cfg && colorInput) {
+        colorInput.value = cfg.color;
+        paletteContainer?.querySelectorAll('.btn-color-swatch').forEach(btn => {
+          const isSelected = btn.dataset.colorHex.toLowerCase() === cfg.color.toLowerCase();
+          btn.querySelector('span')?.classList.toggle('hidden', !isSelected);
+        });
+      }
+    });
+
     saveBtn?.addEventListener('click', () => {
       const nodeId = document.getElementById('edit-node-id')?.value;
       const title = document.getElementById('edit-node-title')?.value.trim();
       const text = document.getElementById('edit-node-text')?.value.trim();
-      const type = document.getElementById('edit-node-type')?.value;
+      const shape = shapeSelect?.value || 'process';
+      const color = colorInput?.value || getShapeConfig(shape).color;
+      const type = shape === 'decision' ? 'decision' : shape === 'comment' ? 'note' : 'action';
 
       if (nodeId) {
-        state.updateNode(nodeId, { title, text, type });
+        state.updateNode(nodeId, { title, text, shape, color, type });
         this.renderer.render();
         this.closeEditModal();
-        this.showToast('Nodo actualizado');
+        this.showToast('Bloque actualizado');
       }
     });
 
@@ -597,12 +635,27 @@ export class FlowchartUI {
     const idInput = document.getElementById('edit-node-id');
     const titleInput = document.getElementById('edit-node-title');
     const textInput = document.getElementById('edit-node-text');
-    const typeSelect = document.getElementById('edit-node-type');
+    const shapeSelect = document.getElementById('edit-node-shape');
+    const colorInput = document.getElementById('edit-node-color');
+    const paletteContainer = document.getElementById('edit-node-colors-palette');
+
+    const shape = node.shape || (node.type === 'decision' ? 'decision' : node.type === 'note' ? 'comment' : node.type === 'warning' ? 'preparation' : (node.type || 'process'));
+    const shapeCfg = getShapeConfig(shape);
+    const activeColor = node.color || shapeCfg.color;
 
     if (idInput) idInput.value = node.id;
     if (titleInput) titleInput.value = node.title || '';
     if (textInput) textInput.value = node.text || '';
-    if (typeSelect) typeSelect.value = node.type || 'action';
+    if (shapeSelect) shapeSelect.value = shape;
+    if (colorInput) colorInput.value = activeColor;
+
+    // Resaltar swatch activo en la paleta
+    if (paletteContainer) {
+      paletteContainer.querySelectorAll('.btn-color-swatch').forEach(btn => {
+        const isSelected = btn.dataset.colorHex.toLowerCase() === activeColor.toLowerCase();
+        btn.querySelector('span')?.classList.toggle('hidden', !isSelected);
+      });
+    }
 
     modal?.classList.remove('hidden');
     modal?.classList.add('flex');
@@ -925,44 +978,65 @@ export class FlowchartUI {
       }
     });
 
-    // 5. Dibujar cada uno de los Nodos con sus iconos vectoriales
+    // 5. Dibujar cada uno de los Nodos con sus formas geométricas e iconos
     ws.nodes.forEach(node => {
+      const shapeKey = node.shape || (node.type === 'decision' ? 'decision' : node.type === 'note' ? 'comment' : node.type === 'warning' ? 'preparation' : (node.type || 'process'));
+      const shapeCfg = getShapeConfig(shapeKey);
+      const colorCfg = getColorConfig(node.color || shapeCfg.color);
+
       const nx = node.x - minX + paddingX;
       const ny = node.y - minY + paddingTop;
-      const nw = 240;
-      const nh = node.type === 'action' ? 122 : 106;
+      const nw = shapeCfg.width || 240;
+      const nh = shapeCfg.height || 100;
 
-      // Colores de borde y fondo
-      let borderColor = '#3b82f6';
-      let iconBg = 'rgba(59, 130, 246, 0.15)';
-      let cardBg = isDark ? '#0e1726' : '#ffffff';
-
-      if (node.type === 'decision') {
-        borderColor = '#10b981';
-        iconBg = 'rgba(16, 185, 129, 0.15)';
-        cardBg = isDark ? '#07221a' : '#ffffff';
-      } else if (node.type === 'warning') {
-        borderColor = '#f59e0b';
-        iconBg = 'rgba(245, 158, 11, 0.15)';
-        cardBg = isDark ? '#271a09' : '#ffffff';
-      } else if (node.type === 'note') {
-        borderColor = '#64748b';
-        iconBg = isDark ? '#1e293b' : '#e2e8f0';
-        cardBg = isDark ? '#111723' : '#f8fafc';
-      }
+      const borderColor = colorCfg.hex;
+      const iconBg = `${colorCfg.hex}25`;
+      const cardBg = isDark ? colorCfg.bgDark : colorCfg.bgLight;
 
       // Sombra suave de la tarjeta
       ctx.shadowColor = 'rgba(0, 0, 0, 0.15)';
       ctx.shadowBlur = 10;
       ctx.shadowOffsetY = 4;
 
-      // Tarjeta base
+      // Dibujar forma geométrica
       ctx.fillStyle = cardBg;
       ctx.strokeStyle = borderColor;
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 2.5;
       ctx.beginPath();
-      if (ctx.roundRect) ctx.roundRect(nx, ny, nw, nh, 16);
-      else ctx.rect(nx, ny, nw, nh);
+
+      if (shapeCfg.id === 'decision') {
+        ctx.moveTo(nx + nw / 2, ny);
+        ctx.lineTo(nx + nw, ny + nh / 2);
+        ctx.lineTo(nx + nw / 2, ny + nh);
+        ctx.lineTo(nx, ny + nh / 2);
+        ctx.closePath();
+      } else if (shapeCfg.id === 'terminal') {
+        const r = nh / 2;
+        if (ctx.roundRect) ctx.roundRect(nx, ny, nw, nh, r);
+        else ctx.rect(nx, ny, nw, nh);
+      } else if (shapeCfg.id === 'circle') {
+        ctx.arc(nx + nw / 2, ny + nh / 2, nw / 2 - 2, 0, Math.PI * 2);
+      } else if (shapeCfg.id === 'data') {
+        const skew = 25;
+        ctx.moveTo(nx + skew, ny);
+        ctx.lineTo(nx + nw, ny);
+        ctx.lineTo(nx + nw - skew, ny + nh);
+        ctx.lineTo(nx, ny + nh);
+        ctx.closePath();
+      } else if (shapeCfg.id === 'preparation') {
+        const pt = 26;
+        ctx.moveTo(nx + pt, ny);
+        ctx.lineTo(nx + nw - pt, ny);
+        ctx.lineTo(nx + nw, ny + nh / 2);
+        ctx.lineTo(nx + nw - pt, ny + nh);
+        ctx.lineTo(nx + pt, ny + nh);
+        ctx.lineTo(nx, ny + nh / 2);
+        ctx.closePath();
+      } else {
+        if (ctx.roundRect) ctx.roundRect(nx, ny, nw, nh, 12);
+        else ctx.rect(nx, ny, nw, nh);
+      }
+
       ctx.fill();
       ctx.stroke();
 

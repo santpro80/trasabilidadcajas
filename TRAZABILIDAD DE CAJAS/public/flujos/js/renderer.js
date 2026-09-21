@@ -1,6 +1,7 @@
 // renderer.js - Motor Gráfico Interactivo para Canvas Infinito, Nodos y Conexiones Bezier
 
 import { state } from './state.js';
+import { getShapeConfig, getColorConfig } from './shapes.js';
 
 export class FlowchartRenderer {
   constructor(containerEl, svgEl, nodesContainerEl) {
@@ -428,58 +429,107 @@ export class FlowchartRenderer {
   }
 
   createNodeElement(node) {
+    const shapeKey = node.shape || (node.type === 'decision' ? 'decision' : node.type === 'note' ? 'comment' : node.type === 'warning' ? 'preparation' : (node.type || 'process'));
+    const shapeCfg = getShapeConfig(shapeKey);
+    const colorCfg = getColorConfig(node.color || shapeCfg.color);
+    const w = shapeCfg.width || 240;
+    const h = shapeCfg.height || 100;
+
     const el = document.createElement('div');
     el.id = `node-el-${node.id}`;
-    el.className = `flow-node absolute select-none cursor-grab active:cursor-grabbing ${this.getNodeThemeClass(node.type)}`;
+    el.className = `flow-node absolute select-none cursor-grab active:cursor-grabbing group/node`;
     el.style.left = `${node.x}px`;
     el.style.top = `${node.y}px`;
-    el.style.width = '240px';
+    el.style.width = `${w}px`;
+    el.style.height = `${h}px`;
+    el.style.setProperty('--node-color', colorCfg.hex);
+    el.style.setProperty('--node-bg-light', colorCfg.bgLight);
+    el.style.setProperty('--node-bg-dark', colorCfg.bgDark);
     el.dataset.nodeId = node.id;
+    el.dataset.shape = shapeCfg.id;
 
     // Header y contenido
-    const icon = this.getNodeIcon(node.type);
-    const subFlujoBadge = (node.type === 'action') ? `
-      <div class="sub-workspace-hint mt-2.5 pt-2 border-t border-blue-500/20 flex items-center justify-between text-[9px] font-black uppercase text-blue-600 dark:text-blue-400 tracking-wider">
+    const icon = shapeCfg.icon || this.getNodeIcon(node.type);
+    const isSubWorkspace = node.type === 'action' || shapeCfg.id === 'subprocess' || !!node.childWorkspaceId;
+    const subFlujoBadge = isSubWorkspace ? `
+      <div class="sub-workspace-hint mt-1.5 pt-1 border-t border-blue-500/20 flex items-center justify-between text-[9px] font-black uppercase text-blue-600 dark:text-blue-400 tracking-wider">
         <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[13px]">account_tree</span> Sub-diagrama</span>
         <span class="opacity-70">Doble clic ↵</span>
       </div>
     ` : '';
 
+    // Puertos calculados
+    const pLeft = shapeCfg.ports.left(w, h);
+    const pRight = shapeCfg.ports.right(w, h);
+    const pBottom = shapeCfg.ports.bottom ? shapeCfg.ports.bottom(w, h) : null;
+
+    // Padding según geometría
+    let paddingClass = 'p-3.5';
+    if (shapeCfg.id === 'decision') {
+      paddingClass = 'px-9 py-4';
+    } else if (shapeCfg.id === 'circle') {
+      paddingClass = 'p-3';
+    } else if (shapeCfg.id === 'data' || shapeCfg.id === 'manual_op') {
+      paddingClass = 'px-8 py-3';
+    } else if (shapeCfg.id === 'terminal') {
+      paddingClass = 'px-7 py-3';
+    } else if (shapeCfg.id === 'document') {
+      paddingClass = 'px-4 pt-3 pb-6';
+    } else if (shapeCfg.id === 'database') {
+      paddingClass = 'px-4 pt-6 pb-3';
+    } else if (shapeCfg.id === 'storage') {
+      paddingClass = 'px-8 pt-3 pb-8';
+    }
+
+    const svgBackground = `
+      <svg class="node-shape-svg absolute inset-0 w-full h-full pointer-events-none overflow-visible">
+        <g class="node-shape-vector" stroke="${colorCfg.hex}">
+          ${shapeCfg.renderSvg(w, h)}
+        </g>
+      </svg>
+    `;
+
     el.innerHTML = `
+      ${svgBackground}
+
       <!-- Puerto Entrada Izquierdo -->
-      <div class="flow-port flow-port-in absolute -left-3 top-1/2 -translate-y-1/2 size-5 rounded-full bg-white dark:bg-slate-800 border-2 border-slate-400 dark:border-slate-500 hover:border-blue-500 hover:scale-125 transition-all flex items-center justify-center cursor-crosshair z-20 shadow-sm" data-node-id="${node.id}" data-port-type="in" data-port="left" title="Conectar aquí">
+      <div class="flow-port flow-port-in absolute size-5 rounded-full bg-white dark:bg-slate-800 border-2 border-slate-400 dark:border-slate-500 hover:border-blue-500 hover:scale-125 transition-all flex items-center justify-center cursor-crosshair z-20 shadow-sm" style="left: ${pLeft.x}px; top: ${pLeft.y}px; transform: translate(-50%, -50%);" data-node-id="${node.id}" data-port-type="in" data-port="left" title="Conectar aquí">
         <div class="size-1.5 rounded-full bg-slate-400 dark:bg-slate-500 pointer-events-none"></div>
       </div>
 
       <!-- Puerto Salida Derecho -->
-      <div class="flow-port flow-port-out absolute -right-3 top-1/2 -translate-y-1/2 size-5 rounded-full bg-white dark:bg-slate-800 border-2 border-blue-500 hover:scale-125 hover:bg-blue-500 transition-all flex items-center justify-center cursor-crosshair z-20 shadow-sm" data-node-id="${node.id}" data-port-type="out" data-port="right" title="Arrastrar para conectar">
+      <div class="flow-port flow-port-out absolute size-5 rounded-full bg-white dark:bg-slate-800 border-2 border-blue-500 hover:scale-125 hover:bg-blue-500 transition-all flex items-center justify-center cursor-crosshair z-20 shadow-sm" style="left: ${pRight.x}px; top: ${pRight.y}px; transform: translate(-50%, -50%);" data-node-id="${node.id}" data-port-type="out" data-port="right" title="Arrastrar para conectar">
         <div class="size-1.5 rounded-full bg-blue-500 pointer-events-none"></div>
       </div>
 
-      <!-- Puerto Salida Inferior (especial para Decisiones) -->
-      ${node.type === 'decision' ? `
-        <div class="flow-port flow-port-out absolute left-1/2 -translate-x-1/2 -bottom-3 size-5 rounded-full bg-white dark:bg-slate-800 border-2 border-emerald-500 hover:scale-125 hover:bg-emerald-500 transition-all flex items-center justify-center cursor-crosshair z-20 shadow-sm" data-node-id="${node.id}" data-port-type="out" data-port="bottom" title="Bifurcación alternativa">
+      <!-- Puerto Salida Inferior (si la forma lo soporta) -->
+      ${pBottom ? `
+        <div class="flow-port flow-port-out absolute size-5 rounded-full bg-white dark:bg-slate-800 border-2 border-emerald-500 hover:scale-125 hover:bg-emerald-500 transition-all flex items-center justify-center cursor-crosshair z-20 shadow-sm" style="left: ${pBottom.x}px; top: ${pBottom.y}px; transform: translate(-50%, -50%);" data-node-id="${node.id}" data-port-type="out" data-port="bottom" title="Bifurcación / Salida">
           <div class="size-1.5 rounded-full bg-emerald-500 pointer-events-none"></div>
         </div>
       ` : ''}
 
       <!-- Cuerpo del Nodo -->
-      <div class="p-4 flex flex-col h-full">
-        <div class="flex items-center gap-2 mb-1.5">
-          <div class="size-7 rounded-lg flex items-center justify-center shrink-0 ${this.getNodeIconBg(node.type)}">
-            <span class="material-symbols-outlined text-[16px]">${icon}</span>
+      <div class="relative z-10 w-full h-full flex flex-col justify-between ${paddingClass}">
+        <div>
+          <div class="flex items-center gap-1.5 mb-1">
+            <div class="size-6 rounded-md flex items-center justify-center shrink-0 shadow-xs" style="background-color: ${colorCfg.hex}22; color: ${colorCfg.hex};">
+              <span class="material-symbols-outlined text-[14px]">${icon}</span>
+            </div>
+            <h4 class="node-title text-xs font-black uppercase tracking-wider text-slate-800 dark:text-white truncate flex-1" title="${node.title}">
+              ${node.title || 'Sin Título'}
+            </h4>
+            <button type="button" class="btn-node-edit size-6 rounded-md hover:bg-slate-200/70 dark:hover:bg-slate-700/70 text-slate-400 hover:text-blue-500 transition-colors flex items-center justify-center cursor-pointer shrink-0" title="Editar bloque">
+              <span class="material-symbols-outlined text-[14px]">edit</span>
+            </button>
           </div>
-          <h4 class="node-title text-xs font-black uppercase tracking-wider text-slate-800 dark:text-white truncate flex-1" title="${node.title}">
-            ${node.title || 'Sin Título'}
-          </h4>
-          <button type="button" class="btn-node-edit size-7 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700/60 text-slate-400 hover:text-blue-500 transition-colors flex items-center justify-center cursor-pointer shrink-0" title="Editar bloque">
-            <span class="material-symbols-outlined text-[15px]">edit</span>
-          </button>
-        </div>
 
-        <p class="node-text text-[11px] font-medium text-slate-600 dark:text-slate-300 leading-snug line-clamp-3">
-          ${node.text || 'Sin descripción...'}
-        </p>
+          ${node.text ? `
+            <p class="node-text text-[11px] font-medium text-slate-600 dark:text-slate-300 leading-snug line-clamp-2">
+              ${node.text}
+            </p>
+          ` : ''}
+        </div>
 
         ${subFlujoBadge}
       </div>
@@ -671,12 +721,14 @@ export class FlowchartRenderer {
   }
 
   getNodeIcon(type) {
+    const cfg = getShapeConfig(type);
+    if (cfg && cfg.icon) return cfg.icon;
     switch (type) {
-      case 'action': return 'bolt';
-      case 'decision': return 'call_split';
+      case 'action': return 'crop_landscape';
+      case 'decision': return 'diamond';
       case 'warning': return 'warning';
-      case 'note': return 'description';
-      default: return 'circle';
+      case 'note': return 'comment';
+      default: return 'crop_landscape';
     }
   }
 
@@ -890,22 +942,20 @@ export class FlowchartRenderer {
   }
 
   getPortCoordinates(node, port) {
-    const el = this.nodesContainer ? this.nodesContainer.querySelector(`.flow-node[data-node-id="${node.id}"]`) : null;
-    const nodeWidth = 240;
-    const nodeHeight = (el && el.offsetHeight) ? el.offsetHeight : 110;
+    const shapeKey = node.shape || (node.type === 'decision' ? 'decision' : node.type === 'note' ? 'comment' : node.type === 'warning' ? 'preparation' : (node.type || 'process'));
+    const shapeCfg = getShapeConfig(shapeKey);
 
-    switch (port) {
-      case 'right':
-        return { x: node.x + nodeWidth, y: node.y + nodeHeight / 2 };
-      case 'left':
-        return { x: node.x, y: node.y + nodeHeight / 2 };
-      case 'bottom':
-        return { x: node.x + nodeWidth / 2, y: node.y + nodeHeight };
-      case 'top':
-        return { x: node.x + nodeWidth / 2, y: node.y };
-      default:
-        return { x: node.x + nodeWidth, y: node.y + nodeHeight / 2 };
-    }
+    const el = this.nodesContainer ? this.nodesContainer.querySelector(`.flow-node[data-node-id="${node.id}"]`) : null;
+    const w = (el && el.offsetWidth) ? el.offsetWidth : (shapeCfg.width || 240);
+    const h = (el && el.offsetHeight) ? el.offsetHeight : (shapeCfg.height || 100);
+
+    const portFn = (shapeCfg.ports && shapeCfg.ports[port]) ? shapeCfg.ports[port] : (shapeCfg.ports.right || ((cw, ch) => ({ x: cw, y: ch / 2 })));
+    const relPos = portFn(w, h);
+
+    return {
+      x: node.x + relPos.x,
+      y: node.y + relPos.y
+    };
   }
 
   calculateBezier(x1, y1, x2, y2, fromPort, toPort) {

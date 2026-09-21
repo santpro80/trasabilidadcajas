@@ -95,75 +95,52 @@
         }
 
         /* ==========================================================================
-           SISTEMA DE NODOS: MODO CLARO & MODO OSCURO DEFINIDO
+           SISTEMA DE NODOS VECTORIALES: FORMAS GEOMÉTRICAS ESTÁNDAR
            ========================================================================== */
         .flow-node {
-            border-radius: 1.25rem;
-            transition: box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.2s ease;
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            border-radius: 0 !important;
             will-change: left, top;
         }
 
-        /* 1. Nodo Acción (Azul) */
-        .flow-node-action {
-            background-color: #ffffff;
-            border: 2px solid #3b82f6;
-            box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.18);
+        /* Capa SVG vectorial de fondo para cada forma */
+        .node-shape-svg {
+            overflow: visible;
+            pointer-events: none;
+            filter: drop-shadow(0 4px 14px rgba(0, 0, 0, 0.08));
+            transition: filter 0.2s ease;
         }
-        html.dark .flow-node-action {
-            background-color: #0e1726 !important;
-            border-color: #3b82f6 !important;
-            box-shadow: 0 12px 30px -5px rgba(59, 130, 246, 0.3) !important;
-        }
-        html.dark .flow-node-action:hover {
-            box-shadow: 0 16px 36px -4px rgba(59, 130, 246, 0.5) !important;
-            border-color: #60a5fa !important;
+        html.dark .node-shape-svg {
+            filter: drop-shadow(0 6px 20px rgba(0, 0, 0, 0.6));
         }
 
-        /* 2. Nodo Decisión (Verde Esmeralda) */
-        .flow-node-decision {
-            background-color: #ffffff;
-            border: 2px solid #10b981;
-            box-shadow: 0 10px 25px -5px rgba(16, 185, 129, 0.18);
+        .node-shape-vector .shape-fill {
+            fill: var(--node-bg-light, #ffffff);
+            stroke: var(--node-color, #3b82f6);
+            stroke-linejoin: round;
+            stroke-linecap: round;
+            transition: fill 0.2s ease, stroke 0.2s ease, stroke-width 0.15s ease;
         }
-        html.dark .flow-node-decision {
-            background-color: #07221a !important;
-            border-color: #10b981 !important;
-            box-shadow: 0 12px 30px -5px rgba(16, 185, 129, 0.3) !important;
+        html.dark .node-shape-vector .shape-fill {
+            fill: var(--node-bg-dark, #0e1726) !important;
+            stroke: var(--node-color, #3b82f6) !important;
         }
-        html.dark .flow-node-decision:hover {
-            box-shadow: 0 16px 36px -4px rgba(16, 185, 129, 0.5) !important;
-            border-color: #34d399 !important;
-        }
-
-        /* 3. Nodo Advertencia (Amarillo Cálido) */
-        .flow-node-warning {
-            background-color: #ffffff;
-            border: 2px solid #f59e0b;
-            box-shadow: 0 10px 25px -5px rgba(245, 158, 11, 0.18);
-        }
-        html.dark .flow-node-warning {
-            background-color: #271a09 !important;
-            border-color: #f59e0b !important;
-            box-shadow: 0 12px 30px -5px rgba(245, 158, 11, 0.3) !important;
-        }
-        html.dark .flow-node-warning:hover {
-            box-shadow: 0 16px 36px -4px rgba(245, 158, 11, 0.5) !important;
-            border-color: #fbbf24 !important;
+        .node-shape-vector .shape-stroke {
+            stroke: var(--node-color, #3b82f6) !important;
+            stroke-linejoin: round;
+            stroke-linecap: round;
         }
 
-        /* 4. Nodo Nota / Comentario */
-        .flow-node-note {
-            background-color: #f8fafc;
-            border: 2px solid #cbd5e1;
-            box-shadow: 0 8px 20px -5px rgba(0, 0, 0, 0.06);
+        .flow-node:hover .node-shape-svg {
+            filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.15));
         }
-        html.dark .flow-node-note {
-            background-color: #111723 !important;
-            border-color: #334155 !important;
-            box-shadow: 0 12px 30px -5px rgba(0, 0, 0, 0.5) !important;
+        html.dark .flow-node:hover .node-shape-svg {
+            filter: drop-shadow(0 10px 28px rgba(0, 0, 0, 0.8));
         }
-        html.dark .flow-node-note:hover {
-            border-color: #64748b !important;
+        .flow-node:hover .node-shape-vector .shape-fill {
+            stroke-width: 3.5px;
         }
 
         /* Tipografía de Nodos */
@@ -230,28 +207,29 @@
            ESTILOS DE SELECCIÓN DE CELDAS / NODOS (ALTO CONTRASTE Y RESALTADO)
            ========================================================================== */
         .flow-node.node-selected {
-            outline: 3px solid #38bdf8 !important;
-            outline-offset: 3px !important;
-            border-color: #38bdf8 !important;
             z-index: 30 !important;
             transform: scale(1.02);
-            transition: transform 0.15s ease, outline 0.15s ease, box-shadow 0.15s ease;
+            transition: transform 0.15s ease;
         }
 
         /* En modo claro */
-        html:not(.dark) .flow-node.node-selected {
-            outline-color: #2563eb !important;
-            border-color: #2563eb !important;
-            background-color: #eff6ff !important;
-            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.25), 0 15px 35px -5px rgba(37, 99, 235, 0.4) !important;
+        html:not(.dark) .flow-node.node-selected .node-shape-svg {
+            filter: drop-shadow(0 0 10px rgba(37, 99, 235, 0.45)) drop-shadow(0 8px 24px rgba(37, 99, 235, 0.25)) !important;
+        }
+        html:not(.dark) .flow-node.node-selected .node-shape-vector .shape-fill {
+            stroke-width: 4px !important;
+            stroke: #2563eb !important;
+            fill: var(--node-bg-light, #eff6ff) !important;
         }
 
         /* En modo oscuro */
-        html.dark .flow-node.node-selected {
-            outline-color: #38bdf8 !important;
-            border-color: #38bdf8 !important;
-            background-color: #112239 !important;
-            box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.35), 0 0 35px 5px rgba(56, 189, 248, 0.45) !important;
+        html.dark .flow-node.node-selected .node-shape-svg {
+            filter: drop-shadow(0 0 14px rgba(56, 189, 248, 0.6)) drop-shadow(0 10px 28px rgba(0, 0, 0, 0.9)) !important;
+        }
+        html.dark .flow-node.node-selected .node-shape-vector .shape-fill {
+            stroke-width: 4px !important;
+            stroke: #38bdf8 !important;
+            fill: var(--node-bg-dark, #112239) !important;
         }
 
         /* Badge indicador de selección activa en la esquina superior derecha */
@@ -462,20 +440,65 @@
                 <span id="cloud-sync-text" class="hidden sm:inline">En la nube</span>
             </div>
 
-            <!-- Botones Rápidos de Agregar Nodo (Desktop) -->
+            <!-- Botones Rápidos de Agregar Formas Estándar (Desktop) -->
             <div class="hidden lg:flex items-center gap-1.5 bg-slate-100 dark:bg-slate-900/60 p-1 rounded-2xl border border-slate-200 dark:border-slate-800">
-                <button data-quick-add="action" class="px-2.5 py-1.5 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 text-[11px] font-black uppercase tracking-wider flex items-center gap-1 transition-all cursor-pointer" title="Agregar Paso de Acción (Azul)">
-                    <span class="material-symbols-outlined text-[15px]">bolt</span> Acción
+                <button data-quick-add="process" class="px-2.5 py-1.5 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 text-[11px] font-black uppercase tracking-wider flex items-center gap-1 transition-all cursor-pointer" title="Proceso (Rectángulo)">
+                    <span class="material-symbols-outlined text-[15px]">crop_landscape</span> Proceso
                 </button>
-                <button data-quick-add="decision" class="px-2.5 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[11px] font-black uppercase tracking-wider flex items-center gap-1 transition-all cursor-pointer" title="Agregar Decisión / Bifurcación (Verde)">
-                    <span class="material-symbols-outlined text-[15px]">call_split</span> Decisión
+                <button data-quick-add="decision" class="px-2.5 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[11px] font-black uppercase tracking-wider flex items-center gap-1 transition-all cursor-pointer" title="Decisión (Rombo)">
+                    <span class="material-symbols-outlined text-[15px]">diamond</span> Decisión
                 </button>
-                <button data-quick-add="warning" class="px-2.5 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 text-[11px] font-black uppercase tracking-wider flex items-center gap-1 transition-all cursor-pointer" title="Agregar Advertencia / Control (Amarillo)">
-                    <span class="material-symbols-outlined text-[15px]">warning</span> Alerta
+                <button data-quick-add="terminal" class="px-2.5 py-1.5 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 text-[11px] font-black uppercase tracking-wider flex items-center gap-1 transition-all cursor-pointer" title="Terminal (Inicio/Fin)">
+                    <span class="material-symbols-outlined text-[15px]">stadium</span> Terminal
                 </button>
-                <button data-quick-add="note" class="px-2.5 py-1.5 rounded-xl bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-[11px] font-black uppercase tracking-wider flex items-center gap-1 transition-all cursor-pointer" title="Agregar Nota explicativa (Gris)">
-                    <span class="material-symbols-outlined text-[15px]">description</span> Nota
+                <button data-quick-add="data" class="px-2.5 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 text-[11px] font-black uppercase tracking-wider flex items-center gap-1 transition-all cursor-pointer" title="Datos (Paralelogramo)">
+                    <span class="material-symbols-outlined text-[15px]">input</span> Datos
                 </button>
+                <button data-quick-add="document" class="px-2.5 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 text-[11px] font-black uppercase tracking-wider flex items-center gap-1 transition-all cursor-pointer" title="Documento (Base curva)">
+                    <span class="material-symbols-outlined text-[15px]">article</span> Doc
+                </button>
+                
+                <!-- Desplegable con Todas las Formas Estándar -->
+                <div class="relative">
+                    <button id="btn-more-shapes-dropdown" type="button" class="px-2 py-1.5 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 text-[11px] font-black uppercase tracking-wider flex items-center gap-1 transition-all cursor-pointer" title="Todas las Formas Geométricas">
+                        <span>+ Formas</span>
+                        <span class="material-symbols-outlined text-[15px]">expand_more</span>
+                    </button>
+                    <div id="more-shapes-menu" class="hidden absolute right-0 mt-2 w-60 glass-panel rounded-2xl p-2 shadow-2xl border border-slate-200 dark:border-slate-800 flex-col gap-1 z-50 text-xs font-bold max-h-80 overflow-y-auto hide-scrollbar animate-in fade-in zoom-in-95 duration-150">
+                        <div class="px-2 py-1 text-[9px] font-black uppercase tracking-widest text-slate-400">Datos & Almacenamiento</div>
+                        <button data-quick-add="database" class="flex items-center gap-2 px-2 py-1.5 rounded-xl hover:bg-purple-500/10 hover:text-purple-600 dark:hover:text-purple-400 transition-colors text-left cursor-pointer">
+                            <span class="material-symbols-outlined text-purple-500 text-[16px]">database</span> Base de Datos
+                        </button>
+                        <button data-quick-add="multidocument" class="flex items-center gap-2 px-2 py-1.5 rounded-xl hover:bg-orange-500/10 hover:text-orange-600 dark:hover:text-orange-400 transition-colors text-left cursor-pointer">
+                            <span class="material-symbols-outlined text-orange-500 text-[16px]">file_copy</span> Múltiples Docs
+                        </button>
+                        <button data-quick-add="storage" class="flex items-center gap-2 px-2 py-1.5 rounded-xl hover:bg-rose-500/10 hover:text-rose-600 dark:hover:text-rose-400 transition-colors text-left cursor-pointer">
+                            <span class="material-symbols-outlined text-rose-500 text-[16px]">archive</span> Almacén (Triángulo)
+                        </button>
+                        <div class="px-2 py-1 text-[9px] font-black uppercase tracking-widest text-slate-400 mt-1 border-t border-slate-200 dark:border-slate-800 pt-1.5">Operaciones & Procesos</div>
+                        <button data-quick-add="subprocess" class="flex items-center gap-2 px-2 py-1.5 rounded-xl hover:bg-blue-600/10 hover:text-blue-600 dark:hover:text-blue-400 transition-colors text-left cursor-pointer">
+                            <span class="material-symbols-outlined text-blue-600 text-[16px]">account_tree</span> Proceso Predefinido
+                        </button>
+                        <button data-quick-add="manual_op" class="flex items-center gap-2 px-2 py-1.5 rounded-xl hover:bg-amber-600/10 hover:text-amber-600 dark:hover:text-amber-400 transition-colors text-left cursor-pointer">
+                            <span class="material-symbols-outlined text-amber-600 text-[16px]">front_hand</span> Operación Manual
+                        </button>
+                        <button data-quick-add="preparation" class="flex items-center gap-2 px-2 py-1.5 rounded-xl hover:bg-lime-600/10 hover:text-lime-600 dark:hover:text-lime-400 transition-colors text-left cursor-pointer">
+                            <span class="material-symbols-outlined text-lime-600 text-[16px]">settings</span> Preparación (Hexágono)
+                        </button>
+                        <button data-quick-add="delay" class="flex items-center gap-2 px-2 py-1.5 rounded-xl hover:bg-yellow-600/10 hover:text-yellow-600 dark:hover:text-yellow-400 transition-colors text-left cursor-pointer">
+                            <span class="material-symbols-outlined text-yellow-500 text-[16px]">hourglass_empty</span> Retraso (Espera)
+                        </button>
+                        <button data-quick-add="display" class="flex items-center gap-2 px-2 py-1.5 rounded-xl hover:bg-sky-500/10 hover:text-sky-600 dark:hover:text-sky-400 transition-colors text-left cursor-pointer">
+                            <span class="material-symbols-outlined text-sky-500 text-[16px]">monitor</span> Display / Pantalla
+                        </button>
+                        <button data-quick-add="circle" class="flex items-center gap-2 px-2 py-1.5 rounded-xl hover:bg-teal-500/10 hover:text-teal-600 dark:hover:text-teal-400 transition-colors text-left cursor-pointer">
+                            <span class="material-symbols-outlined text-teal-500 text-[16px]">radio_button_unchecked</span> Conector (Círculo)
+                        </button>
+                        <button data-quick-add="comment" class="flex items-center gap-2 px-2 py-1.5 rounded-xl hover:bg-slate-300 dark:hover:bg-slate-800 transition-colors text-left cursor-pointer">
+                            <span class="material-symbols-outlined text-slate-500 text-[16px]">comment</span> Comentario / Nota
+                        </button>
+                    </div>
+                </div>
             </div>
 
             <!-- Botón Móvil: Agregar Bloque -->
@@ -671,19 +694,31 @@
             <span>Crear y Conectar</span>
             <span class="material-symbols-outlined text-[14px] text-blue-500">add_circle</span>
         </div>
-        <button data-quick-spawn="action" class="flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl hover:bg-blue-500/10 hover:text-blue-500 dark:hover:bg-blue-500/20 dark:hover:text-blue-400 transition-colors text-left cursor-pointer">
+        <button data-quick-spawn="process" class="flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl hover:bg-blue-500/10 hover:text-blue-500 dark:hover:bg-blue-500/20 dark:hover:text-blue-400 transition-colors text-left cursor-pointer">
             <span class="size-2.5 rounded-full bg-blue-500 shrink-0"></span>
-            <span>Acción (Azul)</span>
+            <span>Proceso (Rectángulo)</span>
         </button>
         <button data-quick-spawn="decision" class="flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl hover:bg-emerald-500/10 hover:text-emerald-500 dark:hover:bg-emerald-500/20 dark:hover:text-emerald-400 transition-colors text-left cursor-pointer">
             <span class="size-2.5 rounded-full bg-emerald-500 shrink-0"></span>
-            <span>Decisión (Verde)</span>
+            <span>Decisión (Rombo)</span>
         </button>
-        <button data-quick-spawn="warning" class="flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl hover:bg-amber-500/10 hover:text-amber-500 dark:hover:bg-amber-500/20 dark:hover:text-amber-400 transition-colors text-left cursor-pointer">
+        <button data-quick-spawn="terminal" class="flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl hover:bg-indigo-500/10 hover:text-indigo-500 dark:hover:bg-indigo-500/20 dark:hover:text-indigo-400 transition-colors text-left cursor-pointer">
+            <span class="size-2.5 rounded-full bg-indigo-500 shrink-0"></span>
+            <span>Terminal (Inicio/Fin)</span>
+        </button>
+        <button data-quick-spawn="data" class="flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl hover:bg-cyan-500/10 hover:text-cyan-500 dark:hover:bg-cyan-500/20 dark:hover:text-cyan-400 transition-colors text-left cursor-pointer">
+            <span class="size-2.5 rounded-full bg-cyan-500 shrink-0"></span>
+            <span>Datos (Paralelogramo)</span>
+        </button>
+        <button data-quick-spawn="document" class="flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl hover:bg-amber-500/10 hover:text-amber-500 dark:hover:bg-amber-500/20 dark:hover:text-amber-400 transition-colors text-left cursor-pointer">
             <span class="size-2.5 rounded-full bg-amber-500 shrink-0"></span>
-            <span>Alerta (Amarillo)</span>
+            <span>Documento (Curvo)</span>
         </button>
-        <button data-quick-spawn="note" class="flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors text-left cursor-pointer">
+        <button data-quick-spawn="database" class="flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl hover:bg-purple-500/10 hover:text-purple-500 dark:hover:bg-purple-500/20 dark:hover:text-purple-400 transition-colors text-left cursor-pointer">
+            <span class="size-2.5 rounded-full bg-purple-500 shrink-0"></span>
+            <span>Base de Datos (Cilindro)</span>
+        </button>
+        <button data-quick-spawn="comment" class="flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors text-left cursor-pointer">
             <span class="size-2.5 rounded-full bg-slate-400 shrink-0"></span>
             <span>Nota / Comentario</span>
         </button>
@@ -734,13 +769,38 @@
 
             <div class="space-y-4">
                 <div>
-                    <label class="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1.5">Tipo de Nodo</label>
-                    <select id="edit-node-type" class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold text-slate-800 dark:text-white outline-none focus:border-blue-500 transition-colors">
-                        <option value="action">Acción (Paso de proceso - Azul)</option>
-                        <option value="decision">Decisión (Bifurcación - Verde)</option>
-                        <option value="warning">Advertencia (Punto de riesgo - Amarillo)</option>
-                        <option value="note">Comentario / Nota (Explicación)</option>
+                    <label class="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1.5">Forma Geométrica Estándar</label>
+                    <select id="edit-node-shape" class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold text-slate-800 dark:text-white outline-none focus:border-blue-500 transition-colors">
+                        <optgroup label="Principales">
+                            <option value="process">Proceso (Rectángulo)</option>
+                            <option value="decision">Decisión (Rombo)</option>
+                            <option value="terminal">Terminal / Inicio-Fin (Cápsula)</option>
+                            <option value="subprocess">Proceso Predefinido / Sub-diagrama</option>
+                            <option value="circle">Conector / Operación (Círculo)</option>
+                        </optgroup>
+                        <optgroup label="Datos y Documentos">
+                            <option value="data">Datos / Entrada-Salida (Paralelogramo)</option>
+                            <option value="document">Documento (Base ondulada)</option>
+                            <option value="multidocument">Múltiples Documentos</option>
+                            <option value="database">Base de Datos (Cilindro)</option>
+                        </optgroup>
+                        <optgroup label="Especializados">
+                            <option value="manual_op">Operación Manual (Trapecio)</option>
+                            <option value="preparation">Preparación / Setup (Hexágono)</option>
+                            <option value="delay">Retraso / Espera (Forma de D)</option>
+                            <option value="storage">Almacenamiento (Triángulo)</option>
+                            <option value="display">Visualización / Display (Pantalla)</option>
+                            <option value="comment">Comentario / Anotación (Corchete)</option>
+                        </optgroup>
                     </select>
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1.5">Color de Forma</label>
+                    <div id="edit-node-colors-palette" class="flex items-center gap-2 flex-wrap py-1">
+                        <!-- Swatches de color inyectados dinámicamente -->
+                    </div>
+                    <input type="hidden" id="edit-node-color" value="" />
                 </div>
 
                 <div>
@@ -774,22 +834,54 @@
                     <span class="material-symbols-outlined text-[18px]">close</span>
                 </button>
             </div>
-            <div class="grid grid-cols-2 gap-2.5 mt-4">
-                <button data-quick-add="action" class="p-3.5 rounded-2xl bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 flex flex-col items-center gap-1.5 border border-blue-500/20 transition-transform active:scale-95 cursor-pointer">
-                    <span class="material-symbols-outlined text-[26px]">bolt</span>
-                    <span class="text-xs font-black uppercase">Acción</span>
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-3 max-h-96 overflow-y-auto hide-scrollbar p-1">
+                <button data-quick-add="process" class="p-3 rounded-2xl bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 flex flex-col items-center gap-1 border border-blue-500/20 transition-transform active:scale-95 cursor-pointer">
+                    <span class="material-symbols-outlined text-[24px]">crop_landscape</span>
+                    <span class="text-[11px] font-black uppercase">Proceso</span>
                 </button>
-                <button data-quick-add="decision" class="p-3.5 rounded-2xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex flex-col items-center gap-1.5 border border-emerald-500/20 transition-transform active:scale-95 cursor-pointer">
-                    <span class="material-symbols-outlined text-[26px]">call_split</span>
-                    <span class="text-xs font-black uppercase">Decisión</span>
+                <button data-quick-add="decision" class="p-3 rounded-2xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex flex-col items-center gap-1 border border-emerald-500/20 transition-transform active:scale-95 cursor-pointer">
+                    <span class="material-symbols-outlined text-[24px]">diamond</span>
+                    <span class="text-[11px] font-black uppercase">Decisión</span>
                 </button>
-                <button data-quick-add="warning" class="p-3.5 rounded-2xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 flex flex-col items-center gap-1.5 border border-amber-500/20 transition-transform active:scale-95 cursor-pointer">
-                    <span class="material-symbols-outlined text-[26px]">warning</span>
-                    <span class="text-xs font-black uppercase">Alerta</span>
+                <button data-quick-add="terminal" class="p-3 rounded-2xl bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 flex flex-col items-center gap-1 border border-indigo-500/20 transition-transform active:scale-95 cursor-pointer">
+                    <span class="material-symbols-outlined text-[24px]">stadium</span>
+                    <span class="text-[11px] font-black uppercase">Terminal</span>
                 </button>
-                <button data-quick-add="note" class="p-3.5 rounded-2xl bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex flex-col items-center gap-1.5 border border-slate-300 dark:border-slate-700 transition-transform active:scale-95 cursor-pointer">
-                    <span class="material-symbols-outlined text-[26px]">description</span>
-                    <span class="text-xs font-black uppercase">Nota</span>
+                <button data-quick-add="data" class="p-3 rounded-2xl bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 flex flex-col items-center gap-1 border border-cyan-500/20 transition-transform active:scale-95 cursor-pointer">
+                    <span class="material-symbols-outlined text-[24px]">input</span>
+                    <span class="text-[11px] font-black uppercase">Datos</span>
+                </button>
+                <button data-quick-add="document" class="p-3 rounded-2xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 flex flex-col items-center gap-1 border border-amber-500/20 transition-transform active:scale-95 cursor-pointer">
+                    <span class="material-symbols-outlined text-[24px]">article</span>
+                    <span class="text-[11px] font-black uppercase">Documento</span>
+                </button>
+                <button data-quick-add="database" class="p-3 rounded-2xl bg-purple-500/10 hover:bg-purple-500/20 text-purple-600 dark:text-purple-400 flex flex-col items-center gap-1 border border-purple-500/20 transition-transform active:scale-95 cursor-pointer">
+                    <span class="material-symbols-outlined text-[24px]">database</span>
+                    <span class="text-[11px] font-black uppercase">Base Datos</span>
+                </button>
+                <button data-quick-add="subprocess" class="p-3 rounded-2xl bg-blue-600/10 hover:bg-blue-600/20 text-blue-700 dark:text-blue-300 flex flex-col items-center gap-1 border border-blue-600/20 transition-transform active:scale-95 cursor-pointer">
+                    <span class="material-symbols-outlined text-[24px]">account_tree</span>
+                    <span class="text-[11px] font-black uppercase">Sub-flujo</span>
+                </button>
+                <button data-quick-add="manual_op" class="p-3 rounded-2xl bg-orange-500/10 hover:bg-orange-500/20 text-orange-600 dark:text-orange-400 flex flex-col items-center gap-1 border border-orange-500/20 transition-transform active:scale-95 cursor-pointer">
+                    <span class="material-symbols-outlined text-[24px]">front_hand</span>
+                    <span class="text-[11px] font-black uppercase">Op. Manual</span>
+                </button>
+                <button data-quick-add="preparation" class="p-3 rounded-2xl bg-lime-500/10 hover:bg-lime-500/20 text-lime-600 dark:text-lime-400 flex flex-col items-center gap-1 border border-lime-500/20 transition-transform active:scale-95 cursor-pointer">
+                    <span class="material-symbols-outlined text-[24px]">settings</span>
+                    <span class="text-[11px] font-black uppercase">Preparación</span>
+                </button>
+                <button data-quick-add="delay" class="p-3 rounded-2xl bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 flex flex-col items-center gap-1 border border-yellow-500/20 transition-transform active:scale-95 cursor-pointer">
+                    <span class="material-symbols-outlined text-[24px]">hourglass_empty</span>
+                    <span class="text-[11px] font-black uppercase">Retraso</span>
+                </button>
+                <button data-quick-add="storage" class="p-3 rounded-2xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 flex flex-col items-center gap-1 border border-rose-500/20 transition-transform active:scale-95 cursor-pointer">
+                    <span class="material-symbols-outlined text-[24px]">archive</span>
+                    <span class="text-[11px] font-black uppercase">Almacén</span>
+                </button>
+                <button data-quick-add="comment" class="p-3 rounded-2xl bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex flex-col items-center gap-1 border border-slate-300 dark:border-slate-700 transition-transform active:scale-95 cursor-pointer">
+                    <span class="material-symbols-outlined text-[24px]">comment</span>
+                    <span class="text-[11px] font-black uppercase">Nota</span>
                 </button>
             </div>
         </div>

@@ -1,6 +1,7 @@
 // state.js - Modelo de Estado Jerárquico para Flujos Sandbox con Sincronización en la Nube (Firestore)
 
 import { db, doc, setDoc, onSnapshot } from '../../supervisor/js/firebase-config.js';
+import { getShapeConfig } from './shapes.js';
 
 const STORAGE_KEY = 'flujos_sandbox_data_v1';
 
@@ -308,15 +309,21 @@ class FlowchartState {
   // Operaciones con Nodos
   addNode(nodeData) {
     const ws = this.getCurrentWorkspace();
-    const id = 'node_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
+    const id = nodeData.id || ('node_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6));
+    const shape = nodeData.shape || (nodeData.type === 'decision' ? 'decision' : nodeData.type === 'note' ? 'comment' : nodeData.type === 'warning' ? 'preparation' : (nodeData.type || 'process'));
+    const shapeCfg = getShapeConfig(shape);
+    const color = nodeData.color || shapeCfg.color || '#3b82f6';
+
     const newNode = {
       id,
-      type: nodeData.type || 'action',
-      title: nodeData.title || (nodeData.type === 'note' ? 'Comentario' : 'Nuevo Nodo'),
+      type: nodeData.type || (shape === 'decision' ? 'decision' : shape === 'comment' ? 'note' : 'action'),
+      shape,
+      color,
+      title: nodeData.title || shapeCfg.defaultTitle || 'Nuevo Bloque',
       text: nodeData.text || '',
       x: nodeData.x !== undefined ? nodeData.x : 200,
       y: nodeData.y !== undefined ? nodeData.y : 200,
-      childWorkspaceId: null
+      childWorkspaceId: nodeData.childWorkspaceId || null
     };
     ws.nodes.push(newNode);
     this.notify('add_node');
@@ -327,6 +334,13 @@ class FlowchartState {
     const ws = this.getCurrentWorkspace();
     const node = ws.nodes.find(n => n.id === id);
     if (!node) return null;
+
+    // Si cambia shape y no se especificó un nuevo color, adaptar al color predeterminado de la forma
+    if (props.shape && !props.color && props.shape !== node.shape) {
+      const cfg = getShapeConfig(props.shape);
+      props.color = cfg.color;
+    }
+
     Object.assign(node, props);
     
     // Si tiene un sub-workspace y cambió el título, actualizar el nombre del sub-workspace
