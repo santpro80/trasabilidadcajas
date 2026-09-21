@@ -154,18 +154,24 @@ export class FlowchartUI {
       btn.addEventListener('click', (e) => {
         if (!this.contextTargetNodeId) return;
         const type = e.currentTarget.dataset.actionConnect;
-        state.connectToNewNode(this.contextTargetNodeId, type);
+        const newNode = state.connectToNewNode(this.contextTargetNodeId, type);
         this.renderer.render();
         this.showToast('Nodo conectado agregado');
+        if (newNode) {
+          this.openEditModal(newNode.id);
+        }
       });
     });
 
     // Agregar comentario vinculado
     document.getElementById('ctx-node-comment')?.addEventListener('click', () => {
       if (this.contextTargetNodeId) {
-        state.connectToNewNode(this.contextTargetNodeId, 'note', 'Nota vinculada');
+        const newNode = state.connectToNewNode(this.contextTargetNodeId, 'note', 'Nota vinculada');
         this.renderer.render();
         this.showToast('Comentario vinculado creado');
+        if (newNode) {
+          this.openEditModal(newNode.id);
+        }
       }
     });
 
@@ -337,6 +343,7 @@ export class FlowchartUI {
         this.renderer.selectNode(newNode.id, false);
         this.hidePortQuickPicker();
         this.showToast(`Bloque "${newNode.title}" conectado`);
+        this.openEditModal(newNode.id);
       });
     });
 
@@ -375,6 +382,7 @@ export class FlowchartUI {
     this.renderer.render();
     this.renderer.selectNode(node.id);
     this.showToast(`Nodo "${node.title}" creado`);
+    this.openEditModal(node.id);
   }
 
   // 3. Barra de Herramientas
@@ -494,6 +502,24 @@ export class FlowchartUI {
         this.showToast('Nodo actualizado');
       }
     });
+
+    // Guardar rápido con Enter en el título
+    const titleInput = document.getElementById('edit-node-title');
+    titleInput?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        saveBtn?.click();
+      }
+    });
+
+    // Guardar rápido con Ctrl+Enter en la descripción
+    const textInput = document.getElementById('edit-node-text');
+    textInput?.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        saveBtn?.click();
+      }
+    });
   }
 
   openEditModal(nodeId) {
@@ -513,7 +539,12 @@ export class FlowchartUI {
 
     modal?.classList.remove('hidden');
     modal?.classList.add('flex');
-    titleInput?.focus();
+
+    // Focalizar y auto-seleccionar el texto del título para edición inmediata
+    setTimeout(() => {
+      titleInput?.focus();
+      titleInput?.select();
+    }, 60);
   }
 
   closeEditModal() {
