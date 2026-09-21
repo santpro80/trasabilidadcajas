@@ -1,9 +1,10 @@
 // state.js - Modelo de Estado Jerárquico para Flujos Sandbox con Sincronización en la Nube (Firestore)
 
-import { db, doc, setDoc, onSnapshot } from '../../supervisor/js/firebase-config.js';
+import { db, doc, getDoc, setDoc, onSnapshot } from '../../supervisor/js/firebase-config.js';
 import { getShapeConfig } from './shapes.js';
 
 const STORAGE_KEY = 'flujos_sandbox_data_v1';
+const SERVER_META_KEY = 'flujos_server_meta_v1';
 
 const DEFAULT_INITIAL_DATA = {
   currentWorkspaceId: 'root',
@@ -128,6 +129,13 @@ class FlowchartState {
       this.saveLocalViewports();
     }
 
+    // Identificador único de cliente / pestaña para saber el origen de los cambios
+    this.clientId = 'client_' + Math.random().toString(36).substring(2, 9) + '_' + Date.now();
+    this.isDirty = false; // Solo es true si el usuario en ESTA pestaña hizo una edición real
+    this.currentServerVersion = 0;
+    this.lastSyncedServerTime = 0;
+    this.loadServerMeta();
+
     this.listeners = new Set();
     this.syncStatusListeners = new Set();
     this.cloudSyncStatus = 'syncing'; // 'syncing' | 'synced' | 'saving' | 'offline' | 'error'
@@ -248,91 +256,243 @@ class FlowchartState {
     }
   }
 
+  saveServerMeta() {
+    try {
+      localStorage.setItem(SERVER_META_KEY, JSON.stringify({
+        serverVersion: this.currentServerVersion,
+        lastSyncedServerTime: this.lastSyncedServerTime
+      }));
+    } catch (e) {}
+  }
+
+  loadServerMeta() {
+    try {
+      const raw = localStorage.getItem(SERVER_META_KEY);
+      if (raw) {
+        const meta = JSON.parse(raw);
+        this.currentServerVersion = meta.serverVersion || 0;
+        this.lastSyncedServerTime = meta.lastSyncedServerTime || 0;
+      }
+    } catch (e) {}
+  }
+
+  cleanContent(data) {
+    if (!data || !data.workspaces) return '';
+    const cleaned = {};
+    for (const [id, ws] of Object.entries(data.workspaces)) {
+      cleaned[id] = {
+        id: ws.id,
+        name: ws.name,
+        parentId: ws.parentId,
+        parentNodeId: ws.parentNodeId,
+        nodes: (ws.nodes || []).map(n => ({
+          id: n.id,
+          shape: n.shape,
+          type: n.type,
+          title: n.title,
+          text: n.text,
+          x: n.x,
+          y: n.y,
+          childWorkspaceId: n.childWorkspaceId
+        })),
+        edges: (ws.edges || []).map(e => ({
+          id: e.id,
+          from: e.from,
+          to: e.to,
+          fromPort: e.fromPort,
+          toPort: e.toPort,
+          label: e.label
+        }))
+      };
+    }
+    return JSON.stringify(cleaned);
+  }
+
+  applyRemoteData(remoteData, serverVersion = 0, updatedAt = 0) {
+    this.isRemoteUpdate = true;
+
+    // 1. Guardar la cámara actual de este dispositivo (pan y zoom de cada workspace)
+    const localViewports = {};
+    if (this.data && this.data.workspaces) {
+      for (const [wsId, ws] of Object.entries(this.data.workspaces)) {
+        localViewports[wsId] = {
+          pan: ws.pan ? { ...ws.pan } : { x: 120, y: 100 },
+          zoom: ws.zoom || 1
+        };
+      }
+    }
+    const localCurrentWsId = this.data?.currentWorkspaceId;
+
+    // Clonar para no mutar el objeto original y eliminar pan/zoom de los datos remotos
+    const cleanRemote = JSON.parse(JSON.stringify(remoteData));
+    if (cleanRemote && cleanRemote.workspaces) {
+      for (const ws of Object.values(cleanRemote.workspaces)) {
+        delete ws.pan;
+        delete ws.zoom;
+      }
+    }
+
+    this.data = cleanRemote;
+
+    // 2. Restaurar los viewports de este dispositivo para que NUNCA se altere la cámara por la edición de otra persona
+    if (this.data && this.data.workspaces) {
+      for (const [wsId, ws] of Object.entries(this.data.workspaces)) {
+        if (localViewports[wsId]) {
+          ws.pan = localViewports[wsId].pan;
+          ws.zoom = localViewports[wsId].zoom;
+        } else {
+          ws.pan = { x: 120, y: 100 };
+          ws.zoom = 1;
+        }
+      }
+      if (localCurrentWsId && this.data.workspaces[localCurrentWsId]) {
+        this.data.currentWorkspaceId = localCurrentWsId;
+      }
+    }
+    this.applyLocalViewports();
+
+    this.currentServerVersion = serverVersion || this.currentServerVersion;
+    this.lastSyncedServerTime = updatedAt || this.lastSyncedServerTime;
+    this.isDirty = false;
+    this.saveServerMeta();
+    this.saveToStorage();
+    this.rebuildBreadcrumbs();
+    this.notify('cloud_sync');
+    this.isRemoteUpdate = false;
+  }
+
+  setupLifecycleSync() {
+    if (typeof document === 'undefined') return;
+
+    // Cuando la pestaña se oculta (celular bloqueado, cambio de app o pestaña en segundo plano)
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') {
+        // Cancelar inmediatamente cualquier guardado diferido pendiente
+        // para evitar que se ejecute horas después con datos obsoletos
+        if (this.cloudSaveTimer) {
+          clearTimeout(this.cloudSaveTimer);
+          this.cloudSaveTimer = null;
+        }
+      } else if (document.visibilityState === 'visible') {
+        // La pestaña volvió del reposo o suspensión: SINCRONIZAR DE INMEDIATO CON EL SERVIDOR
+        this.syncWithServerForce();
+      }
+    });
+
+    // En móviles, pageshow se dispara cuando el navegador restaura la pestaña de la suspensión de memoria
+    window.addEventListener('pageshow', () => {
+      this.syncWithServerForce();
+    });
+
+    // Al volver a hacer foco en la ventana
+    window.addEventListener('focus', () => {
+      this.syncWithServerForce();
+    });
+
+    // Al recuperar la conexión a internet
+    window.addEventListener('online', () => {
+      this.syncWithServerForce();
+    });
+  }
+
+  async syncWithServerForce() {
+    if (!this.cloudDocRef) return;
+    try {
+      // Cancelar cualquier temporizador de guardado pendiente previo
+      if (this.cloudSaveTimer) {
+        clearTimeout(this.cloudSaveTimer);
+        this.cloudSaveTimer = null;
+      }
+
+      const snap = await getDoc(this.cloudDocRef);
+      if (snap.exists()) {
+        const remote = snap.data();
+        if (remote && remote.data && remote.data.workspaces && remote.data.workspaces.root) {
+          const remoteVersion = remote.serverVersion || 0;
+          const remoteTime = remote.updatedAt || 0;
+          const remoteClientId = remote.lastClientId;
+
+          const remoteContentStr = this.cleanContent(remote.data);
+          const localContentStr = this.cleanContent(this.data);
+
+          // Si el servidor tiene datos más nuevos o diferentes a los que tiene este cliente
+          const serverIsNewer = (remoteVersion > this.currentServerVersion) ||
+                                (remoteClientId && remoteClientId !== this.clientId && remoteTime > this.lastSyncedServerTime) ||
+                                (remoteContentStr !== localContentStr);
+
+          if (serverIsNewer) {
+            console.log('[Flujos Sync] Tab restaurada/despertada: La versión del servidor manda. Actualizando...');
+            this.applyRemoteData(remote.data, remoteVersion, remoteTime);
+            this.isDirty = false;
+            window.dispatchEvent(new CustomEvent('show-toast', {
+              detail: { message: `Sincronizado con la versión del servidor (${remote.updatedBy || 'Servidor'})` }
+            }));
+          }
+          this.setSyncStatus('synced');
+        }
+      }
+    } catch (err) {
+      console.warn('Error en syncWithServerForce:', err);
+    }
+  }
+
   initCloud() {
     try {
       this.cloudDocRef = doc(db, 'flujos_sandbox', 'diagrama_principal');
       this.setSyncStatus('syncing');
 
+      // Escuchar eventos de ciclo de vida (suspensión en celulares, cambio de pestaña, reconexión)
+      this.setupLifecycleSync();
+
+      // Sincronización inicial forzada para que el servidor siempre prevalezca sobre datos viejos en localStorage
+      this.syncWithServerForce();
+
       onSnapshot(this.cloudDocRef, (snap) => {
         if (snap.exists()) {
           const remote = snap.data();
           if (remote && remote.data && remote.data.workspaces && remote.data.workspaces.root) {
-            const remoteData = remote.data;
+            const remoteVersion = remote.serverVersion || 0;
+            const remoteTime = remote.updatedAt || 0;
+            const remoteClientId = remote.lastClientId;
 
-            // Comparar solo contenido real ignorando pan y zoom específicos de cada pantalla/dispositivo
-            const cleanContent = (data) => {
-              if (!data || !data.workspaces) return '';
-              const cleaned = {};
-              for (const [id, ws] of Object.entries(data.workspaces)) {
-                cleaned[id] = {
-                  id: ws.id,
-                  name: ws.name,
-                  parentId: ws.parentId,
-                  parentNodeId: ws.parentNodeId,
-                  nodes: ws.nodes,
-                  edges: ws.edges
-                };
-              }
-              return JSON.stringify(cleaned);
-            };
-
-            const remoteContentStr = cleanContent(remoteData);
-            const localContentStr = cleanContent(this.data);
-
-            if (remoteContentStr !== localContentStr) {
-              this.isRemoteUpdate = true;
-
-              // 1. Guardar la cámara actual de este dispositivo (pan y zoom de cada workspace)
-              const localViewports = {};
-              if (this.data && this.data.workspaces) {
-                for (const [wsId, ws] of Object.entries(this.data.workspaces)) {
-                  localViewports[wsId] = {
-                    pan: ws.pan ? { ...ws.pan } : { x: 120, y: 100 },
-                    zoom: ws.zoom || 1
-                  };
-                }
-              }
-              const localCurrentWsId = this.data?.currentWorkspaceId;
-
-              // Eliminar pan y zoom de remoteData para que nunca jamás contamine el cliente local
-              if (remoteData && remoteData.workspaces) {
-                for (const ws of Object.values(remoteData.workspaces)) {
-                  delete ws.pan;
-                  delete ws.zoom;
-                }
-              }
-
-              this.data = remoteData;
-
-              // 2. Restaurar los viewports de este dispositivo para que NUNCA se altere la cámara por la edición de otra persona
-              if (this.data && this.data.workspaces) {
-                for (const [wsId, ws] of Object.entries(this.data.workspaces)) {
-                  if (localViewports[wsId]) {
-                    ws.pan = localViewports[wsId].pan;
-                    ws.zoom = localViewports[wsId].zoom;
-                  } else {
-                    ws.pan = { x: 120, y: 100 };
-                    ws.zoom = 1;
-                  }
-                }
-                if (localCurrentWsId && this.data.workspaces[localCurrentWsId]) {
-                  this.data.currentWorkspaceId = localCurrentWsId;
-                }
-              }
-              this.applyLocalViewports();
-
-              this.saveToStorage();
-              this.rebuildBreadcrumbs();
-              this.notify('cloud_sync');
-              this.isRemoteUpdate = false;
+            // Si el cambio lo acaba de guardar esta misma pestaña/cliente, ya lo tenemos en memoria
+            if (remoteClientId === this.clientId) {
+              this.currentServerVersion = remoteVersion || this.currentServerVersion;
+              this.lastSyncedServerTime = remoteTime || this.lastSyncedServerTime;
+              this.saveServerMeta();
+              this.setSyncStatus('synced');
+              return;
             }
-            this.setSyncStatus('synced');
-          } else {
-            this.saveToCloud(true);
+
+            // Si vino de otro dispositivo, usuario o pestaña:
+            const remoteContentStr = this.cleanContent(remote.data);
+            const localContentStr = this.cleanContent(this.data);
+
+            const serverIsDifferent = remoteContentStr !== localContentStr;
+            const serverIsNewer = (remoteVersion > this.currentServerVersion) || (remoteTime > this.lastSyncedServerTime);
+
+            if (serverIsDifferent || serverIsNewer) {
+              // Cancelar cualquier guardado que esta pestaña tuviera en cola para no pisar el servidor
+              if (this.cloudSaveTimer) {
+                clearTimeout(this.cloudSaveTimer);
+                this.cloudSaveTimer = null;
+              }
+
+              this.applyRemoteData(remote.data, remoteVersion, remoteTime);
+              this.isDirty = false;
+              window.dispatchEvent(new CustomEvent('show-toast', {
+                detail: { message: `Actualizado en vivo (${remote.updatedBy || 'otro dispositivo'})` }
+              }));
+            } else {
+              this.currentServerVersion = remoteVersion || this.currentServerVersion;
+              this.lastSyncedServerTime = remoteTime || this.lastSyncedServerTime;
+              this.saveServerMeta();
+            }
             this.setSyncStatus('synced');
           }
         } else {
-          // Documento inicial en Firestore
+          // Documento inicial en Firestore solo si la base de datos está completamente vacía
+          this.isDirty = true;
           this.saveToCloud(true);
         }
       }, (err) => {
@@ -346,7 +506,7 @@ class FlowchartState {
   }
 
   async saveToCloud(immediate = false) {
-    if (!this.cloudDocRef || this.isRemoteUpdate) return;
+    if (!this.cloudDocRef || this.isRemoteUpdate || !this.isDirty) return;
 
     if (this.cloudSaveTimer) {
       clearTimeout(this.cloudSaveTimer);
@@ -354,11 +514,51 @@ class FlowchartState {
     }
 
     const doSave = async () => {
+      if (!this.isDirty || this.isRemoteUpdate || !this.cloudDocRef) return;
       try {
         this.setSyncStatus('saving');
         const user = localStorage.getItem('userName') || 'Usuario';
-        
-        // Sanitizar datos para la nube: la cámara (pan y zoom) es 100% privada de cada pantalla y nunca se sube a Firestore
+
+        // 1. REGLA DE ORO (Optimistic Concurrency Control):
+        // Comprobar primero si el servidor tiene cambios más nuevos antes de escribir
+        let serverVersion = this.currentServerVersion;
+        const currentSnap = await getDoc(this.cloudDocRef);
+
+        if (currentSnap.exists()) {
+          const serverDoc = currentSnap.data();
+          const remoteVersion = serverDoc?.serverVersion || 0;
+          const remoteClientId = serverDoc?.lastClientId;
+          const remoteUpdatedAt = serverDoc?.updatedAt || 0;
+
+          // ¿Alguien más (o yo mismo desde la compu) guardó algo más nuevo mientras esta pestaña estaba suspendida o abierta?
+          const isServerAhead = (remoteVersion > this.currentServerVersion) || 
+                               (remoteClientId && remoteClientId !== this.clientId && remoteUpdatedAt > this.lastSyncedServerTime);
+
+          if (isServerAhead) {
+            console.warn('[Flujos Cloud] Conflicto evitado: El servidor tiene una versión más nueva. No se sobrescribe.');
+
+            // Respaldar cambios locales no sincronizados en localStorage como salvaguarda
+            try {
+              localStorage.setItem(`flujos_backup_conflict_${Date.now()}`, JSON.stringify(this.data));
+            } catch (e) {}
+
+            // LA VERSIÓN DEL SERVIDOR MANDA: cargamos la del servidor y cancelamos el guardado local
+            if (serverDoc && serverDoc.data && serverDoc.data.workspaces) {
+              this.applyRemoteData(serverDoc.data, remoteVersion, remoteUpdatedAt);
+            }
+            this.isDirty = false;
+            this.setSyncStatus('synced');
+            window.dispatchEvent(new CustomEvent('show-toast', {
+              detail: { message: `⚠️ Se actualizó a la última versión guardada desde otro dispositivo (${serverDoc.updatedBy || 'Servidor'}) para no sobrescribir el trabajo.` }
+            }));
+            return;
+          }
+
+          serverVersion = remoteVersion;
+        }
+
+        // 2. Si no hay conflicto: se incrementa la versión y se guarda en el servidor
+        const nextVersion = serverVersion + 1;
         const cloudData = JSON.parse(JSON.stringify(this.data));
         if (cloudData && cloudData.workspaces) {
           for (const ws of Object.values(cloudData.workspaces)) {
@@ -367,11 +567,19 @@ class FlowchartState {
           }
         }
 
+        const now = Date.now();
         await setDoc(this.cloudDocRef, {
           data: cloudData,
-          updatedAt: Date.now(),
-          updatedBy: user
-        }, { merge: true });
+          serverVersion: nextVersion,
+          updatedAt: now,
+          updatedBy: user,
+          lastClientId: this.clientId
+        });
+
+        this.currentServerVersion = nextVersion;
+        this.lastSyncedServerTime = now;
+        this.isDirty = false;
+        this.saveServerMeta();
         this.setSyncStatus('synced');
       } catch (err) {
         console.error('Error guardando en Firestore:', err);
@@ -395,6 +603,7 @@ class FlowchartState {
   notify(changeType = 'update') {
     this.saveToStorage();
     if (changeType !== 'cloud_sync') {
+      this.isDirty = true;
       this.saveToCloud(false);
     }
     for (const listener of this.listeners) {

@@ -112,8 +112,10 @@ function initFlujos() {
     // Ctrl+S para guardar
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
       e.preventDefault();
+      state.isDirty = true;
       state.saveToStorage();
-      ui.showToast('Diagrama guardado');
+      state.saveToCloud(true);
+      ui.showToast('Diagrama guardado y sincronizado');
     }
 
     // Ctrl+P para Imprimir / PDF

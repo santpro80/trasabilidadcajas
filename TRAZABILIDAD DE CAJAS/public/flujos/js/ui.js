@@ -124,8 +124,10 @@ export class FlowchartUI {
       }
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
         e.preventDefault();
+        state.isDirty = true;
         state.saveToStorage();
-        this.showToast('Diagrama guardado en memoria');
+        state.saveToCloud(true);
+        this.showToast('Diagrama guardado y sincronizado');
       }
     });
 
@@ -590,6 +592,7 @@ export class FlowchartUI {
 
     // Guardar / Exportar / Importar / Imprimir
     document.getElementById('btn-save')?.addEventListener('click', async () => {
+      state.isDirty = true;
       state.saveToStorage();
       await state.saveToCloud(true);
       this.showToast('Diagrama guardado y sincronizado en la nube');
