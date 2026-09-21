@@ -302,6 +302,26 @@
             box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35);
         }
 
+        /* Estilo interactivo para nodos destino al conectar */
+        .node-connect-target {
+            outline: 2px dashed #6366f1 !important;
+            outline-offset: 4px;
+            cursor: crosshair !important;
+            transition: transform 0.15s ease, box-shadow 0.15s ease !important;
+            animation: pulse-target 1.5s infinite alternate ease-in-out;
+        }
+
+        .node-connect-target:hover {
+            transform: scale(1.03) !important;
+            box-shadow: 0 0 25px rgba(99, 102, 241, 0.6) !important;
+            outline-color: #818cf8 !important;
+        }
+
+        @keyframes pulse-target {
+            0% { outline-color: #6366f1; }
+            100% { outline-color: #a5b4fc; }
+        }
+
         /* ==========================================================================
            REGLAS DE IMPRESIÓN PROFESIONAL (PDF / IMPRESORA A4 HORIZONTAL)
            ========================================================================== */
@@ -646,26 +666,54 @@
     </div>
 
     <!-- Popover Rápido de Puerto (Clic en circulito) -->
-    <div id="port-quick-picker" class="fixed z-50 hidden glass-panel rounded-2xl p-2 w-56 shadow-2xl border border-slate-200 dark:border-slate-700/80 flex flex-col gap-1 text-xs font-bold text-slate-800 dark:text-slate-200 animate-in fade-in zoom-in-95 duration-150">
+    <div id="port-quick-picker" class="fixed z-50 hidden glass-panel rounded-2xl p-2 w-64 shadow-2xl border border-slate-200 dark:border-slate-700/80 flex flex-col gap-1 text-xs font-bold text-slate-800 dark:text-slate-200 animate-in fade-in zoom-in-95 duration-150">
         <div class="px-2.5 py-1 text-[9px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 mb-0.5 flex items-center justify-between">
-            <span>Agregar y Conectar</span>
+            <span>Crear y Conectar</span>
             <span class="material-symbols-outlined text-[14px] text-blue-500">add_circle</span>
         </div>
-        <button data-quick-spawn="action" class="flex items-center gap-2.5 px-2.5 py-2 rounded-xl hover:bg-blue-500/10 hover:text-blue-500 dark:hover:bg-blue-500/20 dark:hover:text-blue-400 transition-colors text-left cursor-pointer">
-            <span class="size-2.5 rounded-full bg-blue-500"></span>
+        <button data-quick-spawn="action" class="flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl hover:bg-blue-500/10 hover:text-blue-500 dark:hover:bg-blue-500/20 dark:hover:text-blue-400 transition-colors text-left cursor-pointer">
+            <span class="size-2.5 rounded-full bg-blue-500 shrink-0"></span>
             <span>Acción (Azul)</span>
         </button>
-        <button data-quick-spawn="decision" class="flex items-center gap-2.5 px-2.5 py-2 rounded-xl hover:bg-emerald-500/10 hover:text-emerald-500 dark:hover:bg-emerald-500/20 dark:hover:text-emerald-400 transition-colors text-left cursor-pointer">
-            <span class="size-2.5 rounded-full bg-emerald-500"></span>
+        <button data-quick-spawn="decision" class="flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl hover:bg-emerald-500/10 hover:text-emerald-500 dark:hover:bg-emerald-500/20 dark:hover:text-emerald-400 transition-colors text-left cursor-pointer">
+            <span class="size-2.5 rounded-full bg-emerald-500 shrink-0"></span>
             <span>Decisión (Verde)</span>
         </button>
-        <button data-quick-spawn="warning" class="flex items-center gap-2.5 px-2.5 py-2 rounded-xl hover:bg-amber-500/10 hover:text-amber-500 dark:hover:bg-amber-500/20 dark:hover:text-amber-400 transition-colors text-left cursor-pointer">
-            <span class="size-2.5 rounded-full bg-amber-500"></span>
+        <button data-quick-spawn="warning" class="flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl hover:bg-amber-500/10 hover:text-amber-500 dark:hover:bg-amber-500/20 dark:hover:text-amber-400 transition-colors text-left cursor-pointer">
+            <span class="size-2.5 rounded-full bg-amber-500 shrink-0"></span>
             <span>Alerta (Amarillo)</span>
         </button>
-        <button data-quick-spawn="note" class="flex items-center gap-2.5 px-2.5 py-2 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors text-left cursor-pointer">
-            <span class="size-2.5 rounded-full bg-slate-400"></span>
+        <button data-quick-spawn="note" class="flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors text-left cursor-pointer">
+            <span class="size-2.5 rounded-full bg-slate-400 shrink-0"></span>
             <span>Nota / Comentario</span>
+        </button>
+
+        <!-- Conectar a Bloque Existente -->
+        <div class="h-px bg-slate-200 dark:bg-slate-800 my-1"></div>
+        <div class="px-2.5 py-1 text-[9px] font-black uppercase tracking-widest text-indigo-500 dark:text-indigo-400 flex items-center justify-between">
+            <span>Conectar a Bloque Existente</span>
+            <span class="material-symbols-outlined text-[14px]">link</span>
+        </div>
+
+        <button id="btn-port-connect-interactive" class="flex items-center gap-2 px-2.5 py-2 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 transition-all text-left cursor-pointer font-black border border-indigo-500/20">
+            <span class="material-symbols-outlined text-[17px]">ads_click</span>
+            <span>Elegir bloque con clic...</span>
+        </button>
+
+        <div id="port-existing-nodes-container" class="flex flex-col gap-0.5 max-h-36 overflow-y-auto hide-scrollbar pt-0.5">
+            <!-- Nodos existentes inyectados dinámicamente -->
+        </div>
+    </div>
+
+    <!-- Banner flotante cuando está activo el modo "Conectar a otro bloque" -->
+    <div id="connecting-mode-banner" class="fixed top-20 left-1/2 -translate-x-1/2 z-40 hidden items-center gap-3 px-4 py-2.5 rounded-2xl glass-panel shadow-2xl border-2 border-indigo-500 bg-slate-900/95 text-white animate-in slide-in-from-top-3 duration-150">
+        <div class="size-2.5 rounded-full bg-indigo-500 animate-ping"></div>
+        <div class="flex items-center gap-1.5 text-xs font-black uppercase tracking-wide text-slate-100">
+            <span class="material-symbols-outlined text-[18px] text-indigo-400">link</span>
+            <span id="connecting-mode-text">Haz clic en el bloque o circulito de destino</span>
+        </div>
+        <button id="btn-cancel-connecting" class="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-bold uppercase transition-colors cursor-pointer ml-2 border border-slate-700">
+            Cancelar (Esc)
         </button>
     </div>
 

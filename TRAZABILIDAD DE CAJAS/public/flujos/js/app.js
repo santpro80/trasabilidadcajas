@@ -64,6 +64,7 @@ function initFlujos() {
     // Escape para deseleccionar y cerrar menús
     if (e.key === 'Escape') {
       renderer.deselectAll();
+      renderer.cancelConnectingMode();
       ui.closeEditModal();
       ui.hideContextMenus();
       ui.hidePortQuickPicker();

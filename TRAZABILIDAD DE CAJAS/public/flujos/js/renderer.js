@@ -23,6 +23,7 @@ export class FlowchartRenderer {
     this.dragInitialNodes = {};
 
     this.isConnecting = false;
+    this.isInteractiveConnecting = false;
     this.connectingFromNodeId = null;
     this.connectingFromPort = 'right';
     this.connectingFromPos = { x: 0, y: 0 };
@@ -126,6 +127,12 @@ export class FlowchartRenderer {
       }
 
       if (this.isPinching) return;
+
+      // Si estamos en modo interactivo de conexión y se hizo clic en el fondo, cancelar
+      if (this.isInteractiveConnecting) {
+        this.cancelConnectingMode();
+        return;
+      }
 
       // Si se hizo clic sobre un nodo, puerto o control flotante, no intervenir
       if (e.target.closest('.flow-node') || e.target.closest('.flow-port') || e.target.closest('.flow-edge-action') || e.target.closest('.glass-panel')) {
@@ -263,9 +270,9 @@ export class FlowchartRenderer {
 
       // 3. Conexión en vivo
       if (this.isConnecting) {
-        const dist = Math.hypot(e.clientX - this.portPointerStart.x, e.clientY - this.portPointerStart.y);
+        const dist = this.isInteractiveConnecting ? 10 : Math.hypot(e.clientX - this.portPointerStart.x, e.clientY - this.portPointerStart.y);
         if (dist > 5) {
-          this.portDragged = true;
+          if (!this.isInteractiveConnecting) this.portDragged = true;
           const mouseCanvas = this.screenToCanvas(e.clientX, e.clientY);
           const pathData = this.calculateBezier(
             this.connectingFromPos.x,
@@ -276,7 +283,7 @@ export class FlowchartRenderer {
             'left'
           );
           this.tempEdgePath.setAttribute('d', pathData);
-          this.tempEdgePath.setAttribute('class', 'stroke-blue-500 fill-none stroke-[2.5] opacity-90 pointer-events-none');
+          this.tempEdgePath.setAttribute('class', 'stroke-indigo-500 fill-none stroke-[3] stroke-dasharray-[6_4] opacity-90 pointer-events-none');
         }
       }
     });
@@ -306,7 +313,7 @@ export class FlowchartRenderer {
         state.saveToStorage();
       }
 
-      if (this.isConnecting) {
+      if (this.isConnecting && !this.isInteractiveConnecting) {
         this.isConnecting = false;
         this.tempEdgePath.setAttribute('class', 'opacity-0 pointer-events-none');
       }
@@ -336,6 +343,62 @@ export class FlowchartRenderer {
     const zoomDisplay = document.getElementById('zoom-percentage');
     if (zoomDisplay) {
       zoomDisplay.textContent = `${Math.round(zoom * 100)}%`;
+    }
+  }
+
+  // Activar modo interactivo para conectar con otro bloque existente
+  startConnectingMode(fromNodeId, fromPort) {
+    const fromNode = state.getNode(fromNodeId);
+    if (!fromNode) return;
+
+    this.isConnecting = true;
+    this.isInteractiveConnecting = true;
+    this.connectingFromNodeId = fromNodeId;
+    this.connectingFromPort = fromPort || 'right';
+
+    this.connectingFromPos = this.getPortCoordinates(fromNode, this.connectingFromPort);
+
+    // Resaltar todos los demás nodos como destinos válidos
+    const allNodeEls = this.nodesContainer.querySelectorAll('.flow-node');
+    allNodeEls.forEach(el => {
+      if (el.dataset.nodeId !== fromNodeId) {
+        el.classList.add('node-connect-target');
+      }
+    });
+
+    // Mostrar banner superior informativo
+    const banner = document.getElementById('connecting-mode-banner');
+    const bannerText = document.getElementById('connecting-mode-text');
+    if (banner) {
+      if (bannerText) {
+        bannerText.textContent = `Conectando desde "${fromNode.title || 'Bloque'}": Haz clic en el bloque de destino`;
+      }
+      banner.classList.remove('hidden');
+      banner.classList.add('flex');
+    }
+
+    if (this.tempEdgePath) {
+      this.tempEdgePath.setAttribute('class', 'stroke-indigo-500 dark:stroke-indigo-400 fill-none stroke-[3] stroke-dasharray-[6_4] opacity-90 pointer-events-none');
+    }
+  }
+
+  // Cancelar modo interactivo de conexión
+  cancelConnectingMode() {
+    this.isConnecting = false;
+    this.isInteractiveConnecting = false;
+    this.connectingFromNodeId = null;
+
+    if (this.tempEdgePath) {
+      this.tempEdgePath.setAttribute('class', 'opacity-0 pointer-events-none');
+    }
+
+    const allNodeEls = this.nodesContainer.querySelectorAll('.node-connect-target');
+    allNodeEls.forEach(el => el.classList.remove('node-connect-target'));
+
+    const banner = document.getElementById('connecting-mode-banner');
+    if (banner) {
+      banner.classList.add('hidden');
+      banner.classList.remove('flex');
     }
   }
 
@@ -431,8 +494,25 @@ export class FlowchartRenderer {
       }
     });
 
-    // Interacción Drag del Nodo
+    // Interacción Drag del Nodo & Conexión al hacer clic en modo interactivo
     el.addEventListener('pointerdown', (e) => {
+      // Si estamos en modo interactivo de conexión y se hace clic en otro nodo -> CONECTAR
+      if (this.isInteractiveConnecting) {
+        e.stopPropagation();
+        if (this.connectingFromNodeId && this.connectingFromNodeId !== node.id) {
+          const fromNode = state.getNode(this.connectingFromNodeId);
+          let label = '';
+          if (fromNode && fromNode.type === 'decision') {
+            label = this.connectingFromPort === 'right' ? 'Sí' : 'No';
+          }
+          state.addEdge(this.connectingFromNodeId, node.id, label, this.connectingFromPort, 'left');
+          this.cancelConnectingMode();
+          this.renderEdges();
+          window.dispatchEvent(new CustomEvent('node-connected-toast', { detail: { title: node.title } }));
+        }
+        return;
+      }
+
       // Ignorar si se hace click en puertos o botones
       if (e.target.closest('.flow-port') || e.target.closest('.btn-node-edit') || e.target.closest('.sub-workspace-hint')) return;
 
@@ -457,6 +537,23 @@ export class FlowchartRenderer {
           });
         }
         e.stopPropagation();
+      }
+    });
+
+    // Soltar arrastre de cable en cualquier parte del cuerpo del nodo para conectar
+    el.addEventListener('pointerup', (e) => {
+      if (this.isConnecting && this.portDragged && this.connectingFromNodeId && this.connectingFromNodeId !== node.id) {
+        e.stopPropagation();
+        const fromNode = state.getNode(this.connectingFromNodeId);
+        let label = '';
+        if (fromNode && fromNode.type === 'decision') {
+          label = this.connectingFromPort === 'right' ? 'Sí' : 'No';
+        }
+        state.addEdge(this.connectingFromNodeId, node.id, label, this.connectingFromPort, 'left');
+        this.isConnecting = false;
+        this.tempEdgePath.setAttribute('class', 'opacity-0 pointer-events-none');
+        this.renderEdges();
+        window.dispatchEvent(new CustomEvent('node-connected-toast', { detail: { title: node.title } }));
       }
     });
 
@@ -493,18 +590,41 @@ export class FlowchartRenderer {
       port.addEventListener('pointerup', (e) => {
         if (this.isConnecting && this.portDragged && this.connectingFromNodeId && this.connectingFromNodeId !== node.id) {
           e.stopPropagation();
+          const fromNode = state.getNode(this.connectingFromNodeId);
+          let label = '';
+          if (fromNode && fromNode.type === 'decision') {
+            label = this.connectingFromPort === 'right' ? 'Sí' : 'No';
+          }
           const toPort = port.dataset.port || (port.classList.contains('flow-port-in') ? 'left' : 'right');
-          state.addEdge(this.connectingFromNodeId, node.id, '', this.connectingFromPort, toPort);
+          state.addEdge(this.connectingFromNodeId, node.id, label, this.connectingFromPort, toPort);
           this.isConnecting = false;
           this.tempEdgePath.setAttribute('class', 'opacity-0 pointer-events-none');
           this.renderEdges();
+          window.dispatchEvent(new CustomEvent('node-connected-toast', { detail: { title: node.title } }));
         }
       });
 
-      // Clic directo sobre el circulito -> Abrir Quick-Picker (Acción, Decisión, Comentario...)
+      // Clic directo sobre el circulito -> Abrir Quick-Picker o Conectar si está activo el modo interactivo
       port.addEventListener('click', (e) => {
         e.stopPropagation();
         e.preventDefault();
+
+        if (this.isInteractiveConnecting) {
+          if (this.connectingFromNodeId && this.connectingFromNodeId !== node.id) {
+            const fromNode = state.getNode(this.connectingFromNodeId);
+            let label = '';
+            if (fromNode && fromNode.type === 'decision') {
+              label = this.connectingFromPort === 'right' ? 'Sí' : 'No';
+            }
+            const toPort = port.dataset.port || (port.classList.contains('flow-port-in') ? 'left' : 'right');
+            state.addEdge(this.connectingFromNodeId, node.id, label, this.connectingFromPort, toPort);
+            this.cancelConnectingMode();
+            this.renderEdges();
+            window.dispatchEvent(new CustomEvent('node-connected-toast', { detail: { title: node.title } }));
+          }
+          return;
+        }
+
         if (this.portDragged) {
           this.portDragged = false;
           return;

@@ -262,6 +262,73 @@ export class FlowchartUI {
       const screenY = e.detail.screenY;
       this.positionMenu(picker, screenX + 8, screenY - 25);
       picker.classList.remove('hidden');
+
+      // Cargar lista de otros bloques existentes en el nivel actual
+      const currentWs = state.getCurrentWorkspace();
+      const otherNodes = (currentWs.nodes || []).filter(n => n.id !== e.detail.nodeId);
+      const existingContainer = document.getElementById('port-existing-nodes-container');
+
+      if (existingContainer) {
+        existingContainer.innerHTML = '';
+        if (otherNodes.length === 0) {
+          existingContainer.innerHTML = '<span class="text-[10px] text-slate-400 italic px-2 py-1">No hay otros bloques creados</span>';
+        } else {
+          otherNodes.forEach(other => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'flex items-center gap-2 px-2.5 py-1.5 rounded-xl hover:bg-indigo-500/10 hover:text-indigo-600 dark:hover:bg-indigo-500/20 dark:hover:text-indigo-400 text-slate-700 dark:text-slate-300 transition-colors text-left text-xs cursor-pointer group w-full';
+
+            const dotColor = (other.type === 'action') ? 'bg-blue-500' :
+                             (other.type === 'decision') ? 'bg-emerald-500' :
+                             (other.type === 'warning') ? 'bg-amber-500' : 'bg-slate-400';
+
+            btn.innerHTML = `
+              <span class="size-2 rounded-full ${dotColor} shrink-0"></span>
+              <span class="truncate flex-1 font-bold">${other.title || 'Sin Título'}</span>
+              <span class="material-symbols-outlined text-[13px] text-slate-400 group-hover:text-indigo-500 transition-transform group-hover:translate-x-0.5">arrow_forward</span>
+            `;
+
+            btn.addEventListener('click', (ev) => {
+              ev.stopPropagation();
+              const fromNodeId = this.portTarget?.nodeId;
+              const fromPort = this.portTarget?.port || 'right';
+              const fromNode = state.getNode(fromNodeId);
+              let edgeLabel = '';
+              if (fromNode && fromNode.type === 'decision') {
+                edgeLabel = fromPort === 'right' ? 'Sí' : 'No';
+              }
+              state.addEdge(fromNodeId, other.id, edgeLabel, fromPort, 'left');
+              this.renderer.render();
+              this.hidePortQuickPicker();
+              this.showToast(`Conectado con "${other.title}"`);
+            });
+
+            existingContainer.appendChild(btn);
+          });
+        }
+      }
+    });
+
+    // Conectar a nodo existente mediante clic interactivo en el lienzo
+    document.getElementById('btn-port-connect-interactive')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (!this.portTarget) return;
+      const { nodeId, port } = this.portTarget;
+      this.hidePortQuickPicker();
+      this.renderer.startConnectingMode(nodeId, port);
+    });
+
+    // Cancelar modo interactivo de conexión
+    document.getElementById('btn-cancel-connecting')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.renderer.cancelConnectingMode();
+    });
+
+    // Toast de notificación cuando se conecta un nodo
+    window.addEventListener('node-connected-toast', (e) => {
+      if (e.detail?.title) {
+        this.showToast(`Conectado con "${e.detail.title}"`);
+      }
     });
 
     // Clic en opciones para generar y conectar
