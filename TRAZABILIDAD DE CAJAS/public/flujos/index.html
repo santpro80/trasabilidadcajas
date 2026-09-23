@@ -302,6 +302,8 @@
 
         /* ==========================================================================
            REGLAS DE IMPRESIÓN PROFESIONAL (PDF / IMPRESORA A4 HORIZONTAL)
+        /* ==========================================================================
+           REGLAS DE IMPRESIÓN PROFESIONAL (BLANCO Y NEGRO / A4 HORIZONTAL)
            ========================================================================== */
         @media print {
             @page {
@@ -309,7 +311,7 @@
                 margin: 8mm;
             }
 
-            /* Ocultar interfaz no imprimible */
+            /* Ocultar elementos de interfaz interactiva */
             header,
             .glass-panel,
             #context-menu-canvas,
@@ -318,7 +320,13 @@
             #toast-msg,
             #marquee-selection-box,
             .flow-port,
-            .sub-workspace-hint {
+            .sub-workspace-hint,
+            .btn-node-edit,
+            .edge-action-group,
+            #modal-mobile-add-node,
+            #edit-node-modal,
+            #edit-edge-modal,
+            .flow-node::after {
                 display: none !important;
             }
 
@@ -330,6 +338,8 @@
                 margin: 0 !important;
                 padding: 0 !important;
                 overflow: hidden !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
             }
 
             main, #canvas-container {
@@ -356,47 +366,100 @@
                 left: 0 !important;
             }
 
-            /* Nodos optimizados para tinta y contraste en papel */
-            .flow-node {
-                background-color: #ffffff !important;
+            /* 1. Nodos: Fondo blanco puro, sin sombras pesadas, borde negro vectorial */
+            .flow-node,
+            html.dark .flow-node {
+                background-color: transparent !important;
                 box-shadow: none !important;
-                border-width: 2px !important;
+                filter: none !important;
                 page-break-inside: avoid;
             }
 
-            .flow-node-action { border-color: #2563eb !important; }
-            .flow-node-decision { border-color: #059669 !important; }
-            .flow-node-warning { border-color: #d97706 !important; }
-            .flow-node-note { border-color: #64748b !important; }
-
-            .flow-node .node-title {
-                color: #0f172a !important;
-                font-weight: 800 !important;
+            .node-shape-svg,
+            html.dark .node-shape-svg,
+            .flow-node:hover .node-shape-svg,
+            html.dark .flow-node:hover .node-shape-svg {
+                filter: none !important;
+                box-shadow: none !important;
+                drop-shadow: none !important;
             }
 
-            .flow-node .node-text {
-                color: #334155 !important;
+            /* Figuras geométricas vectoriales: Fondo blanco y borde negro nítido */
+            .node-shape-vector,
+            html.dark .node-shape-vector {
+                stroke: #000000 !important;
+            }
+
+            .node-shape-vector .shape-fill,
+            html.dark .node-shape-vector .shape-fill,
+            .flow-node:hover .node-shape-vector .shape-fill {
+                fill: #ffffff !important;
+                stroke: #000000 !important;
+                stroke-width: 2.2px !important;
+                opacity: 1 !important;
+            }
+
+            .node-shape-vector .shape-stroke,
+            html.dark .node-shape-vector .shape-stroke {
+                stroke: #000000 !important;
+                stroke-width: 2.2px !important;
+            }
+
+            /* 2. Tipografía e Iconos: Letras negras de alto contraste y legibilidad */
+            .flow-node .node-title,
+            html.dark .flow-node .node-title {
+                color: #000000 !important;
+                font-weight: 900 !important;
+            }
+
+            .flow-node .node-text,
+            html.dark .flow-node .node-text {
+                color: #1e293b !important;
+                font-weight: 700 !important;
+            }
+
+            .flow-node .material-symbols-outlined,
+            html.dark .flow-node .material-symbols-outlined {
+                color: #000000 !important;
+            }
+
+            /* 3. Conexiones / Flechas: Líneas negras y puntas de flecha negras */
+            .edge-item path {
+                stroke: #000000 !important;
+                filter: none !important;
+            }
+
+            marker path {
+                fill: #000000 !important;
             }
 
             .edge-label-bg {
                 fill: #ffffff !important;
-                stroke: #94a3b8 !important;
+                stroke: #000000 !important;
+                stroke-width: 1.5px !important;
+                filter: none !important;
             }
 
             .edge-label-text {
-                fill: #0f172a !important;
+                fill: #000000 !important;
+                font-weight: 800 !important;
             }
 
-            /* Membrete de impresión */
+            /* 4. Membrete de impresión institucional */
             .print-banner {
                 display: flex !important;
                 align-items: center;
                 justify-content: space-between;
-                border-bottom: 2px solid #0f172a;
+                border-bottom: 2px solid #000000 !important;
                 padding-bottom: 8px;
                 margin-bottom: 12px;
                 width: 1020px !important;
                 margin: 0 auto !important;
+                color: #000000 !important;
+            }
+
+            .print-banner * {
+                color: #000000 !important;
             }
         }
 

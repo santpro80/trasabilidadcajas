@@ -934,10 +934,15 @@ export class FlowchartUI {
       printDate.textContent = now.toLocaleDateString() + ' ' + now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     }
 
-    // 2. Guardar estado de visualización previo
+    // 2. Guardar estado de visualización previo y tema
     const ws = state.getCurrentWorkspace();
     const origPan = { ...(ws.pan || { x: 0, y: 0 }) };
     const origZoom = ws.zoom || 1;
+    const wasDark = document.documentElement.classList.contains('dark');
+
+    // Deseleccionar nodos y líneas para que no salgan resaltados en la hoja
+    this.renderer.deselectAll();
+    this.renderer.deselectEdge();
 
     if (!ws.nodes || ws.nodes.length === 0) {
       window.print();
@@ -971,12 +976,20 @@ export class FlowchartUI {
     state.setZoom(printZoom);
     this.renderer.applyTransform();
 
-    // 4. Invocar ventana de impresión
+    // 4. Asegurar que durante la impresión el documento esté en modo claro nativo
+    if (wasDark) {
+      document.documentElement.classList.remove('dark');
+    }
+
+    // 5. Invocar ventana de impresión
     setTimeout(() => {
       window.print();
       
-      // 5. Restaurar vista anterior tras cerrar el diálogo
+      // 6. Restaurar vista anterior y tema tras cerrar el diálogo
       setTimeout(() => {
+        if (wasDark) {
+          document.documentElement.classList.add('dark');
+        }
         state.setPan(origPan.x, origPan.y);
         state.setZoom(origZoom);
         this.renderer.applyTransform();
