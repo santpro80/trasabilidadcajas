@@ -681,6 +681,12 @@ class FlowchartState {
     return true;
   }
 
+  leaveSubWorkspace() {
+    const currentWs = this.getCurrentWorkspace();
+    if (!currentWs || !currentWs.parentId) return false;
+    return this.navigateToWorkspace(currentWs.parentId);
+  }
+
   rebuildBreadcrumbs() {
     const crumbs = [];
     let curr = this.data.workspaces[this.data.currentWorkspaceId];

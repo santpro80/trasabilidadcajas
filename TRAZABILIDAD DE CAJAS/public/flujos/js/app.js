@@ -98,15 +98,33 @@ function initFlujos() {
       ui.showToast('Modo Mano');
     }
 
-    // Escape para deseleccionar y cerrar menús
+    // Escape para deseleccionar, cerrar menús y volver de nivel en sub-flujos
     if (e.key === 'Escape') {
-      renderer.deselectAll();
-      renderer.deselectEdge();
-      renderer.cancelConnectingMode();
-      ui.closeEditModal();
-      ui.closeEditEdgeModal();
+      const isEditModalOpen = !document.getElementById('edit-node-modal')?.classList.contains('hidden');
+      const isEdgeModalOpen = !document.getElementById('edit-edge-modal')?.classList.contains('hidden');
+      const isMobileAddOpen = !document.getElementById('modal-mobile-add-node')?.classList.contains('hidden');
+      const isPortPickerOpen = !document.getElementById('port-quick-picker')?.classList.contains('hidden');
+      const isConnecting = renderer.isConnecting || renderer.isInteractiveConnecting;
+      const hasSelection = (renderer.selectedNodeIds && renderer.selectedNodeIds.size > 0) || !!renderer.selectedEdgeId;
+
+      let somethingClosed = false;
+
+      if (isEditModalOpen) { ui.closeEditModal(); somethingClosed = true; }
+      if (isEdgeModalOpen) { ui.closeEditEdgeModal(); somethingClosed = true; }
+      if (isMobileAddOpen) { ui.closeMobileAddModal(); somethingClosed = true; }
+      if (isPortPickerOpen) { ui.hidePortQuickPicker(); somethingClosed = true; }
+      if (isConnecting) { renderer.cancelConnectingMode(); somethingClosed = true; }
+      if (hasSelection) { renderer.deselectAll(); renderer.deselectEdge(); somethingClosed = true; }
+
       ui.hideContextMenus();
-      ui.hidePortQuickPicker();
+
+      // Si no había nada abierto ni seleccionado, navegar hacia atrás en la jerarquía
+      if (!somethingClosed) {
+        const wentBack = ui.navigateBackLevel();
+        if (!wentBack) {
+          ui.showToast('Estás en el flujo principal');
+        }
+      }
     }
 
     // Ctrl+S para guardar

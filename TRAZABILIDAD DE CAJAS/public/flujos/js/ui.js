@@ -42,6 +42,32 @@ export class FlowchartUI {
       this.renderer.render();
       this.renderer.fitView();
     });
+
+    // Botón de Volver en el encabezado
+    document.getElementById('btn-header-back')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      const wentBack = this.navigateBackLevel();
+      if (!wentBack) {
+        window.history.back();
+      }
+    });
+  }
+
+  navigateBackLevel() {
+    const currentWs = state.getCurrentWorkspace();
+    if (!currentWs || !currentWs.parentId) {
+      return false;
+    }
+    const parentWs = state.data.workspaces[currentWs.parentId];
+    const parentName = parentWs ? parentWs.name : 'Principal';
+    const ok = state.leaveSubWorkspace();
+    if (ok) {
+      this.renderer.render();
+      this.renderer.fitView();
+      this.showToast(`Nivel: ${parentName}`);
+      return true;
+    }
+    return false;
   }
 
   renderBreadcrumbs() {
@@ -924,6 +950,12 @@ export class FlowchartUI {
       mobileMoreMenu?.classList.remove('flex');
       document.getElementById('btn-import-json')?.click();
     });
+  }
+
+  closeMobileAddModal() {
+    const modal = document.getElementById('modal-mobile-add-node');
+    modal?.classList.add('hidden');
+    modal?.classList.remove('flex');
   }
 
   handlePrint() {
