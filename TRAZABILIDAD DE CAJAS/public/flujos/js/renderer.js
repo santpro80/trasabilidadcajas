@@ -487,6 +487,7 @@ export class FlowchartRenderer {
     // Puertos calculados
     const pLeft = shapeCfg.ports.left(w, h);
     const pRight = shapeCfg.ports.right(w, h);
+    const pTop = (shapeCfg.id === 'circle' && shapeCfg.ports.top) ? shapeCfg.ports.top(w, h) : null;
     const pBottom = shapeCfg.ports.bottom ? shapeCfg.ports.bottom(w, h) : null;
 
     // Padding según geometría para formas rectangulares
@@ -719,6 +720,13 @@ export class FlowchartRenderer {
       <div class="flow-port flow-port-out absolute size-5 rounded-full bg-white dark:bg-slate-800 border-2 border-blue-500 hover:scale-125 hover:bg-blue-500 transition-all flex items-center justify-center cursor-crosshair z-20 shadow-sm" style="left: ${pRight.x}px; top: ${pRight.y}px; transform: translate(-50%, -50%);" data-node-id="${node.id}" data-port-type="out" data-port="right" title="Arrastrar para conectar">
         <div class="size-1.5 rounded-full bg-blue-500 pointer-events-none"></div>
       </div>
+
+      <!-- Puerto Superior (para Conector de 4 puntos) -->
+      ${pTop ? `
+        <div class="flow-port flow-port-out absolute size-5 rounded-full bg-white dark:bg-slate-800 border-2 border-indigo-500 hover:scale-125 hover:bg-indigo-500 transition-all flex items-center justify-center cursor-crosshair z-20 shadow-sm" style="left: ${pTop.x}px; top: ${pTop.y}px; transform: translate(-50%, -50%);" data-node-id="${node.id}" data-port-type="out" data-port="top" title="Conexión Superior">
+          <div class="size-1.5 rounded-full bg-indigo-500 pointer-events-none"></div>
+        </div>
+      ` : ''}
 
       <!-- Puerto Salida Inferior (si la forma lo soporta) -->
       ${pBottom ? `

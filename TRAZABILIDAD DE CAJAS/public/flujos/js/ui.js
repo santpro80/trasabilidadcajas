@@ -364,7 +364,8 @@ export class FlowchartUI {
               if (fromNode && fromNode.type === 'decision') {
                 edgeLabel = fromPort === 'right' ? 'Sí' : 'No';
               }
-              state.addEdge(fromNodeId, other.id, edgeLabel, fromPort, 'left');
+              const targetPort = fromPort === 'top' ? 'bottom' : fromPort === 'bottom' ? 'top' : 'left';
+              state.addEdge(fromNodeId, other.id, edgeLabel, fromPort, targetPort);
               this.renderer.render();
               this.hidePortQuickPicker();
               this.showToast(`Conectado con "${other.title}"`);
@@ -421,6 +422,9 @@ export class FlowchartUI {
         if (fromPort === 'bottom') {
           newX = fromNode.x;
           newY = fromNode.y + 160;
+        } else if (fromPort === 'top') {
+          newX = fromNode.x;
+          newY = fromNode.y - 160;
         } else if (fromPort === 'left') {
           newX = fromNode.x - 280;
           newY = fromNode.y;
@@ -457,6 +461,8 @@ export class FlowchartUI {
           state.addEdge(newNode.id, fromNodeId, '', 'right', 'left');
         } else if (fromPort === 'bottom') {
           state.addEdge(fromNodeId, newNode.id, edgeLabel, 'bottom', 'top');
+        } else if (fromPort === 'top') {
+          state.addEdge(fromNodeId, newNode.id, edgeLabel, 'top', 'bottom');
         } else {
           state.addEdge(fromNodeId, newNode.id, edgeLabel, 'right', 'left');
         }
