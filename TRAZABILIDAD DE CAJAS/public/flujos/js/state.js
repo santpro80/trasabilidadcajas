@@ -1,7 +1,7 @@
 // state.js - Modelo de Estado Jerárquico para Flujos Sandbox con Sincronización en la Nube (Firestore)
 
 import { db, doc, getDoc, setDoc, onSnapshot } from '../../supervisor/js/firebase-config.js';
-import { getShapeConfig } from './shapes.js';
+import { getShapeConfig } from './shapes.js?v=2.2';
 
 const STORAGE_KEY = 'flujos_sandbox_data_v1';
 const SERVER_META_KEY = 'flujos_server_meta_v1';
@@ -862,6 +862,152 @@ class FlowchartState {
 
     this.addEdge(fromNodeId, newNode.id, '', 'right', 'left');
     return newNode;
+  }
+
+  // Clonación y duplicación recursiva de workspaces para sub-flujos
+  cloneWorkspaceRecursive(sourceWsId, newParentNodeId) {
+    const srcWs = this.data.workspaces[sourceWsId];
+    if (!srcWs) return null;
+
+    const newWsId = 'ws_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
+    const idMap = new Map();
+
+    const clonedNodes = (srcWs.nodes || []).map(n => {
+      const nid = 'node_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
+      idMap.set(n.id, nid);
+      let childWsId = null;
+      if (n.childWorkspaceId && this.data.workspaces[n.childWorkspaceId]) {
+        childWsId = this.cloneWorkspaceRecursive(n.childWorkspaceId, nid);
+      }
+      return {
+        ...JSON.parse(JSON.stringify(n)),
+        id: nid,
+        childWorkspaceId: childWsId
+      };
+    });
+
+    const clonedEdges = (srcWs.edges || []).map(e => ({
+      ...JSON.parse(JSON.stringify(e)),
+      id: 'edge_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+      from: idMap.get(e.from) || e.from,
+      to: idMap.get(e.to) || e.to
+    })).filter(e => idMap.has(e.from) && idMap.has(e.to));
+
+    this.data.workspaces[newWsId] = {
+      ...JSON.parse(JSON.stringify(srcWs)),
+      id: newWsId,
+      parentNodeId: newParentNodeId,
+      nodes: clonedNodes,
+      edges: clonedEdges
+    };
+
+    return newWsId;
+  }
+
+  // Duplicar uno o más nodos seleccionados (Ctrl+D)
+  duplicateNodes(nodeIds, offsetX = 40, offsetY = 40) {
+    if (!nodeIds || nodeIds.length === 0) return [];
+    this.takeSnapshot();
+    const ws = this.getCurrentWorkspace();
+    const idMap = new Map();
+    const newNodes = [];
+
+    nodeIds.forEach(id => {
+      const src = ws.nodes.find(n => n.id === id);
+      if (!src) return;
+      const newId = 'node_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
+      idMap.set(id, newId);
+
+      let newChildWsId = null;
+      if (src.childWorkspaceId && this.data.workspaces[src.childWorkspaceId]) {
+        newChildWsId = this.cloneWorkspaceRecursive(src.childWorkspaceId, newId);
+      }
+
+      const cloned = {
+        ...JSON.parse(JSON.stringify(src)),
+        id: newId,
+        x: src.x + offsetX,
+        y: src.y + offsetY,
+        childWorkspaceId: newChildWsId
+      };
+      ws.nodes.push(cloned);
+      newNodes.push(cloned);
+    });
+
+    // Replicar las conexiones que existían entre los nodos seleccionados
+    const internalEdges = (ws.edges || []).filter(e => idMap.has(e.from) && idMap.has(e.to));
+    internalEdges.forEach(e => {
+      const newEdgeId = 'edge_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
+      ws.edges.push({
+        ...JSON.parse(JSON.stringify(e)),
+        id: newEdgeId,
+        from: idMap.get(e.from),
+        to: idMap.get(e.to)
+      });
+    });
+
+    this.notify('add_node');
+    return newNodes;
+  }
+
+  // Pegar nodos desde el portapapeles (Ctrl+V)
+  pasteNodes(nodesData, edgesData = [], targetCoords = null, defaultOffset = 40) {
+    if (!nodesData || nodesData.length === 0) return [];
+    this.takeSnapshot();
+    const ws = this.getCurrentWorkspace();
+    const idMap = new Map();
+    const newNodes = [];
+
+    let offsetX = defaultOffset;
+    let offsetY = defaultOffset;
+
+    if (targetCoords && typeof targetCoords.x === 'number' && typeof targetCoords.y === 'number') {
+      let minX = Infinity, minY = Infinity;
+      nodesData.forEach(n => {
+        if (n.x < minX) minX = n.x;
+        if (n.y < minY) minY = n.y;
+      });
+      offsetX = targetCoords.x - minX;
+      offsetY = targetCoords.y - minY;
+    }
+
+    nodesData.forEach(src => {
+      const newId = 'node_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
+      idMap.set(src.id, newId);
+
+      let newChildWsId = null;
+      if (src.childWorkspaceId && this.data.workspaces[src.childWorkspaceId]) {
+        newChildWsId = this.cloneWorkspaceRecursive(src.childWorkspaceId, newId);
+      }
+
+      const cloned = {
+        ...JSON.parse(JSON.stringify(src)),
+        id: newId,
+        x: Math.round(src.x + offsetX),
+        y: Math.round(src.y + offsetY),
+        childWorkspaceId: newChildWsId
+      };
+      ws.nodes.push(cloned);
+      newNodes.push(cloned);
+    });
+
+    // Replicar las conexiones que existían entre los nodos pegados
+    if (Array.isArray(edgesData)) {
+      edgesData.forEach(e => {
+        if (idMap.has(e.from) && idMap.has(e.to)) {
+          const newEdgeId = 'edge_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
+          ws.edges.push({
+            ...JSON.parse(JSON.stringify(e)),
+            id: newEdgeId,
+            from: idMap.get(e.from),
+            to: idMap.get(e.to)
+          });
+        }
+      });
+    }
+
+    this.notify('add_node');
+    return newNodes;
   }
 
   // Pan y Zoom por workspace (locales e independientes por pantalla/dispositivo)

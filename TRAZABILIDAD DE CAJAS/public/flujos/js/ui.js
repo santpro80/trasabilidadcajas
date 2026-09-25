@@ -1,5 +1,5 @@
-import { state } from './state.js';
-import { FLOW_SHAPES, SHAPE_COLORS, getShapeConfig, getColorConfig } from './shapes.js';
+import { state } from './state.js?v=2.2';
+import { FLOW_SHAPES, SHAPE_COLORS, getShapeConfig, getColorConfig } from './shapes.js?v=2.2';
 
 export class FlowchartUI {
   constructor(renderer) {
@@ -8,6 +8,8 @@ export class FlowchartUI {
     this.contextTargetNodeId = null;
     this.contextCanvasCoords = { x: 0, y: 0 };
     this.portTarget = null; // { nodeId, port }
+    this.clipboard = this.loadClipboard();
+    this.pasteCount = 0;
 
     this.setupBreadcrumbs();
     this.setupContextMenus();
@@ -18,6 +20,75 @@ export class FlowchartUI {
     this.setupModeSwitcher();
     this.setupCloudSyncBadge();
     this.setupMobileControls();
+  }
+
+  // 1.0 Gestión de Portapapeles y Duplicación de Nodos
+  loadClipboard() {
+    try {
+      const raw = localStorage.getItem('flujos_clipboard_v1');
+      return raw ? JSON.parse(raw) : { nodes: [], edges: [] };
+    } catch (e) {
+      return { nodes: [], edges: [] };
+    }
+  }
+
+  saveClipboard(data) {
+    this.clipboard = data;
+    try {
+      localStorage.setItem('flujos_clipboard_v1', JSON.stringify(data));
+    } catch (e) {}
+  }
+
+  copyNodes(nodeIds) {
+    if (!nodeIds || nodeIds.length === 0) return 0;
+    const ws = state.getCurrentWorkspace();
+    const selectedNodes = ws.nodes.filter(n => nodeIds.includes(n.id));
+    if (selectedNodes.length === 0) return 0;
+
+    const idSet = new Set(nodeIds);
+    const relatedEdges = (ws.edges || []).filter(e => idSet.has(e.from) && idSet.has(e.to));
+
+    this.saveClipboard({
+      nodes: JSON.parse(JSON.stringify(selectedNodes)),
+      edges: JSON.parse(JSON.stringify(relatedEdges)),
+      sourceWorkspaceId: ws.id,
+      copiedAt: Date.now()
+    });
+    this.pasteCount = 0;
+    return selectedNodes.length;
+  }
+
+  duplicateNodes(nodeIds) {
+    if (!nodeIds || nodeIds.length === 0) return [];
+    const newNodes = state.duplicateNodes(nodeIds, 40, 40);
+    if (newNodes.length > 0) {
+      this.renderer.render();
+      this.renderer.deselectAll();
+      newNodes.forEach(n => this.renderer.selectNode(n.id, true));
+    }
+    return newNodes;
+  }
+
+  pasteNodes(targetCoords = null) {
+    if (!this.clipboard || !this.clipboard.nodes || this.clipboard.nodes.length === 0) {
+      this.showToast('Portapapeles vacío (usa Ctrl+C en un bloque)');
+      return [];
+    }
+
+    this.pasteCount = (this.pasteCount || 0) + 1;
+    let coords = targetCoords;
+    if (!coords && this.renderer.lastPointerCanvas && this.renderer.isPointerOverCanvas) {
+      coords = { ...this.renderer.lastPointerCanvas };
+    }
+
+    const defaultOffset = coords ? 0 : (35 * this.pasteCount);
+    const newNodes = state.pasteNodes(this.clipboard.nodes, this.clipboard.edges, coords, defaultOffset);
+    if (newNodes.length > 0) {
+      this.renderer.render();
+      this.renderer.deselectAll();
+      newNodes.forEach(n => this.renderer.selectNode(n.id, true));
+    }
+    return newNodes;
   }
 
   // 1. Breadcrumbs de Navegación Multinivel
@@ -165,9 +236,36 @@ export class FlowchartUI {
       });
     });
 
+    // Acción: Pegar desde portapapeles en menú contextual del lienzo
+    document.getElementById('ctx-canvas-paste')?.addEventListener('click', () => {
+      const pasted = this.pasteNodes(this.contextCanvasCoords);
+      if (pasted && pasted.length > 0) {
+        this.showToast(pasted.length > 1 ? `${pasted.length} bloques pegados (Ctrl+V)` : 'Bloque pegado (Ctrl+V)');
+      }
+    });
+
     // Acción: Centrar diagrama desde context menu
     document.getElementById('ctx-action-fit')?.addEventListener('click', () => {
       this.renderer.fitView();
+    });
+
+    // Acciones del Menú Contextual de Nodo: Duplicar y Copiar
+    document.getElementById('ctx-node-duplicate')?.addEventListener('click', () => {
+      const selectedIds = this.renderer.getSelectedNodeIds();
+      const idsToDup = selectedIds.length > 0 ? selectedIds : (this.contextTargetNodeId ? [this.contextTargetNodeId] : []);
+      if (idsToDup.length > 0) {
+        const dups = this.duplicateNodes(idsToDup);
+        this.showToast(dups.length > 1 ? `${dups.length} bloques duplicados (Ctrl+D)` : 'Bloque duplicado (Ctrl+D)');
+      }
+    });
+
+    document.getElementById('ctx-node-copy')?.addEventListener('click', () => {
+      const selectedIds = this.renderer.getSelectedNodeIds();
+      const idsToCopy = selectedIds.length > 0 ? selectedIds : (this.contextTargetNodeId ? [this.contextTargetNodeId] : []);
+      if (idsToCopy.length > 0) {
+        const count = this.copyNodes(idsToCopy);
+        this.showToast(count > 1 ? `${count} bloques copiados (Ctrl+C)` : 'Bloque copiado (Ctrl+C)');
+      }
     });
 
     // Acciones del Menú Contextual de Nodo
@@ -227,12 +325,43 @@ export class FlowchartUI {
         this.openEditModal(e.detail.nodeId);
       }
     });
+
+    // Evento custom para duplicar un nodo individual desde botón rápido
+    window.addEventListener('duplicate-single-node', (e) => {
+      if (e.detail?.nodeId) {
+        const dups = this.duplicateNodes([e.detail.nodeId]);
+        if (dups && dups.length > 0) {
+          this.showToast('Bloque duplicado (Ctrl+D)');
+        }
+      }
+    });
   }
 
   showCanvasContextMenu(screenX, screenY) {
     const menu = document.getElementById('context-menu-canvas');
     if (!menu) return;
+
+    // Habilitar o desactivar el botón de Pegar según el portapapeles
+    const pasteBtn = document.getElementById('ctx-canvas-paste');
+    const hasItems = this.clipboard && this.clipboard.nodes && this.clipboard.nodes.length > 0;
+    if (pasteBtn) {
+      if (hasItems) {
+        pasteBtn.classList.remove('opacity-40', 'pointer-events-none');
+        pasteBtn.classList.add('cursor-pointer');
+        const badge = pasteBtn.querySelector('.paste-count-badge');
+        if (badge) badge.textContent = `(${this.clipboard.nodes.length})`;
+      } else {
+        pasteBtn.classList.add('opacity-40', 'pointer-events-none');
+        pasteBtn.classList.remove('cursor-pointer');
+        const badge = pasteBtn.querySelector('.paste-count-badge');
+        if (badge) badge.textContent = '';
+      }
+    }
+
     this.positionMenu(menu, screenX, screenY);
+    menu.classList.remove('hidden');
+    this.activeContextMenu = menu;
+  }
     menu.classList.remove('hidden');
     this.activeContextMenu = menu;
   }

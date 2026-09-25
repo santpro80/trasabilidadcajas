@@ -696,11 +696,11 @@
             <span>•</span>
             <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px] text-rose-500">link_off</span> Desvincular: Clic en línea</span>
             <span>•</span>
+            <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px] text-emerald-500">content_copy</span> Ctrl+C / V: Copiar / Pegar</span>
+            <span>•</span>
+            <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px] text-cyan-500">control_point_duplicate</span> Ctrl+D: Duplicar</span>
+            <span>•</span>
             <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px] text-indigo-500">undo</span> Ctrl+Z: Deshacer</span>
-            <span>•</span>
-            <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px] text-indigo-500">redo</span> Ctrl+Y: Rehacer</span>
-            <span>•</span>
-            <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px] text-amber-500">print</span> Ctrl+P: Imprimir</span>
             <span>•</span>
             <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px] text-teal-500">arrow_back</span> Esc: Volver</span>
         </div>
@@ -708,6 +708,14 @@
 
     <!-- Menú Contextual del Lienzo (Clic Derecho en espacio vacío) -->
     <div id="context-menu-canvas" class="fixed z-50 hidden glass-panel rounded-2xl p-2 w-60 shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col gap-1 text-xs font-bold text-slate-800 dark:text-slate-200 animate-in fade-in zoom-in-95 duration-150">
+        <button id="ctx-canvas-paste" class="flex items-center gap-3 px-3 py-2 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 transition-colors text-left cursor-pointer font-black">
+            <span class="material-symbols-outlined text-[18px]">content_paste</span>
+            <div class="flex items-center justify-between flex-1">
+                <span>Pegar bloque <span class="paste-count-badge text-[10px] opacity-75"></span></span>
+                <span class="text-[9px] text-slate-400 font-normal">Ctrl+V</span>
+            </div>
+        </button>
+        <div class="h-px bg-slate-200 dark:bg-slate-800 my-1"></div>
         <div class="px-3 py-1.5 text-[9px] font-black uppercase tracking-widest text-slate-400 border-b border-slate-200 dark:border-slate-800 mb-1">
             Crear Nuevo Nodo
         </div>
@@ -736,6 +744,21 @@
 
     <!-- Menú Contextual del Nodo (Clic Derecho sobre un nodo) -->
     <div id="context-menu-node" class="fixed z-50 hidden glass-panel rounded-2xl p-2 w-64 shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col gap-1 text-xs font-bold text-slate-800 dark:text-slate-200 animate-in fade-in zoom-in-95 duration-150">
+        <button id="ctx-node-duplicate" class="flex items-center gap-3 px-3 py-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 transition-colors text-left cursor-pointer font-black">
+            <span class="material-symbols-outlined text-[18px]">control_point_duplicate</span>
+            <div class="flex items-center justify-between flex-1">
+                <span>Duplicar bloque</span>
+                <span class="text-[9px] text-slate-400 font-normal">Ctrl+D</span>
+            </div>
+        </button>
+        <button id="ctx-node-copy" class="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors text-left cursor-pointer">
+            <span class="material-symbols-outlined text-[18px] text-blue-500">content_copy</span>
+            <div class="flex items-center justify-between flex-1">
+                <span>Copiar bloque</span>
+                <span class="text-[9px] text-slate-400 font-normal">Ctrl+C</span>
+            </div>
+        </button>
+        <div class="h-px bg-slate-200 dark:bg-slate-800 my-1"></div>
         <button id="ctx-node-subflow" class="flex items-center gap-3 px-3 py-2 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 transition-colors text-left cursor-pointer font-black">
             <span class="material-symbols-outlined text-[18px]">account_tree</span>
             <span>Abrir Sub-diagrama ↵</span>
@@ -1009,7 +1032,7 @@
     </div>
 
     <!-- Global App Integration Scripts -->
-    <script type="module" src="./js/app.js"></script>
+    <script type="module" src="./js/app.js?v=2.2"></script>
     <script type="module" src="../js/global-sidebar.js"></script>
     <script type="module">import '../js/theme.js';</script>
 </body>

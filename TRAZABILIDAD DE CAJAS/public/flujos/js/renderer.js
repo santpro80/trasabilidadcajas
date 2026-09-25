@@ -1,7 +1,7 @@
 // renderer.js - Motor Gráfico Interactivo para Canvas Infinito, Nodos y Conexiones Bezier
 
-import { state } from './state.js';
-import { getShapeConfig, getColorConfig } from './shapes.js';
+import { state } from './state.js?v=2.2';
+import { getShapeConfig, getColorConfig } from './shapes.js?v=2.2';
 
 export class FlowchartRenderer {
   constructor(containerEl, svgEl, nodesContainerEl) {
@@ -35,6 +35,8 @@ export class FlowchartRenderer {
     this.selectedNodeIds = new Set();
     this.selectedEdgeId = null;
     this.preDragSnapshot = null;
+    this.lastPointerCanvas = { x: 250, y: 250 };
+    this.isPointerOverCanvas = false;
 
     // Gestos táctiles multitáctiles (Pinch-to-zoom en celulares)
     this.activePointers = new Map();
@@ -112,8 +114,13 @@ export class FlowchartRenderer {
       this.applyTransform();
     }, { passive: false });
 
+    // Rastrear presencia del cursor sobre el lienzo para pegar en coordenadas exactas
+    this.container.addEventListener('pointerenter', () => { this.isPointerOverCanvas = true; });
+    this.container.addEventListener('pointerleave', () => { this.isPointerOverCanvas = false; });
+
     // Pan o Selección con clic / toque sobre fondo
     this.container.addEventListener('pointerdown', (e) => {
+      this.lastPointerCanvas = this.screenToCanvas(e.clientX, e.clientY);
       this.activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
 
       // Si hay 2 dedos en pantalla -> Iniciar gesto Pinch-to-Zoom (móvil)
@@ -174,6 +181,7 @@ export class FlowchartRenderer {
     });
 
     window.addEventListener('pointermove', (e) => {
+      this.lastPointerCanvas = this.screenToCanvas(e.clientX, e.clientY);
       if (this.activePointers.has(e.pointerId)) {
         this.activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
       }
@@ -520,6 +528,9 @@ export class FlowchartRenderer {
             <button type="button" class="btn-node-edit size-5 rounded hover:bg-slate-200/70 dark:hover:bg-slate-700/70 text-slate-400 hover:text-blue-500 transition-colors flex items-center justify-center cursor-pointer" title="Editar bloque">
               <span class="material-symbols-outlined text-[13px]">edit</span>
             </button>
+            <button type="button" class="btn-node-duplicate size-5 rounded hover:bg-slate-200/70 dark:hover:bg-slate-700/70 text-slate-400 hover:text-emerald-500 transition-colors flex items-center justify-center cursor-pointer" title="Duplicar bloque (Ctrl+D)">
+              <span class="material-symbols-outlined text-[13px]">content_copy</span>
+            </button>
           </div>
           <h4 class="node-title text-[11px] font-black uppercase tracking-wider text-slate-800 dark:text-white line-clamp-2 max-w-[145px] leading-tight" title="${node.title}">
             ${node.title || '¿Condición?'}
@@ -540,6 +551,9 @@ export class FlowchartRenderer {
             <span class="material-symbols-outlined text-[15px]" style="color: ${colorCfg.hex};">${icon}</span>
             <button type="button" class="btn-node-edit size-4 rounded hover:bg-slate-200/70 dark:hover:bg-slate-700/70 text-slate-400 hover:text-blue-500 transition-colors flex items-center justify-center cursor-pointer" title="Editar bloque">
               <span class="material-symbols-outlined text-[11px]">edit</span>
+            </button>
+            <button type="button" class="btn-node-duplicate size-4 rounded hover:bg-slate-200/70 dark:hover:bg-slate-700/70 text-slate-400 hover:text-emerald-500 transition-colors flex items-center justify-center cursor-pointer" title="Duplicar bloque (Ctrl+D)">
+              <span class="material-symbols-outlined text-[11px]">content_copy</span>
             </button>
           </div>
           <h4 class="node-title text-[10px] font-black uppercase tracking-wider text-slate-800 dark:text-white line-clamp-2 max-w-[85px] leading-tight" title="${node.title}">
@@ -562,6 +576,9 @@ export class FlowchartRenderer {
             <button type="button" class="btn-node-edit size-5 rounded hover:bg-slate-200/70 dark:hover:bg-slate-700/70 text-slate-400 hover:text-blue-500 transition-colors flex items-center justify-center cursor-pointer" title="Editar bloque">
               <span class="material-symbols-outlined text-[12px]">edit</span>
             </button>
+            <button type="button" class="btn-node-duplicate size-5 rounded hover:bg-slate-200/70 dark:hover:bg-slate-700/70 text-slate-400 hover:text-emerald-500 transition-colors flex items-center justify-center cursor-pointer" title="Duplicar bloque (Ctrl+D)">
+              <span class="material-symbols-outlined text-[12px]">content_copy</span>
+            </button>
           </div>
           <h4 class="node-title text-[11px] font-black uppercase tracking-wider text-slate-800 dark:text-white line-clamp-2 max-w-[135px] leading-tight" title="${node.title}">
             ${node.title || 'Inicio / Fin'}
@@ -582,6 +599,9 @@ export class FlowchartRenderer {
             <span class="material-symbols-outlined text-[15px]" style="color: ${colorCfg.hex};">${icon}</span>
             <button type="button" class="btn-node-edit size-5 rounded hover:bg-slate-200/70 dark:hover:bg-slate-700/70 text-slate-400 hover:text-blue-500 transition-colors flex items-center justify-center cursor-pointer" title="Editar bloque">
               <span class="material-symbols-outlined text-[12px]">edit</span>
+            </button>
+            <button type="button" class="btn-node-duplicate size-5 rounded hover:bg-slate-200/70 dark:hover:bg-slate-700/70 text-slate-400 hover:text-emerald-500 transition-colors flex items-center justify-center cursor-pointer" title="Duplicar bloque (Ctrl+D)">
+              <span class="material-symbols-outlined text-[12px]">content_copy</span>
             </button>
           </div>
           <h4 class="node-title text-[11px] font-black uppercase tracking-wider text-slate-800 dark:text-white line-clamp-2 max-w-[155px] leading-tight" title="${node.title}">
@@ -604,6 +624,9 @@ export class FlowchartRenderer {
             <button type="button" class="btn-node-edit size-5 rounded hover:bg-slate-200/70 dark:hover:bg-slate-700/70 text-slate-400 hover:text-blue-500 transition-colors flex items-center justify-center cursor-pointer" title="Editar bloque">
               <span class="material-symbols-outlined text-[12px]">edit</span>
             </button>
+            <button type="button" class="btn-node-duplicate size-5 rounded hover:bg-slate-200/70 dark:hover:bg-slate-700/70 text-slate-400 hover:text-emerald-500 transition-colors flex items-center justify-center cursor-pointer" title="Duplicar bloque (Ctrl+D)">
+              <span class="material-symbols-outlined text-[12px]">content_copy</span>
+            </button>
           </div>
           <h4 class="node-title text-[11px] font-black uppercase tracking-wider text-slate-800 dark:text-white line-clamp-2 max-w-[155px] leading-tight" title="${node.title}">
             ${node.title || 'Preparación'}
@@ -625,6 +648,9 @@ export class FlowchartRenderer {
             <button type="button" class="btn-node-edit size-5 rounded hover:bg-slate-200/70 dark:hover:bg-slate-700/70 text-slate-400 hover:text-blue-500 transition-colors flex items-center justify-center cursor-pointer" title="Editar bloque">
               <span class="material-symbols-outlined text-[12px]">edit</span>
             </button>
+            <button type="button" class="btn-node-duplicate size-5 rounded hover:bg-slate-200/70 dark:hover:bg-slate-700/70 text-slate-400 hover:text-emerald-500 transition-colors flex items-center justify-center cursor-pointer" title="Duplicar bloque (Ctrl+D)">
+              <span class="material-symbols-outlined text-[12px]">content_copy</span>
+            </button>
           </div>
           <h4 class="node-title text-[11px] font-black uppercase tracking-wider text-slate-800 dark:text-white line-clamp-2 max-w-[150px] leading-tight" title="${node.title}">
             ${node.title || 'Pantalla / Aviso'}
@@ -645,6 +671,9 @@ export class FlowchartRenderer {
             <span class="material-symbols-outlined text-[15px]" style="color: ${colorCfg.hex};">${icon}</span>
             <button type="button" class="btn-node-edit size-5 rounded hover:bg-slate-200/70 dark:hover:bg-slate-700/70 text-slate-400 hover:text-blue-500 transition-colors flex items-center justify-center cursor-pointer" title="Editar bloque">
               <span class="material-symbols-outlined text-[12px]">edit</span>
+            </button>
+            <button type="button" class="btn-node-duplicate size-5 rounded hover:bg-slate-200/70 dark:hover:bg-slate-700/70 text-slate-400 hover:text-emerald-500 transition-colors flex items-center justify-center cursor-pointer" title="Duplicar bloque (Ctrl+D)">
+              <span class="material-symbols-outlined text-[12px]">content_copy</span>
             </button>
           </div>
           <h4 class="node-title text-[10.5px] font-black uppercase tracking-wider text-slate-800 dark:text-white line-clamp-2 max-w-[125px] leading-tight" title="${node.title}">
@@ -672,6 +701,9 @@ export class FlowchartRenderer {
             <button type="button" class="btn-node-edit size-6 rounded-md hover:bg-slate-200/70 dark:hover:bg-slate-700/70 text-slate-400 hover:text-blue-500 transition-colors flex items-center justify-center cursor-pointer shrink-0" title="Editar bloque">
               <span class="material-symbols-outlined text-[14px]">edit</span>
             </button>
+            <button type="button" class="btn-node-duplicate size-6 rounded-md hover:bg-slate-200/70 dark:hover:bg-slate-700/70 text-slate-400 hover:text-emerald-500 transition-colors flex items-center justify-center cursor-pointer shrink-0" title="Duplicar bloque (Ctrl+D)">
+              <span class="material-symbols-outlined text-[14px]">content_copy</span>
+            </button>
           </div>
           ${node.text ? `
             <p class="node-text text-[10.5px] font-medium text-slate-600 dark:text-slate-300 leading-snug line-clamp-2 mt-0.5">
@@ -694,6 +726,9 @@ export class FlowchartRenderer {
             </h4>
             <button type="button" class="btn-node-edit size-6 rounded-md hover:bg-slate-200/70 dark:hover:bg-slate-700/70 text-slate-400 hover:text-blue-500 transition-colors flex items-center justify-center cursor-pointer shrink-0" title="Editar bloque">
               <span class="material-symbols-outlined text-[14px]">edit</span>
+            </button>
+            <button type="button" class="btn-node-duplicate size-6 rounded-md hover:bg-slate-200/70 dark:hover:bg-slate-700/70 text-slate-400 hover:text-emerald-500 transition-colors flex items-center justify-center cursor-pointer shrink-0" title="Duplicar bloque (Ctrl+D)">
+              <span class="material-symbols-outlined text-[14px]">content_copy</span>
             </button>
           </div>
 
@@ -745,6 +780,12 @@ export class FlowchartRenderer {
       window.dispatchEvent(new CustomEvent('open-edit-node-modal', { detail: { nodeId: node.id } }));
     });
 
+    // Click en botón de duplicar (para celular y desktop)
+    el.querySelector('.btn-node-duplicate')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      window.dispatchEvent(new CustomEvent('duplicate-single-node', { detail: { nodeId: node.id } }));
+    });
+
     // Click en sub-diagrama (para celular y desktop)
     el.querySelector('.sub-workspace-hint')?.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -774,7 +815,7 @@ export class FlowchartRenderer {
       }
 
       // Ignorar si se hace click en puertos o botones
-      if (e.target.closest('.flow-port') || e.target.closest('.btn-node-edit') || e.target.closest('.sub-workspace-hint')) return;
+      if (e.target.closest('.flow-port') || e.target.closest('.btn-node-edit') || e.target.closest('.btn-node-duplicate') || e.target.closest('.sub-workspace-hint')) return;
 
       if (e.button === 0 || e.pointerType === 'touch') { // Clic izquierdo o toque móvil
         if (e.shiftKey) {
