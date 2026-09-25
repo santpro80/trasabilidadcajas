@@ -1,8 +1,8 @@
 // app.js - Bootstrap del Módulo Flujos Sandbox
 
-import { state } from './state.js?v=2.2';
-import { FlowchartRenderer } from './renderer.js?v=2.2';
-import { FlowchartUI } from './ui.js?v=2.2';
+import { state } from './state.js?v=2.3';
+import { FlowchartRenderer } from './renderer.js?v=2.3';
+import { FlowchartUI } from './ui.js?v=2.3';
 
 function initFlujos() {
   const container = document.getElementById('canvas-container');

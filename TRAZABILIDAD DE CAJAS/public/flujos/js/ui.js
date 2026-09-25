@@ -1,5 +1,5 @@
-import { state } from './state.js?v=2.2';
-import { FLOW_SHAPES, SHAPE_COLORS, getShapeConfig, getColorConfig } from './shapes.js?v=2.2';
+import { state } from './state.js?v=2.3';
+import { FLOW_SHAPES, SHAPE_COLORS, getShapeConfig, getColorConfig } from './shapes.js?v=2.3';
 
 export class FlowchartUI {
   constructor(renderer) {
@@ -359,9 +359,6 @@ export class FlowchartUI {
     }
 
     this.positionMenu(menu, screenX, screenY);
-    menu.classList.remove('hidden');
-    this.activeContextMenu = menu;
-  }
     menu.classList.remove('hidden');
     this.activeContextMenu = menu;
   }

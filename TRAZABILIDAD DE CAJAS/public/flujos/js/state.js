@@ -1,7 +1,7 @@
 // state.js - Modelo de Estado Jerárquico para Flujos Sandbox con Sincronización en la Nube (Firestore)
 
 import { db, doc, getDoc, setDoc, onSnapshot } from '../../supervisor/js/firebase-config.js';
-import { getShapeConfig } from './shapes.js?v=2.2';
+import { getShapeConfig } from './shapes.js?v=2.3';
 
 const STORAGE_KEY = 'flujos_sandbox_data_v1';
 const SERVER_META_KEY = 'flujos_server_meta_v1';

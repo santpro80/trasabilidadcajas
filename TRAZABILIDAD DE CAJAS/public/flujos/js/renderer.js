@@ -1,7 +1,7 @@
 // renderer.js - Motor Gráfico Interactivo para Canvas Infinito, Nodos y Conexiones Bezier
 
-import { state } from './state.js?v=2.2';
-import { getShapeConfig, getColorConfig } from './shapes.js?v=2.2';
+import { state } from './state.js?v=2.3';
+import { getShapeConfig, getColorConfig } from './shapes.js?v=2.3';
 
 export class FlowchartRenderer {
   constructor(containerEl, svgEl, nodesContainerEl) {
