@@ -33,13 +33,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const tipoReporteModal = document.getElementById('tipoReporteModal');
     const btnEntrada = document.getElementById('btn-entrada');
     const btnSalida = document.getElementById('btn-salida');
+    const cancelReportBtn = document.getElementById('cancel-report-btn');
     const prestamoModal = document.getElementById('prestamoModal');
     const prestamoInput = document.getElementById('prestamo-input');
     const cancelPrestamoBtn = document.getElementById('cancel-prestamo-btn');
     const confirmPrestamoBtn = document.getElementById('confirm-prestamo-btn');
-    const observationModal = document.getElementById('observationModal');
-    const noObservationBtn = document.getElementById('no-observation-btn');
-    const yesObservationBtn = document.getElementById('yes-observation-btn');
 
     let allLoadedItemsData = {};
     let currentSelectedSerialNumber = '';
@@ -556,31 +554,19 @@ document.addEventListener('DOMContentLoaded', () => {
     if (btnEntrada) btnEntrada.addEventListener('click', () => {
         reportType = 'Entrada';
         if (tipoReporteModal) tipoReporteModal.style.display = 'none';
-        if (observationModal) observationModal.style.display = 'flex';
+        generarPDF('Entrada');
     });
 
     if (btnSalida) btnSalida.addEventListener('click', () => {
         console.log("Botón 'Salida' clickeado.");
         reportType = 'Salida';
         if (tipoReporteModal) tipoReporteModal.style.display = 'none';
-        if (observationModal) observationModal.style.display = 'flex';
+        if (prestamoModal) prestamoModal.style.display = 'flex';
+        if (prestamoInput) prestamoInput.focus();
     });
 
-    if (noObservationBtn) noObservationBtn.addEventListener('click', () => {
-        if (observationModal) observationModal.style.display = 'none';
-        console.log(`Generando reporte de tipo: ${reportType}`);
-        if (reportType === 'Entrada') {
-            generarPDF('Entrada');
-        } else if (reportType === 'Salida') {
-            if (prestamoModal) prestamoModal.style.display = 'flex';
-            if (prestamoInput) prestamoInput.focus();
-        }
-    });
-
-    if (yesObservationBtn) yesObservationBtn.addEventListener('click', () => {
-        if (observationModal) observationModal.style.display = 'none';
-        const url = `reportar-problema.html?serial=${encodeURIComponent(currentSelectedSerialNumber)}&modelo=${encodeURIComponent(modelName)}`;
-        window.location.href = url;
+    if (cancelReportBtn) cancelReportBtn.addEventListener('click', () => {
+        if (tipoReporteModal) tipoReporteModal.style.display = 'none';
     });
 
     // Configuración del campo de préstamo (Solo números y numpad)

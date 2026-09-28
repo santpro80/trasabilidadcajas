@@ -35,9 +35,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const prestamoInput = document.getElementById('prestamo-input');
     const cancelPrestamoBtn = document.getElementById('cancel-prestamo-btn');
     const confirmPrestamoBtn = document.getElementById('confirm-prestamo-btn');
-    const observationModal = document.getElementById('observationModal');
-    const noObservationBtn = document.getElementById('no-observation-btn');
-    const yesObservationBtn = document.getElementById('yes-observation-btn');
 
     let allLoadedItemsData = {};
     let currentSelectedSerialNumber = '';
