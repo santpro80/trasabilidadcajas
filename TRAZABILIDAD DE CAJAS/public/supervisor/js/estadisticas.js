@@ -30,6 +30,17 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    const getTimestampMs = (ts, fallbackDateStr) => {
+        if (!ts) {
+            return fallbackDateStr ? new Date(fallbackDateStr).getTime() : 0;
+        }
+        if (typeof ts.toMillis === 'function') return ts.toMillis();
+        if (typeof ts.toDate === 'function') return ts.toDate().getTime();
+        if (typeof ts.seconds === 'number') return ts.seconds * 1000 + Math.floor((ts.nanoseconds || 0) / 1e6);
+        const parsed = new Date(ts).getTime();
+        return isNaN(parsed) ? 0 : parsed;
+    };
+
     const loadMonthlyStats = async (date) => {
         if (!statsContainer || !monthTitle) {
             console.error("Required elements for statistics are not found on the page.");
@@ -40,34 +51,147 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             const currentMonthISO = date.toISOString().slice(0, 7); 
+            const nextMonthDate = new Date(date.getFullYear(), date.getMonth() + 1, 15);
+            const nextMonthISO = nextMonthDate.toISOString().slice(0, 7);
             
             const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
             monthTitle.textContent = `Salidas de Cajas - ${monthNames[date.getMonth()]} ${date.getFullYear()}`;
 
-            const schemasSnapshot = await getDocs(collection(db, "esquemas_modelos"));
-            const allModelNames = schemasSnapshot.docs.map(doc => doc.id);
+            const startOfMonthRange = new Date(date.getFullYear(), date.getMonth(), 0, 0, 0, 0);
+            const endOfNextMonthRange = new Date(date.getFullYear(), date.getMonth() + 2, 2, 23, 59, 59, 999);
 
-            const modelCounts = {};
-            allModelNames.forEach(modelName => {
-                modelCounts[modelName] = 0;
-            });
-
-            const q = query(
+            const qMovCurrent = query(
                 collection(db, "movimientos_cajas"),
-                where("mes", "==", currentMonthISO),
-                where("tipo", "==", "Salida")
+                where("mes", "==", currentMonthISO)
+            );
+            const qMovNext = query(
+                collection(db, "movimientos_cajas"),
+                where("mes", "==", nextMonthISO)
+            );
+            const qHistorial = query(
+                collection(db, "historial"),
+                where("timestamp", ">=", startOfMonthRange),
+                where("timestamp", "<=", endOfNextMonthRange)
             );
 
-            const querySnapshot = await getDocs(q);
+            const [schemasSnapshot, movCurrentSnap, movNextSnap, historialSnap] = await Promise.all([
+                getDocs(collection(db, "esquemas_modelos")),
+                getDocs(qMovCurrent),
+                getDocs(qMovNext),
+                getDocs(qHistorial)
+            ]);
 
-            querySnapshot.forEach(doc => {
-                const data = doc.data();
-                if (data.modelName && modelCounts.hasOwnProperty(data.modelName)) {
-                    modelCounts[data.modelName]++;
+            const allModelNames = schemasSnapshot.docs.map(doc => doc.id);
+
+            const modelStats = {};
+            allModelNames.forEach(modelName => {
+                modelStats[modelName] = {
+                    sinConsumo: 0,
+                    conConsumo: 0,
+                    totalSalidas: 0
+                };
+            });
+
+            const normSerie = (s) => String(s || '').trim().toUpperCase();
+            const movsByCaja = {};
+            const seenDocIds = new Set();
+
+            [...movCurrentSnap.docs, ...movNextSnap.docs].forEach(docSnap => {
+                if (seenDocIds.has(docSnap.id)) return;
+                seenDocIds.add(docSnap.id);
+
+                const data = docSnap.data();
+                const serie = normSerie(data.cajaSerie);
+
+                if (!serie) {
+                    if (data.tipo === 'Salida' && data.mes === currentMonthISO && data.modelName && modelStats.hasOwnProperty(data.modelName)) {
+                        modelStats[data.modelName].totalSalidas++;
+                    }
+                    return;
+                }
+
+                if (!movsByCaja[serie]) movsByCaja[serie] = [];
+                movsByCaja[serie].push({
+                    id: docSnap.id,
+                    ...data,
+                    timeMs: getTimestampMs(data.timestamp, data.fecha)
+                });
+            });
+
+            Object.keys(movsByCaja).forEach(serie => {
+                movsByCaja[serie].sort((a, b) => a.timeMs - b.timeMs);
+            });
+
+            const consumosByCaja = {};
+            historialSnap.forEach(docSnap => {
+                const h = docSnap.data();
+                if (
+                    h.accion === 'MODIFICACIÓN DE ÍTEM' &&
+                    h.detalles &&
+                    String(h.detalles.valorNuevo || '').trim().toUpperCase() === 'REEMPLAZAR'
+                ) {
+                    const serie = normSerie(h.detalles.cajaSerie);
+                    if (!serie) return;
+                    if (!consumosByCaja[serie]) consumosByCaja[serie] = [];
+                    consumosByCaja[serie].push(getTimestampMs(h.timestamp));
                 }
             });
 
-            const sortedModels = Object.entries(modelCounts).sort(([, a], [, b]) => b - a);
+            Object.keys(consumosByCaja).forEach(serie => {
+                consumosByCaja[serie].sort((a, b) => a - b);
+            });
+
+            Object.keys(movsByCaja).forEach(serie => {
+                const movs = movsByCaja[serie];
+                const consumos = consumosByCaja[serie] || [];
+
+                for (let i = 0; i < movs.length; i++) {
+                    const mov = movs[i];
+                    if (mov.tipo !== 'Salida' || mov.mes !== currentMonthISO) continue;
+
+                    const modelName = mov.modelName;
+                    if (!modelName || !modelStats.hasOwnProperty(modelName)) continue;
+
+                    modelStats[modelName].totalSalidas++;
+
+                    // Buscar la siguiente Salida de esta misma caja para delimitar el ciclo
+                    let nextSalidaTimeMs = Infinity;
+                    for (let k = i + 1; k < movs.length; k++) {
+                        if (movs[k].tipo === 'Salida') {
+                            nextSalidaTimeMs = movs[k].timeMs;
+                            break;
+                        }
+                    }
+
+                    // Buscar si la caja tuvo una Entrada posterior a esta Salida y antes de la siguiente Salida
+                    let entradaMov = null;
+                    for (let j = i + 1; j < movs.length; j++) {
+                        if (movs[j].timeMs >= nextSalidaTimeMs) break;
+                        if (movs[j].tipo === 'Entrada') {
+                            entradaMov = movs[j];
+                        }
+                    }
+
+                    // Tomamos las cajas que salieron y entraron, y verificamos si en el medio se consumieron ítems
+                    if (entradaMov) {
+                        const salidaTimeMs = mov.timeMs;
+                        const entradaTimeMs = entradaMov.timeMs;
+                        const maxGraceMs = Math.min(nextSalidaTimeMs - 1, entradaTimeMs + (2 * 24 * 60 * 60 * 1000));
+                        const tuvoConsumo = consumos.some(cTimeMs => cTimeMs >= salidaTimeMs && cTimeMs <= maxGraceMs);
+
+                        if (tuvoConsumo) {
+                            modelStats[modelName].conConsumo++;
+                        } else {
+                            modelStats[modelName].sinConsumo++;
+                        }
+                    }
+                }
+            });
+
+            const sortedModels = Object.entries(modelStats).sort(([, a], [, b]) => {
+                if (b.totalSalidas !== a.totalSalidas) return b.totalSalidas - a.totalSalidas;
+                return b.conConsumo - a.conConsumo;
+            });
             currentBoxStatsData = sortedModels; 
 
             if (sortedModels.length === 0) {
@@ -84,30 +208,36 @@ document.addEventListener('DOMContentLoaded', () => {
         updateNavButtons();
     };
 
-    const renderStatsTable = (modelCounts) => {
+    const renderStatsTable = (modelStatsList) => {
         let tableHTML = `
-            <table class="stats-table">
-                <thead>
-                    <tr>
-                        <th>Modelo de Caja</th>
-                        <th>Cantidad de Salidas</th>
-                    </tr>
-                </thead>
-                <tbody>
+            <div style="width: 100%; overflow-x: auto;">
+                <table class="stats-table">
+                    <thead>
+                        <tr>
+                            <th>Modelo de Caja</th>
+                            <th>Cajas sin Consumo</th>
+                            <th>Cajas con Consumo</th>
+                            <th>Cajas Totales que Salieron</th>
+                        </tr>
+                    </thead>
+                    <tbody>
         `;
 
-        modelCounts.forEach(([modelName, count]) => {
+        modelStatsList.forEach(([modelName, stats]) => {
             tableHTML += `
                 <tr class="clickable-row" data-model-name="${modelName}">
                     <td>${modelName}</td>
-                    <td>${count}</td>
+                    <td>${stats.sinConsumo}</td>
+                    <td>${stats.conConsumo}</td>
+                    <td>${stats.totalSalidas}</td>
                 </tr>
             `;
         });
 
         tableHTML += `
-                </tbody>
-            </table>
+                    </tbody>
+                </table>
+            </div>
         `;
 
         statsContainer.innerHTML = tableHTML;
@@ -228,9 +358,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
         const filename = `Salidas_Cajas_${monthNames[currentDate.getMonth()]}_${currentDate.getFullYear()}.csv`;
 
-        let csvContent = "Modelo de Caja;Cantidad de Salidas\n";
-        currentBoxStatsData.forEach(([modelName, count]) => {
-            csvContent += `"${modelName}";${count}\n`;
+        let csvContent = "\uFEFFModelo de Caja;Cajas sin Consumo;Cajas con Consumo;Cajas Totales que Salieron\n";
+        currentBoxStatsData.forEach(([modelName, stats]) => {
+            csvContent += `"${modelName}";${stats.sinConsumo};${stats.conConsumo};${stats.totalSalidas}\n`;
         });
         downloadCSV(csvContent, filename);
     });
