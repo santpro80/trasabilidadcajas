@@ -106,6 +106,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!serie) {
                     if (data.tipo === 'Salida' && data.mes === currentMonthISO && data.modelName && modelStats.hasOwnProperty(data.modelName)) {
                         modelStats[data.modelName].totalSalidas++;
+                        modelStats[data.modelName].sinConsumo++;
                     }
                     return;
                 }
@@ -154,7 +155,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     modelStats[modelName].totalSalidas++;
 
-                    // Buscar la siguiente Salida de esta misma caja para delimitar el ciclo
+                    // Buscar la siguiente Salida de esta misma caja para delimitar el ciclo del préstamo
                     let nextSalidaTimeMs = Infinity;
                     for (let k = i + 1; k < movs.length; k++) {
                         if (movs[k].tipo === 'Salida') {
@@ -163,7 +164,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                     }
 
-                    // Buscar si la caja tuvo una Entrada posterior a esta Salida y antes de la siguiente Salida
+                    // Si hubo Entrada entre esta Salida y la próxima Salida, tomamos el fin del ciclo hasta la próxima Salida
+                    // (o hasta 2 días después de la Entrada si fue posterior), sin exigir que hayan tocado "Entrada"
                     let entradaMov = null;
                     for (let j = i + 1; j < movs.length; j++) {
                         if (movs[j].timeMs >= nextSalidaTimeMs) break;
@@ -172,18 +174,17 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                     }
 
-                    // Tomamos las cajas que salieron y entraron, y verificamos si en el medio se consumieron ítems
-                    if (entradaMov) {
-                        const salidaTimeMs = mov.timeMs;
-                        const entradaTimeMs = entradaMov.timeMs;
-                        const maxGraceMs = Math.min(nextSalidaTimeMs - 1, entradaTimeMs + (2 * 24 * 60 * 60 * 1000));
-                        const tuvoConsumo = consumos.some(cTimeMs => cTimeMs >= salidaTimeMs && cTimeMs <= maxGraceMs);
+                    const salidaTimeMs = mov.timeMs;
+                    const endCycleTimeMs = entradaMov
+                        ? Math.min(nextSalidaTimeMs - 1, Math.max(entradaMov.timeMs, entradaMov.timeMs + (2 * 24 * 60 * 60 * 1000)))
+                        : nextSalidaTimeMs - 1;
 
-                        if (tuvoConsumo) {
-                            modelStats[modelName].conConsumo++;
-                        } else {
-                            modelStats[modelName].sinConsumo++;
-                        }
+                    const tuvoConsumo = consumos.some(cTimeMs => cTimeMs >= salidaTimeMs && cTimeMs <= endCycleTimeMs);
+
+                    if (tuvoConsumo) {
+                        modelStats[modelName].conConsumo++;
+                    } else {
+                        modelStats[modelName].sinConsumo++;
                     }
                 }
             });
