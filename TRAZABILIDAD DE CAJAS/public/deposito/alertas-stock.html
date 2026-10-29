@@ -101,57 +101,96 @@
             <!-- Content Grid (Initially Hidden) -->
             <div id="alertas-main-container" class="w-full grid grid-cols-1 lg:grid-cols-2 gap-8 hidden">
                 <!-- Columna Izquierda: Configurar Alerta -->
-                <div class="glass-card rounded-[2rem] p-6 lg:p-8 shadow-xl flex flex-col h-fit sticky top-24">
-                    <div class="flex items-center gap-3 mb-6 border-b border-slate-200 dark:border-white/5 pb-4">
-                        <button id="btn-back-to-choices" class="flex items-center justify-center size-9 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 transition-colors mr-1 group" title="Cambiar Depósito">
-                            <span class="material-symbols-outlined text-[18px] group-hover:-translate-x-1 transition-transform">arrow_back</span>
-                        </button>
-                        <h2 class="text-lg font-black text-slate-800 dark:text-white uppercase tracking-tight flex items-center gap-2">
-                            <span id="alertas-title-text">Configurar Alerta</span>
-                        </h2>
+                <div class="glass-card rounded-[2rem] p-6 lg:p-8 shadow-xl flex flex-col h-full min-h-[500px]">
+                    <div class="flex items-center justify-between gap-3 mb-5 border-b border-slate-200 dark:border-white/5 pb-4">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <button id="btn-back-to-choices" class="flex items-center justify-center size-9 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 transition-colors shrink-0 group" title="Cambiar Depósito">
+                                <span class="material-symbols-outlined text-[18px] group-hover:-translate-x-1 transition-transform">arrow_back</span>
+                            </button>
+                            <div class="min-w-0">
+                                <h2 class="text-base sm:text-lg font-black text-slate-800 dark:text-white uppercase tracking-tight truncate">
+                                    <span id="alertas-title-text">Configurar Alerta</span>
+                                </h2>
+                                <p class="text-[10px] font-bold uppercase tracking-widest text-slate-500">Catálogo completo del depósito</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2 shrink-0">
+                            <span id="contador-catalogo" class="bg-slate-200/80 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[10px] font-black px-3 py-1 rounded-full">0 ÍTEMS</span>
+                            <button id="btn-sync-catalog" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-villalba-blue/10 hover:bg-villalba-blue text-villalba-blue hover:text-white text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer" title="Sincronizar y actualizar todos los ítems desde la base de datos">
+                                <span id="sync-catalog-icon" class="material-symbols-outlined text-[16px]">sync</span>
+                                <span class="hidden sm:inline">Actualizar</span>
+                            </button>
+                        </div>
                     </div>
 
-                    <div class="space-y-6">
-                        <!-- Buscador -->
-                        <div class="space-y-2 relative">
-                            <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Código o Descripción</label>
+                    <div class="flex flex-col flex-1 gap-4 min-h-0">
+                        <!-- Buscador y Filtros Rápidos -->
+                        <div class="space-y-2.5">
+                            <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Buscar por Código, Descripción o Material</label>
                             <div class="relative group">
                                 <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-villalba-blue transition-colors">search</span>
-                                <input type="text" id="buscador-input" placeholder="Ej: PLACA Ø4..." autocomplete="off" class="w-full h-14 pl-12 pr-4 bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-2xl text-sm font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-villalba-blue/50 focus:border-villalba-blue transition-all uppercase placeholder:normal-case placeholder:font-medium">
+                                <input type="text" id="buscador-input" placeholder="Ej: PLACA Ø4, TORNILLO, 42-123..." autocomplete="off" class="w-full h-12 pl-12 pr-10 bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-2xl text-sm font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-villalba-blue/50 focus:border-villalba-blue transition-all uppercase placeholder:normal-case placeholder:font-medium">
+                                <button id="btn-clear-search" class="hidden absolute right-3 top-1/2 -translate-y-1/2 size-7 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-700 dark:hover:text-white items-center justify-center transition-colors" title="Limpiar búsqueda">
+                                    <span class="material-symbols-outlined text-[16px]">close</span>
+                                </button>
                             </div>
-                            
-                            <!-- Resultados Autocompletado -->
-                            <div id="autocomplete-list" class="absolute left-0 right-0 top-full mt-2 bg-white dark:bg-[#151a27] border border-slate-200 dark:border-slate-800/80 rounded-2xl shadow-2xl z-50 max-h-[300px] overflow-y-auto hidden divide-y divide-slate-100 dark:divide-slate-800/50">
-                                <!-- Resultados aquí -->
+
+                            <!-- Filtros rápidos del catálogo -->
+                            <div class="flex items-center gap-1.5 pt-0.5 flex-wrap">
+                                <button type="button" data-filter="todos" class="catalog-filter-btn px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest bg-villalba-blue text-white transition-all cursor-pointer">
+                                    Todos
+                                </button>
+                                <button type="button" data-filter="sin_alarma" class="catalog-filter-btn px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest bg-slate-100 dark:bg-slate-800/70 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 transition-all cursor-pointer">
+                                    Sin Alarma
+                                </button>
+                                <button type="button" data-filter="con_alarma" class="catalog-filter-btn px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest bg-slate-100 dark:bg-slate-800/70 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 transition-all cursor-pointer">
+                                    Con Alarma Configurada
+                                </button>
                             </div>
                         </div>
 
                         <!-- Detalles del ítem seleccionado -->
-                        <div id="item-seleccionado" class="hidden p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-white/5 space-y-4">
-                            <div>
-                                <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Ítem Seleccionado</span>
-                                <h3 id="item-codigo" class="text-lg font-black text-villalba-blue tracking-wider mt-1"></h3>
-                                <p id="item-desc" class="text-xs font-bold text-slate-600 dark:text-slate-300 mt-1"></p>
+                        <div id="item-seleccionado" class="hidden p-4 rounded-2xl bg-blue-500/5 dark:bg-slate-800/70 border-2 border-villalba-blue/40 space-y-3 shrink-0">
+                            <div class="flex items-start justify-between gap-2">
+                                <div>
+                                    <span class="text-[9px] font-black text-villalba-blue uppercase tracking-widest">Ítem Seleccionado para Configurar</span>
+                                    <h3 id="item-codigo" class="text-base font-black text-slate-900 dark:text-white tracking-wider mt-0.5"></h3>
+                                    <p id="item-desc" class="text-xs font-bold text-slate-600 dark:text-slate-300 mt-0.5"></p>
+                                </div>
+                                <button type="button" id="btn-cerrar-seleccion" class="size-7 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-700 dark:hover:text-white flex items-center justify-center shrink-0" title="Cerrar selección">
+                                    <span class="material-symbols-outlined text-[16px]">close</span>
+                                </button>
                             </div>
                             
-                            <div class="space-y-2">
-                                <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Cantidad a reponer (Opcional)</label>
-                                <input type="number" id="cantidad-reposicion" min="1" placeholder="Ej: 10" class="w-full h-12 px-4 bg-white dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-xl text-sm font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-villalba-blue/50 transition-all">
+                            <div class="space-y-1.5">
+                                <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Stock Mínimo / Cantidad a reponer</label>
+                                <input type="number" id="cantidad-reposicion" min="1" placeholder="Ej: 20" class="w-full h-11 px-4 bg-white dark:bg-black/30 border border-slate-200 dark:border-white/10 rounded-xl text-sm font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-villalba-blue/50 transition-all">
                             </div>
 
-                            <div class="grid grid-cols-2 gap-3 pt-2">
-                                <button id="btn-alerta-amarilla" class="flex flex-col items-center justify-center p-4 rounded-xl border border-yellow-500/20 bg-yellow-500/10 text-yellow-600 hover:bg-yellow-500 hover:text-white transition-all group">
-                                    <span class="material-symbols-outlined mb-1 group-hover:scale-110 transition-transform">warning</span>
+                            <div class="grid grid-cols-2 gap-3 pt-1">
+                                <button id="btn-alerta-amarilla" class="flex flex-col items-center justify-center p-3 rounded-xl border border-yellow-500/30 bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 hover:bg-yellow-500 hover:text-white transition-all group cursor-pointer">
+                                    <span class="material-symbols-outlined mb-0.5 group-hover:scale-110 transition-transform">warning</span>
                                     <span class="text-[10px] font-black uppercase tracking-widest text-center">Amarilla<br>(Prioridad Media)</span>
                                 </button>
-                                <button id="btn-alerta-roja" class="flex flex-col items-center justify-center p-4 rounded-xl border border-rose-500/20 bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white transition-all group">
-                                    <span class="material-symbols-outlined mb-1 group-hover:scale-110 transition-transform">error</span>
+                                <button id="btn-alerta-roja" class="flex flex-col items-center justify-center p-3 rounded-xl border border-rose-500/30 bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white transition-all group cursor-pointer">
+                                    <span class="material-symbols-outlined mb-0.5 group-hover:scale-110 transition-transform">error</span>
                                     <span class="text-[10px] font-black uppercase tracking-widest text-center">Roja<br>(Prioridad Alta)</span>
                                 </button>
                             </div>
-                            <button id="btn-quitar-alerta" class="w-full py-3 mt-2 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-400 font-bold text-[10px] uppercase tracking-widest hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors hidden">
-                                Quitar Alerta
+                            <button id="btn-quitar-alerta" class="w-full py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-400 font-bold text-[10px] uppercase tracking-widest hover:bg-rose-500/10 hover:text-rose-500 hover:border-rose-500/30 transition-colors hidden cursor-pointer">
+                                Quitar Alerta / Stock Mínimo
                             </button>
+                        </div>
+
+                        <!-- Listado Completo del Catálogo (Scrollable) -->
+                        <div class="flex-1 flex flex-col min-h-[340px] border border-slate-200 dark:border-slate-800/80 rounded-2xl bg-white/50 dark:bg-black/20 overflow-hidden relative">
+                            <div class="bg-slate-100/90 dark:bg-slate-800/90 backdrop-blur-md px-4 py-2.5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between shrink-0">
+                                <span class="text-[9px] font-black uppercase tracking-widest text-slate-500">Ítems del Catálogo (clic para configurar)</span>
+                                <span id="catalogo-mostrando-label" class="text-[9px] font-bold uppercase tracking-widest text-slate-400"></span>
+                            </div>
+                            <div id="autocomplete-list" class="flex-1 overflow-y-auto max-h-[420px] divide-y divide-slate-100 dark:divide-slate-800/50">
+                                <!-- Todos los ítems del catálogo se renderizan aquí -->
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -207,7 +246,7 @@
         </div>
     </div>
 
-    <script type="module" src="js/alertas-stock.js?v=1.2"></script>
+    <script type="module" src="js/alertas-stock.js?v=1.3"></script>
     <script type="module" src="../js/global-sidebar.js?v=1.2"></script>
     <script type="module">import "../js/theme.js";</script>
 </body>

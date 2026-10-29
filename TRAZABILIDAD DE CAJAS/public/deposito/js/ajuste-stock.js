@@ -96,11 +96,12 @@ const initSearch = () => {
 
         const valAlfanumerico = val.replace(/[^A-Z0-9]/g, '');
         const matches = depositoItemsCache.filter(item => {
-            const codigo = item.codigo.toUpperCase();
+            const codigo = (item.codigo || '').toUpperCase();
             const desc = (item.descripcion || '').toUpperCase();
+            const mat = (item.material || '').toUpperCase();
             const codigoAlfanumerico = codigo.replace(/[^A-Z0-9]/g, '');
-            return codigo.includes(val) || desc.includes(val) || (valAlfanumerico.length > 0 && codigoAlfanumerico.includes(valAlfanumerico));
-        }).slice(0, 15);
+            return codigo.includes(val) || desc.includes(val) || mat.includes(val) || (valAlfanumerico.length > 0 && codigoAlfanumerico.includes(valAlfanumerico));
+        }).slice(0, 150);
 
         if (matches.length > 0) {
             autocompleteList.classList.remove('hidden');
