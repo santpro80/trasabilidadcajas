@@ -628,25 +628,27 @@ const fetchMovimientos = async (codigo) => {
 const initFilters = () => {
     const d = new Date();
     const selectMes = document.getElementById('select-mes');
+    const selectMesAnio = document.getElementById('select-mes-anio');
     const selectAnio = document.getElementById('select-anio');
 
-    selectMes.value = d.getMonth().toString();
+    if (selectMes) selectMes.value = d.getMonth().toString();
 
     const currentYear = d.getFullYear();
-    selectAnio.innerHTML = '';
-    for (let y = 2024; y <= currentYear + 1; y++) {
-        const opt = document.createElement('option');
-        opt.value = y;
-        opt.textContent = y;
-        if (y === currentYear) opt.selected = true;
-        selectAnio.appendChild(opt);
-    }
-
-    selectMes.addEventListener('change', renderMensual);
-    selectAnio.addEventListener('change', () => {
-        renderMensual();
-        renderAnual();
+    [selectMesAnio, selectAnio].forEach(sel => {
+        if (!sel) return;
+        sel.innerHTML = '';
+        for (let y = 2024; y <= currentYear + 1; y++) {
+            const opt = document.createElement('option');
+            opt.value = y;
+            opt.textContent = y;
+            if (y === currentYear) opt.selected = true;
+            sel.appendChild(opt);
+        }
     });
+
+    selectMes?.addEventListener('change', renderMensual);
+    selectMesAnio?.addEventListener('change', renderMensual);
+    selectAnio?.addEventListener('change', renderAnual);
 };
 
 const defaultOptions = {
@@ -713,7 +715,7 @@ const renderSemanal = () => {
 const renderMensual = () => {
     const ctx = document.getElementById('chart-mensual').getContext('2d');
     const mesSeleccionado = parseInt(document.getElementById('select-mes').value, 10);
-    const anioSeleccionado = parseInt(document.getElementById('select-anio')?.value, 10) || new Date().getFullYear();
+    const anioSeleccionado = parseInt(document.getElementById('select-mes-anio')?.value || document.getElementById('select-anio')?.value, 10) || new Date().getFullYear();
 
     const diasEnMes = new Date(anioSeleccionado, mesSeleccionado + 1, 0).getDate();
     const labels = Array.from({ length: diasEnMes }, (_, i) => `${i + 1}`);
@@ -788,13 +790,79 @@ const renderAnual = () => {
 // ============================================================================
 // MODO 2: PRODUCTOS QUE MÁS SALEN (ESTADÍSTICAS GLOBALES)
 // ============================================================================
+const updateTopPeriodSelectorsVisibility = () => {
+    const periodKey = document.getElementById('top-periodo-select')?.value || 'all';
+    const mesContainer = document.getElementById('top-mes-container');
+    const anioContainer = document.getElementById('top-anio-container');
+    const searchCol = document.getElementById('top-search-col');
+
+    if (periodKey === 'month') {
+        mesContainer?.classList.remove('hidden');
+        mesContainer?.classList.add('flex');
+        anioContainer?.classList.remove('hidden');
+        anioContainer?.classList.add('flex');
+        if (searchCol) {
+            searchCol.classList.remove('md:col-span-8', 'md:col-span-6');
+            searchCol.classList.add('md:col-span-4');
+        }
+    } else if (periodKey === 'year') {
+        mesContainer?.classList.add('hidden');
+        mesContainer?.classList.remove('flex');
+        anioContainer?.classList.remove('hidden');
+        anioContainer?.classList.add('flex');
+        if (searchCol) {
+            searchCol.classList.remove('md:col-span-8', 'md:col-span-4');
+            searchCol.classList.add('md:col-span-6');
+        }
+    } else {
+        mesContainer?.classList.add('hidden');
+        mesContainer?.classList.remove('flex');
+        anioContainer?.classList.add('hidden');
+        anioContainer?.classList.remove('flex');
+        if (searchCol) {
+            searchCol.classList.remove('md:col-span-4', 'md:col-span-6');
+            searchCol.classList.add('md:col-span-8');
+        }
+    }
+};
+
 const initTopProductsControls = () => {
+    const now = new Date();
     const periodoSelect = document.getElementById('top-periodo-select');
+    const topSelectMes = document.getElementById('top-select-mes');
+    const topSelectAnio = document.getElementById('top-select-anio');
     const searchInput = document.getElementById('top-search-input');
     const btnLoadMore = document.getElementById('btn-top-load-more');
     const btnExportCsv = document.getElementById('btn-export-top-csv');
 
+    if (topSelectMes) {
+        topSelectMes.value = now.getMonth().toString();
+    }
+
+    if (topSelectAnio) {
+        const currentYear = now.getFullYear();
+        topSelectAnio.innerHTML = '';
+        for (let y = 2024; y <= currentYear + 1; y++) {
+            const opt = document.createElement('option');
+            opt.value = y;
+            opt.textContent = y;
+            if (y === currentYear) opt.selected = true;
+            topSelectAnio.appendChild(opt);
+        }
+    }
+
     periodoSelect?.addEventListener('change', () => {
+        updateTopPeriodSelectorsVisibility();
+        currentTopLimit = TOP_PAGE_SIZE;
+        computeAndRenderTopProducts();
+    });
+
+    topSelectMes?.addEventListener('change', () => {
+        currentTopLimit = TOP_PAGE_SIZE;
+        computeAndRenderTopProducts();
+    });
+
+    topSelectAnio?.addEventListener('change', () => {
         currentTopLimit = TOP_PAGE_SIZE;
         computeAndRenderTopProducts();
     });
@@ -810,32 +878,40 @@ const initTopProductsControls = () => {
     });
 
     btnExportCsv?.addEventListener('click', exportTopProductsCSV);
+
+    updateTopPeriodSelectorsVisibility();
 };
 
-const getStartTimestampForPeriod = (periodKey) => {
+const getDateRangeForPeriod = (periodKey) => {
     const now = new Date();
     if (periodKey === '7d') {
-        const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6);
-        d.setHours(0, 0, 0, 0);
-        return d.getTime();
+        const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6, 0, 0, 0, 0);
+        return { startMs: d.getTime(), endMs: Infinity };
     }
     if (periodKey === '30d') {
-        const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 29);
-        d.setHours(0, 0, 0, 0);
-        return d.getTime();
+        const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 29, 0, 0, 0, 0);
+        return { startMs: d.getTime(), endMs: Infinity };
     }
     if (periodKey === 'month') {
-        return new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0).getTime();
+        const mes = parseInt(document.getElementById('top-select-mes')?.value, 10);
+        const anio = parseInt(document.getElementById('top-select-anio')?.value, 10) || now.getFullYear();
+        const validMes = isNaN(mes) ? now.getMonth() : mes;
+        const startMs = new Date(anio, validMes, 1, 0, 0, 0, 0).getTime();
+        const endMs = new Date(anio, validMes + 1, 0, 23, 59, 59, 999).getTime();
+        return { startMs, endMs };
     }
     if (periodKey === 'year') {
-        return new Date(now.getFullYear(), 0, 1, 0, 0, 0, 0).getTime();
+        const anio = parseInt(document.getElementById('top-select-anio')?.value, 10) || now.getFullYear();
+        const startMs = new Date(anio, 0, 1, 0, 0, 0, 0).getTime();
+        const endMs = new Date(anio, 11, 31, 23, 59, 59, 999).getTime();
+        return { startMs, endMs };
     }
-    return 0; // 'all'
+    return { startMs: 0, endMs: Infinity }; // 'all'
 };
 
 const computeAndRenderTopProducts = () => {
     const periodKey = document.getElementById('top-periodo-select')?.value || 'all';
-    const minTimestampMs = getStartTimestampForPeriod(periodKey);
+    const { startMs, endMs } = getDateRangeForPeriod(periodKey);
 
     // Mapa de catálogo para enriquecer descripciones rápidamente
     const catalogDescMap = new Map();
@@ -853,7 +929,7 @@ const computeAndRenderTopProducts = () => {
         if (mov.tipo !== 'Egreso') return;
         const cantidad = Number(mov.cantidad) || 0;
         if (cantidad <= 0) return;
-        if (minTimestampMs > 0 && mov.timestampMs < minTimestampMs) return;
+        if (mov.timestampMs < startMs || mov.timestampMs > endMs) return;
 
         const codigo = (mov.codigo || '').trim().toUpperCase();
         if (!codigo) return;
