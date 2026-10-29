@@ -105,6 +105,236 @@ const playWarningBeep = () => {
     }
 };
 
+const playMediumAlertBeep = () => {
+    try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        const osc1 = audioCtx.createOscillator();
+        const gain1 = audioCtx.createGain();
+        osc1.connect(gain1);
+        gain1.connect(audioCtx.destination);
+        osc1.type = 'triangle';
+        osc1.frequency.setValueAtTime(480, audioCtx.currentTime);
+        gain1.gain.setValueAtTime(0.18, audioCtx.currentTime);
+        osc1.start();
+        osc1.stop(audioCtx.currentTime + 0.14);
+
+        setTimeout(() => {
+            const osc2 = audioCtx.createOscillator();
+            const gain2 = audioCtx.createGain();
+            osc2.connect(gain2);
+            gain2.connect(audioCtx.destination);
+            osc2.type = 'triangle';
+            osc2.frequency.setValueAtTime(380, audioCtx.currentTime);
+            gain2.gain.setValueAtTime(0.18, audioCtx.currentTime);
+            osc2.start();
+            osc2.stop(audioCtx.currentTime + 0.18);
+        }, 160);
+    } catch (e) {
+        console.error("Audio Context not allowed or failed", e);
+    }
+};
+
+/**
+ * Calcula el stock disponible de un código restando/sumando lo que ya está en la lista de pendientes (stagedMovements).
+ */
+const getAvailableStockForCode = (codigo) => {
+    const itemCache = depositoItemsCache.find(item => item.codigo === codigo);
+    const currentStock = itemCache ? (Number(itemCache.stock) || 0) : 0;
+    let stagedQty = 0;
+    stagedMovements.forEach(m => {
+        if (m.codigo === codigo) {
+            if (m.tipo === 'Egreso') stagedQty += m.cantidad;
+            else if (m.tipo === 'Ingreso') stagedQty -= m.cantidad;
+        }
+    });
+    return currentStock - stagedQty;
+};
+
+/**
+ * Evalúa si un ítem con el stock resultante está por debajo de las alertas configuradas.
+ * Retorna:
+ * - { level: 'critica', stockActual, umbralCritico, umbralRecomendado } si está en nivel de alerta crítica ("STOCK CRÍTICO")
+ * - { level: 'amarilla', stockActual, umbralCritico, umbralRecomendado } si está en alerta media ("por debajo de lo recomendado")
+ * - null si no tiene alerta configurada o el stock está por encima de los umbrales.
+ */
+const evaluateStockAlert = (item, resultingStock) => {
+    if (!item) return null;
+    const stock = Number(resultingStock ?? item.stock ?? 0);
+
+    const rawMin = item.stockMinimo ?? item.minimo;
+    const hasMin = rawMin !== undefined && rawMin !== null && Number(rawMin) > 0;
+    const minStock = hasMin ? Number(rawMin) : 0;
+
+    const rawCrit = item.stockCritico;
+    const hasCrit = rawCrit !== undefined && rawCrit !== null && String(rawCrit).trim() !== '' && Number(rawCrit) >= 0;
+    const critStock = hasCrit ? Number(rawCrit) : 0;
+
+    const alertaTipo = item.alertaStock; // 'amarilla' | 'roja' | undefined
+
+    if (!hasMin && !hasCrit && !alertaTipo) {
+        return null;
+    }
+
+    // 1. Evaluar Alerta Crítica (Roja -> "STOCK CRÍTICO")
+    if (hasCrit && stock <= critStock) {
+        return {
+            level: 'critica',
+            stockActual: stock,
+            umbralCritico: critStock,
+            umbralRecomendado: hasMin ? minStock : null
+        };
+    }
+
+    if (alertaTipo === 'roja' && !hasCrit && hasMin && stock <= minStock) {
+        return {
+            level: 'critica',
+            stockActual: stock,
+            umbralCritico: minStock,
+            umbralRecomendado: minStock
+        };
+    }
+
+    if (alertaTipo === 'roja' && !hasCrit && !hasMin) {
+        return {
+            level: 'critica',
+            stockActual: stock,
+            umbralCritico: 0,
+            umbralRecomendado: null
+        };
+    }
+
+    if ((hasMin || alertaTipo) && stock <= 0) {
+        return {
+            level: 'critica',
+            stockActual: stock,
+            umbralCritico: hasCrit ? critStock : 0,
+            umbralRecomendado: hasMin ? minStock : null
+        };
+    }
+
+    // 2. Evaluar Alerta Media (Amarilla -> "Por debajo de lo recomendado")
+    if (hasMin && stock <= minStock) {
+        return {
+            level: 'amarilla',
+            stockActual: stock,
+            umbralCritico: hasCrit ? critStock : null,
+            umbralRecomendado: minStock
+        };
+    }
+
+    if (alertaTipo === 'amarilla' && !hasMin && !hasCrit) {
+        return {
+            level: 'amarilla',
+            stockActual: stock,
+            umbralCritico: null,
+            umbralRecomendado: null
+        };
+    }
+
+    return null;
+};
+
+const showStockLevelAlertModal = (item, alertData) => {
+    const modal = document.getElementById('stockLevelAlertModal');
+    const card = document.getElementById('stock-alert-card');
+    const pill = document.getElementById('stock-alert-pill');
+    const iconBox = document.getElementById('stock-alert-icon-box');
+    const icon = document.getElementById('stock-alert-icon');
+    const title = document.getElementById('stock-alert-title');
+    const subtitle = document.getElementById('stock-alert-subtitle');
+    const lblCodigo = document.getElementById('stock-alert-codigo');
+    const lblDesc = document.getElementById('stock-alert-desc');
+    const lblActual = document.getElementById('stock-alert-actual');
+    const rowMin = document.getElementById('stock-alert-row-min');
+    const lblMin = document.getElementById('stock-alert-min');
+    const rowCrit = document.getElementById('stock-alert-row-crit');
+    const lblCrit = document.getElementById('stock-alert-crit');
+    const closeBtn = document.getElementById('closeStockLevelAlertBtn');
+
+    if (!modal || !item || !alertData) return;
+
+    const isCritica = alertData.level === 'critica';
+
+    lblCodigo.textContent = item.codigo || '--';
+    lblDesc.textContent = item.descripcion || 'Sin descripción';
+    lblActual.textContent = `${alertData.stockActual} UDS`;
+
+    if (alertData.umbralRecomendado !== null && alertData.umbralRecomendado !== undefined) {
+        rowMin.classList.remove('hidden');
+        rowMin.classList.add('flex');
+        lblMin.textContent = `${alertData.umbralRecomendado} UDS`;
+    } else {
+        rowMin.classList.add('hidden');
+        rowMin.classList.remove('flex');
+    }
+
+    if (alertData.umbralCritico !== null && alertData.umbralCritico !== undefined) {
+        rowCrit.classList.remove('hidden');
+        rowCrit.classList.add('flex');
+        lblCrit.textContent = `${alertData.umbralCritico} UDS`;
+    } else {
+        rowCrit.classList.add('hidden');
+        rowCrit.classList.remove('flex');
+    }
+
+    if (isCritica) {
+        playWarningBeep();
+        modal.className = "fixed inset-0 bg-rose-950/80 backdrop-blur-md z-[115] flex items-center justify-center p-4 opacity-0 transition-opacity duration-300";
+        card.className = "bg-white dark:bg-surface-dark border-2 border-rose-500 rounded-[2rem] p-7 sm:p-8 max-w-md w-full shadow-2xl relative transform scale-95 transition-transform duration-300 flex flex-col items-center text-center";
+        pill.className = "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest mb-4 border bg-rose-500/15 text-rose-500 border-rose-500/30";
+        pill.textContent = "ALERTA CRÍTICA • NIVEL ROJO";
+        iconBox.className = "size-16 rounded-2xl bg-rose-500/20 text-rose-500 flex items-center justify-center mb-4 animate-pulse";
+        icon.textContent = "error";
+        title.className = "text-2xl font-black text-rose-600 dark:text-rose-400 uppercase tracking-wider mb-2";
+        title.textContent = "¡STOCK CRÍTICO!";
+        subtitle.textContent = "El ítem se encuentra por debajo de la alerta crítica configurada. Requiere reposición urgente.";
+        lblActual.className = "text-sm font-black text-rose-500";
+        closeBtn.className = "w-full py-3.5 bg-rose-500 hover:bg-rose-600 text-white rounded-xl font-black uppercase tracking-widest text-xs transition-all active:scale-95 shadow-lg shadow-rose-500/25 cursor-pointer";
+    } else {
+        playMediumAlertBeep();
+        modal.className = "fixed inset-0 bg-amber-950/75 backdrop-blur-md z-[115] flex items-center justify-center p-4 opacity-0 transition-opacity duration-300";
+        card.className = "bg-white dark:bg-surface-dark border-2 border-amber-500 rounded-[2rem] p-7 sm:p-8 max-w-md w-full shadow-2xl relative transform scale-95 transition-transform duration-300 flex flex-col items-center text-center";
+        pill.className = "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest mb-4 border bg-amber-500/15 text-amber-500 border-amber-500/30";
+        pill.textContent = "ALERTA MEDIA • NIVEL AMARILLO";
+        iconBox.className = "size-16 rounded-2xl bg-amber-500/15 text-amber-500 flex items-center justify-center mb-4 animate-pulse";
+        icon.textContent = "warning";
+        title.className = "text-xl font-black text-amber-500 uppercase tracking-wider mb-2";
+        title.textContent = "¡Ítem por debajo de lo recomendado!";
+        subtitle.textContent = "El stock de este ítem quedó por debajo del nivel recomendado según la configuración de alertas.";
+        lblActual.className = "text-sm font-black text-amber-500";
+        closeBtn.className = "w-full py-3.5 bg-amber-500 hover:bg-amber-600 text-slate-950 rounded-xl font-black uppercase tracking-widest text-xs transition-all active:scale-95 shadow-lg shadow-amber-500/25 cursor-pointer";
+    }
+
+    void modal.offsetWidth;
+    modal.classList.remove('opacity-0');
+    card.classList.remove('scale-95');
+    card.classList.add('scale-100');
+
+    setTimeout(() => {
+        if (closeBtn) closeBtn.focus();
+    }, 60);
+};
+
+const closeStockLevelAlertModal = () => {
+    const modal = document.getElementById('stockLevelAlertModal');
+    const card = document.getElementById('stock-alert-card');
+    if (!modal) return;
+
+    modal.classList.add('opacity-0');
+    if (card) {
+        card.classList.remove('scale-100');
+        card.classList.add('scale-95');
+    }
+
+    setTimeout(() => {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        const codigoInput = document.getElementById('codigo-pieza');
+        if (codigoInput) codigoInput.focus();
+    }, 280);
+};
+
 const showAlarmModal = (codigo, solicitado, disponible) => {
     const modal = document.getElementById('alarmModal');
     const lblCodigo = document.getElementById('alarm-item-codigo');
@@ -148,6 +378,35 @@ const closeAlarmModal = () => {
     }, 300);
 };
 
+const updateStockAlertBadge = (item) => {
+    const badge = document.getElementById('badge-alerta-pieza');
+    if (!badge) return;
+
+    if (!item) {
+        badge.classList.add('hidden');
+        badge.classList.remove('flex');
+        badge.innerHTML = '';
+        return;
+    }
+
+    const availableStock = getAvailableStockForCode(item.codigo);
+    const alertData = evaluateStockAlert(item, availableStock);
+
+    badge.classList.remove('hidden');
+    badge.classList.add('flex');
+
+    if (alertData?.level === 'critica') {
+        badge.className = 'flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider shrink-0 shadow-sm transition-all border bg-rose-500/15 text-rose-500 border-rose-500/30 animate-pulse';
+        badge.innerHTML = `<span class="material-symbols-outlined text-[14px]">error</span> STOCK CRÍTICO (${availableStock} UDS)`;
+    } else if (alertData?.level === 'amarilla') {
+        badge.className = 'flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider shrink-0 shadow-sm transition-all border bg-amber-500/15 text-amber-500 border-amber-500/30';
+        badge.innerHTML = `<span class="material-symbols-outlined text-[14px]">warning</span> BAJO RECOMENDADO (${availableStock} UDS)`;
+    } else {
+        badge.className = 'flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider shrink-0 shadow-sm transition-all border bg-slate-200/70 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-700';
+        badge.innerHTML = `STOCK: ${availableStock} UDS`;
+    }
+};
+
 const updateMaterialBadge = (materialStr) => {
     const badge = document.getElementById('badge-material-pieza');
     if (!badge) return;
@@ -165,16 +424,12 @@ const updateMaterialBadge = (materialStr) => {
     badge.className = 'px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider shrink-0 shadow-sm transition-all border';
 
     if (mat.includes('TITANIO') || mat.includes('TITANIUM') || mat === 'TI') {
-        // Titanio: Gris un poco oscuro
         badge.classList.add('bg-slate-700', 'text-white', 'border-slate-800', 'dark:bg-slate-800', 'dark:text-slate-100', 'dark:border-slate-700');
     } else if (mat.includes('ACERO') || mat.includes('STEEL') || mat.includes('INOX') || mat === 'AC') {
-        // Acero: Gris más claro
         badge.classList.add('bg-slate-400', 'text-slate-900', 'border-slate-500', 'dark:bg-slate-500', 'dark:text-slate-100', 'dark:border-slate-400');
     } else if (mat.includes('ALUMINIO') || mat.includes('ALUMINUM') || mat === 'AL') {
-        // Aluminio: Gris aún más claro
         badge.classList.add('bg-slate-200', 'text-slate-800', 'border-slate-300', 'dark:bg-slate-300', 'dark:text-slate-900', 'dark:border-slate-200');
     } else {
-        // Otros materiales
         badge.classList.add('bg-indigo-600', 'text-white', 'border-indigo-700', 'dark:bg-indigo-500');
     }
 
@@ -205,6 +460,7 @@ const setPreviewVisibility = (visible) => {
         }
         if (previewPieza) previewPieza.style.opacity = '0';
         updateMaterialBadge(null);
+        updateStockAlertBadge(null);
     }
 };
 
@@ -217,48 +473,21 @@ const initAutocomplete = () => {
     
     let isFetching = false;
 
-    // Cachear lista de ítems en el navegador para ahorrar lecturas a Firebase (Válido por 12 hs)
     const fetchListaItems = async () => {
         if (!selectedWarehouse) return;
+        const CACHE_KEY = `villalba_items_cache_${selectedWarehouse}`;
         try {
             isFetching = true;
             input.disabled = true;
             input.placeholder = "Cargando ítems...";
-            console.log("Iniciando fetchListaItems...");
             
-            const CACHE_KEY = `villalba_items_cache_${selectedWarehouse}`;
-            const CACHE_EXPIRY = 1000 * 60 * 60 * 2; // 2 horas
-            const cached = localStorage.getItem(CACHE_KEY);
-            
-            if (cached) {
-                const { timestamp, data } = JSON.parse(cached);
-                if (Date.now() - timestamp < CACHE_EXPIRY && data && data.length > 0) {
-                    const containsNegative = data.some(i => (i.stock || 0) < 0);
-                    if (containsNegative) {
-                        console.log("Caché local contiene stock negativo en carga-datos. Invalidando...");
-                        localStorage.removeItem(CACHE_KEY);
-                    } else {
-                        console.log(`Cargando ${data.length} ítems desde caché local.`);
-                        depositoItemsCache = data;
-                        input.disabled = false;
-                        input.placeholder = "Ej: 4211800";
-                        isFetching = false;
-                        
-                        if (input.value) input.dispatchEvent(new Event('input', { bubbles: true }));
-                        return;
-                    }
-                }
-            }
-
-            console.log(`Descargando ítems desde Firestore (Master Document ${selectedWarehouse})...`);
+            // Leemos el documento maestro (1 sola lectura en Firestore) para tener siempre las alertas y el stock al día
             const masterRef = doc(db, 'system', `master_catalog_${selectedWarehouse}`);
             const snap = await getDoc(masterRef);
             
             depositoItemsCache = [];
             if (snap.exists()) {
                 const masterData = snap.data().items || [];
-                console.log(`Se descargaron ${masterData.length} ítems del Master Document.`);
-                
                 let hasNegative = false;
                 const correctedItems = masterData.map(item => {
                     if ((item.stock || 0) < 0) {
@@ -271,13 +500,10 @@ const initAutocomplete = () => {
                 });
 
                 if (hasNegative) {
-                    console.log("Se detectaron y corrigieron stocks negativos en el Master Document. Subiendo corrección...");
                     setDoc(masterRef, { items: correctedItems }, { merge: true }).catch(err => console.error(`Error al corregir master_catalog_${selectedWarehouse}:`, err));
                 }
 
                 depositoItemsCache = correctedItems;
-            } else {
-                console.warn("Master Document no encontrado.");
             }
             
             if (depositoItemsCache.length > 0) {
@@ -286,7 +512,6 @@ const initAutocomplete = () => {
                     data: depositoItemsCache
                 }));
             } else {
-                console.warn("El catálogo de Firestore está vacío, no se guardará en caché.");
                 localStorage.removeItem(CACHE_KEY);
             }
 
@@ -294,17 +519,25 @@ const initAutocomplete = () => {
             input.placeholder = "Ej: 4211800";
             isFetching = false;
             
-            // Si el input ya tiene valor, forzamos un evento input para buscar
+            renderStagedItems();
             if (input.value) input.dispatchEvent(new Event('input', { bubbles: true }));
         } catch (e) {
-            console.error("No se pudo cargar la lista de ítems", e);
+            console.error("No se pudo cargar la lista de ítems desde Firestore, intentando caché local", e);
+            const cached = localStorage.getItem(CACHE_KEY);
+            if (cached) {
+                try {
+                    const parsed = JSON.parse(cached);
+                    depositoItemsCache = parsed.data || [];
+                } catch (_) {
+                    depositoItemsCache = [];
+                }
+            }
             input.disabled = false;
-            input.placeholder = "Error al cargar base maestra";
-            const detalleInput = document.getElementById('detalle-pieza');
-            if (detalleInput) detalleInput.value = "ERROR: No se pudo conectar con la base maestra.";
+            input.placeholder = "Ej: 4211800";
             isFetching = false;
         }
     };
+
     input.addEventListener('input', (e) => {
         let val = e.target.value.toUpperCase();
         
@@ -359,8 +592,18 @@ const initAutocomplete = () => {
                 const div = document.createElement('div');
                 div.className = "px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer flex justify-between items-center transition-colors border-b border-slate-100 dark:border-slate-800/50 last:border-0";
                 const matHtml = item.material ? `<span class="px-1.5 py-0.5 rounded text-[9px] font-black uppercase bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 ml-2 border border-slate-300 dark:border-slate-700">${item.material}</span>` : '';
+
+                const avail = getAvailableStockForCode(item.codigo);
+                const alertEval = evaluateStockAlert(item, avail);
+                let alertDot = '';
+                if (alertEval?.level === 'critica') {
+                    alertDot = `<span class="px-1.5 py-0.5 rounded text-[8px] font-black uppercase bg-rose-500/15 text-rose-500 border border-rose-500/30 ml-2">STOCK CRÍTICO (${avail})</span>`;
+                } else if (alertEval?.level === 'amarilla') {
+                    alertDot = `<span class="px-1.5 py-0.5 rounded text-[8px] font-black uppercase bg-amber-500/15 text-amber-500 border border-amber-500/30 ml-2">BAJO REC. (${avail})</span>`;
+                }
+
                 div.innerHTML = `
-                    <span class="text-sm font-bold text-slate-800 dark:text-white whitespace-nowrap flex items-center">${item.codigo} ${matHtml}</span>
+                    <span class="text-sm font-bold text-slate-800 dark:text-white whitespace-nowrap flex items-center flex-wrap">${item.codigo} ${matHtml} ${alertDot}</span>
                     <span class="text-[9px] text-slate-500 font-medium uppercase tracking-widest text-right leading-tight ml-4 flex-1 break-words">${item.descripcion}</span>
                 `;
                 div.addEventListener('mousedown', (e) => {
@@ -368,13 +611,16 @@ const initAutocomplete = () => {
                     input.value = item.codigo;
                     detalleInput.value = item.descripcion;
                     updateMaterialBadge(item.material);
+                    updateStockAlertBadge(item);
                     autocompleteList.classList.add('hidden');
                     
                     previewPieza.src = `../assets/items/${item.codigo}.webp`;
                     setPreviewVisibility(true);
+                    updateMaterialBadge(item.material);
+                    updateStockAlertBadge(item);
 
-                    // ALARMA DE STOCK 0
-                    if ((item.stock || 0) <= 0) {
+                    const currentAvail = getAvailableStockForCode(item.codigo);
+                    if (currentAvail <= 0) {
                         playWarningBeep();
                         showToastMessage(`¡Alerta! Este ítem tiene 0 stock.`, true);
                         detalleInput.value = `[¡SIN STOCK!] ${item.descripcion}`;
@@ -393,6 +639,7 @@ const initAutocomplete = () => {
             autocompleteList.classList.add('hidden');
             detalleInput.value = "Ítem no encontrado en base maestra.";
             updateMaterialBadge(null);
+            updateStockAlertBadge(null);
         }
     });
 
@@ -410,12 +657,13 @@ const initAutocomplete = () => {
             if (exactMatch) {
                  input.value = exactMatch.codigo; // Auto-formatea insertando guiones correctos
                  detalleInput.value = exactMatch.descripcion;
-                 updateMaterialBadge(exactMatch.material);
                  previewPieza.src = `../assets/items/${exactMatch.codigo}.webp`;
                  setPreviewVisibility(true);
+                 updateMaterialBadge(exactMatch.material);
+                 updateStockAlertBadge(exactMatch);
 
-                 // ALARMA DE STOCK 0
-                 if ((exactMatch.stock || 0) <= 0) {
+                 const currentAvail = getAvailableStockForCode(exactMatch.codigo);
+                 if (currentAvail <= 0) {
                      playWarningBeep();
                      showToastMessage(`¡Alerta! Este ítem tiene 0 stock.`, true);
                      detalleInput.value = `[¡SIN STOCK!] ${exactMatch.descripcion}`;
@@ -423,10 +671,12 @@ const initAutocomplete = () => {
             } else {
                  setPreviewVisibility(false);
                  updateMaterialBadge(null);
+                 updateStockAlertBadge(null);
             }
         } else {
             setPreviewVisibility(false);
             updateMaterialBadge(null);
+            updateStockAlertBadge(null);
         }
     });
 
@@ -499,7 +749,6 @@ const initAutocomplete = () => {
         document.getElementById(id)?.addEventListener('click', (e) => { e.stopPropagation(); resetZoom(); });
     });
 
-    // Retornamos la función para poder llamarla más tarde
     return fetchListaItems;
 };
 
@@ -537,7 +786,6 @@ const showToastMessage = (message, isError = false) => {
     const toast = document.getElementById('toast-notification');
     if (!toast) return;
     
-    // Cambiar color y texto dinámicamente
     toast.className = `fixed top-20 right-4 md:right-8 transform transition-all duration-300 pointer-events-none px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 z-[100] ${
         isError ? 'bg-rose-500 text-white animate-bounce' : 'bg-emerald-500 text-white'
     }`;
@@ -570,13 +818,24 @@ const renderStagedItems = () => {
         const esIngreso = m.tipo === 'Ingreso';
         const color = esIngreso ? 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20' : 'text-rose-500 bg-rose-500/10 border-rose-500/20';
         const matBadge = m.material ? `<span class="px-1.5 py-0.5 rounded text-[9px] font-black uppercase bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-300 dark:border-slate-700 ml-1.5">${m.material}</span>` : '';
+
+        const itemCache = depositoItemsCache.find(i => i.codigo === m.codigo);
+        const resultingStock = getAvailableStockForCode(m.codigo);
+        const alertEval = itemCache ? evaluateStockAlert(itemCache, resultingStock) : null;
+
+        let stockAlertPill = '';
+        if (alertEval?.level === 'critica') {
+            stockAlertPill = `<span class="px-1.5 py-0.5 rounded text-[8px] font-black uppercase bg-rose-500/15 text-rose-500 border border-rose-500/30 ml-1.5" title="Stock resultante: ${resultingStock} UDS">STOCK CRÍTICO (${resultingStock})</span>`;
+        } else if (alertEval?.level === 'amarilla') {
+            stockAlertPill = `<span class="px-1.5 py-0.5 rounded text-[8px] font-black uppercase bg-amber-500/15 text-amber-500 border border-amber-500/30 ml-1.5" title="Stock resultante: ${resultingStock} UDS">BAJO RECOMENDADO (${resultingStock})</span>`;
+        }
         
         return `
             <tr class="hover:bg-slate-100/50 dark:hover:bg-white/5 transition-colors">
                 <td class="py-3 px-4">
                     <span class="px-2 py-0.5 rounded text-[9px] font-black uppercase border ${color}">${m.tipo}</span>
                 </td>
-                <td class="py-3 px-4 text-xs font-black text-villalba-blue dark:text-blue-400 tracking-widest flex items-center">${m.codigo} ${matBadge}</td>
+                <td class="py-3 px-4 text-xs font-black text-villalba-blue dark:text-blue-400 tracking-widest flex items-center flex-wrap gap-y-1">${m.codigo} ${matBadge} ${stockAlertPill}</td>
                 <td class="py-3 px-4 text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase truncate max-w-[150px] md:max-w-xs" title="${m.descripcion}">${m.descripcion}</td>
                 <td class="py-3 px-4 text-center text-xs font-black text-slate-800 dark:text-white">${m.cantidad}</td>
                 <td class="py-3 px-4 text-right">
@@ -643,7 +902,7 @@ const initForm = () => {
         
         const tipo = document.getElementById('tipo-movimiento').value;
         const codigo = document.getElementById('codigo-pieza').value.trim().toUpperCase();
-        const descripcion = document.getElementById('detalle-pieza').value.trim();
+        const descripcion = document.getElementById('detalle-pieza').value.trim().replace(/^\[¡SIN STOCK!\]\s*/i, '');
         const cantidad = parseInt(document.getElementById('cantidad-pieza').value, 10);
 
         if (!codigo || isNaN(cantidad) || cantidad <= 0) {
@@ -651,21 +910,10 @@ const initForm = () => {
             return;
         }
 
-        // Buscar stock disponible en cache
+        // Buscar ítem y stock disponible en cache
         const itemCache = depositoItemsCache.find(item => item.codigo === codigo);
-        const currentStock = itemCache ? (itemCache.stock || 0) : 0;
         const material = itemCache ? (itemCache.material || '') : '';
-
-        // Calcular stock ya reservado/comprometido en la lista stagedMovements
-        let stagedQty = 0;
-        stagedMovements.forEach(m => {
-            if (m.codigo === codigo) {
-                if (m.tipo === 'Egreso') stagedQty += m.cantidad;
-                else if (m.tipo === 'Ingreso') stagedQty -= m.cantidad;
-            }
-        });
-
-        const availableStock = currentStock - stagedQty;
+        const availableStock = getAvailableStockForCode(codigo);
 
         if (tipo === 'Egreso' && cantidad > availableStock) {
             // Registrar Intento Fallido en Firestore
@@ -684,6 +932,11 @@ const initForm = () => {
             return;
         }
 
+        // Stock resultante luego de aplicar este movimiento
+        const resultingStock = tipo === 'Egreso'
+            ? (availableStock - cantidad)
+            : (availableStock + cantidad);
+
         // Añadir al array de pendientes
         stagedMovements.push({ tipo, codigo, descripcion, material, cantidad });
         saveStagedToLocal();
@@ -698,7 +951,14 @@ const initForm = () => {
         setPreviewVisibility(false);
 
         renderStagedItems();
-        document.getElementById('codigo-pieza').focus();
+
+        // Evaluar si el ítem está por debajo de las alertas configuradas (Media / Amarilla o Crítica / Roja)
+        const stockAlert = evaluateStockAlert(itemCache, resultingStock);
+        if (stockAlert) {
+            showStockLevelAlertModal(itemCache, stockAlert);
+        } else {
+            document.getElementById('codigo-pieza').focus();
+        }
     });
 
     // Confirmación final (BATCH)
@@ -736,7 +996,7 @@ const initForm = () => {
                 }
             }
 
-            // 3. Actualizar Master Document para mantener stock sincronizado en 1 escritura
+            // 3. Actualizar Master Document y caché en memoria para mantener stock y alertas sincronizadas
             try {
                 const masterRef = doc(db, 'system', `master_catalog_${selectedWarehouse}`);
                 const masterSnap = await getDoc(masterRef);
@@ -750,11 +1010,18 @@ const initForm = () => {
                     } else {
                         masterItems.push({ codigo: mov.codigo, descripcion: mov.descripcion, stock: val });
                     }
+
+                    const localIdx = depositoItemsCache.findIndex(i => i.codigo === mov.codigo);
+                    if (localIdx >= 0) {
+                        depositoItemsCache[localIdx].stock = (depositoItemsCache[localIdx].stock || 0) + val;
+                    }
                 });
                 
                 await setDoc(masterRef, { items: masterItems });
-                // Limpiar caché local para forzar actualización del master
-                localStorage.removeItem(`villalba_items_cache_${selectedWarehouse}`);
+                localStorage.setItem(`villalba_items_cache_${selectedWarehouse}`, JSON.stringify({
+                    timestamp: Date.now(),
+                    data: depositoItemsCache
+                }));
             } catch (e) {
                 console.error("Error actualizando Master Document", e);
             }
@@ -785,8 +1052,6 @@ const initDescSearch = () => {
     searchInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
             e.preventDefault();
-            // Si hay resultados, podríamos elegir el primero, 
-            // pero por ahora solo pasamos el foco al formulario
             document.getElementById('codigo-pieza').focus();
         }
     });
@@ -818,18 +1083,14 @@ const initDescSearch = () => {
                     <span class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase leading-tight break-words flex-1 group-hover:text-slate-700 dark:group-hover:text-slate-200 transition-colors">${item.descripcion}</span>
                     <span class="text-xs font-black text-villalba-blue bg-villalba-blue/10 px-3 py-1.5 rounded-lg whitespace-nowrap shadow-sm border border-villalba-blue/20 tracking-widest">${item.codigo}</span>
                 `;
-                // If clicked, we can optionally fill the main input
                 div.addEventListener('click', () => {
                     const mainInput = document.getElementById('codigo-pieza');
                     if (mainInput) {
                         mainInput.value = item.codigo;
-                        // Trigger the input event to auto-fill the description and load image
                         const event = new Event('input', { bubbles: true });
                         mainInput.dispatchEvent(event);
-                        // Also trigger blur to close the main autocomplete
                         mainInput.dispatchEvent(new Event('blur'));
 
-                        // Set quantity to 1 and FOCUS
                         const cantInput = document.getElementById('cantidad-pieza');
                         if (cantInput) {
                             cantInput.value = 1;
@@ -920,6 +1181,28 @@ const setupApp = () => {
             if (e.target === alarmModal) closeAlarmModal();
         });
     }
+
+    const closeStockLevelBtn = document.getElementById('closeStockLevelAlertBtn');
+    if (closeStockLevelBtn) {
+        closeStockLevelBtn.addEventListener('click', closeStockLevelAlertModal);
+    }
+    const stockLevelModal = document.getElementById('stockLevelAlertModal');
+    if (stockLevelModal) {
+        stockLevelModal.addEventListener('click', (e) => {
+            if (e.target === stockLevelModal) closeStockLevelAlertModal();
+        });
+    }
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            if (stockLevelModal && !stockLevelModal.classList.contains('hidden')) {
+                closeStockLevelAlertModal();
+            }
+            if (alarmModal && !alarmModal.classList.contains('hidden')) {
+                closeAlarmModal();
+            }
+        }
+    });
 };
 
 document.addEventListener('DOMContentLoaded', () => {

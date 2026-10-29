@@ -9,14 +9,98 @@ let itemSeleccionado = null;
 let currentUser = null;
 
 const THEME = {
-    amarilla: { bg: 'bg-yellow-500/10', border: 'border-yellow-500/30', text: 'text-yellow-600 dark:text-yellow-500', icon: 'warning', label: 'AMARILLA' },
-    roja: { bg: 'bg-rose-500/10', border: 'border-rose-500/30', text: 'text-rose-600 dark:text-rose-500', icon: 'error', label: 'ROJA' }
+    amarilla: { bg: 'bg-yellow-500/10', border: 'border-yellow-500/30', text: 'text-yellow-600 dark:text-yellow-500', icon: 'warning', label: 'AMARILLA (MEDIA)' },
+    roja: { bg: 'bg-rose-500/10', border: 'border-rose-500/30', text: 'text-rose-600 dark:text-rose-500', icon: 'error', label: 'ROJA (CRÍTICA)' }
 };
 
 const hasAlarmConfigured = (item) => {
+    if (!item) return false;
     const min = item.stockMinimo ?? item.minimo;
     const hasMin = min !== undefined && min !== null && Number(min) > 0;
-    return item.alertaStock === 'amarilla' || item.alertaStock === 'roja' || hasMin;
+    const crit = item.stockCritico;
+    const hasCrit = crit !== undefined && crit !== null && Number(crit) >= 0 && String(crit).trim() !== '';
+    return item.alertaStock === 'amarilla' || item.alertaStock === 'roja' || hasMin || hasCrit;
+};
+
+/**
+ * Evalúa si un ítem se encuentra actualmente por debajo de sus alertas configuradas.
+ * Retorna { level: 'roja' | 'amarilla', stockActual, umbralRecomendado, umbralCritico } o null si el stock está OK.
+ */
+const evaluateStockAlert = (item, stockValue) => {
+    if (!item) return null;
+    const stock = Number(stockValue ?? item.stock ?? 0);
+
+    const rawMin = item.stockMinimo ?? item.minimo;
+    const hasMin = rawMin !== undefined && rawMin !== null && Number(rawMin) > 0;
+    const minStock = hasMin ? Number(rawMin) : 0;
+
+    const rawCrit = item.stockCritico;
+    const hasCrit = rawCrit !== undefined && rawCrit !== null && String(rawCrit).trim() !== '' && Number(rawCrit) >= 0;
+    const critStock = hasCrit ? Number(rawCrit) : 0;
+
+    const alertaTipo = item.alertaStock; // 'amarilla' | 'roja' | undefined
+
+    if (!hasMin && !hasCrit && !alertaTipo) {
+        return null;
+    }
+
+    // 1. Evaluar Alerta Crítica (Roja -> Stock Crítico)
+    if (hasCrit && stock <= critStock) {
+        return {
+            level: 'roja',
+            stockActual: stock,
+            umbralCritico: critStock,
+            umbralRecomendado: hasMin ? minStock : null
+        };
+    }
+
+    if (alertaTipo === 'roja' && !hasCrit && hasMin && stock <= minStock) {
+        return {
+            level: 'roja',
+            stockActual: stock,
+            umbralCritico: minStock,
+            umbralRecomendado: minStock
+        };
+    }
+
+    if (alertaTipo === 'roja' && !hasCrit && !hasMin) {
+        return {
+            level: 'roja',
+            stockActual: stock,
+            umbralCritico: 0,
+            umbralRecomendado: null
+        };
+    }
+
+    if ((hasMin || alertaTipo) && stock <= 0) {
+        return {
+            level: 'roja',
+            stockActual: stock,
+            umbralCritico: hasCrit ? critStock : 0,
+            umbralRecomendado: hasMin ? minStock : null
+        };
+    }
+
+    // 2. Evaluar Alerta Media (Amarilla -> Por debajo de lo recomendado)
+    if (hasMin && stock <= minStock) {
+        return {
+            level: 'amarilla',
+            stockActual: stock,
+            umbralCritico: hasCrit ? critStock : null,
+            umbralRecomendado: minStock
+        };
+    }
+
+    if (alertaTipo === 'amarilla' && !hasMin && !hasCrit) {
+        return {
+            level: 'amarilla',
+            stockActual: stock,
+            umbralCritico: null,
+            umbralRecomendado: null
+        };
+    }
+
+    return null;
 };
 
 const showAlertasView = (warehouseName, labelText) => {
@@ -46,6 +130,8 @@ const showChoiceScreen = () => {
     document.getElementById('buscador-input').value = '';
     document.getElementById('btn-clear-search')?.classList.add('hidden');
     document.getElementById('cantidad-reposicion').value = '';
+    const critInput = document.getElementById('cantidad-critica');
+    if (critInput) critInput.value = '';
     renderAlertasActivas();
 };
 
@@ -134,6 +220,9 @@ const syncCatalogFromCollection = async () => {
             if (minVal !== undefined && minVal !== null) {
                 item.stockMinimo = Number(minVal);
                 item.minimo = Number(minVal);
+            }
+            if (data.stockCritico !== undefined && data.stockCritico !== null) {
+                item.stockCritico = Number(data.stockCritico);
             }
             if (data.alertaStock) {
                 item.alertaStock = data.alertaStock;
@@ -297,15 +386,20 @@ const renderCatalogList = () => {
     autocompleteList.innerHTML = sliceToRender.map(item => {
         const min = item.stockMinimo ?? item.minimo;
         const hasMin = min !== undefined && min !== null && Number(min) > 0;
+        const crit = item.stockCritico;
+        const hasCrit = crit !== undefined && crit !== null && String(crit).trim() !== '' && Number(crit) >= 0;
         const stock = Number(item.stock) || 0;
         const isSelected = itemSeleccionado && itemSeleccionado.codigo === item.codigo;
 
+        const alertState = evaluateStockAlert(item, stock);
+        const configured = hasAlarmConfigured(item);
+
         let badgeDot = '<span class="size-2.5 rounded-full bg-slate-300 dark:bg-slate-700 shrink-0" title="Sin alarma configurada"></span>';
-        if (item.alertaStock === 'roja' || (hasMin && stock <= 0)) {
-            badgeDot = '<span class="size-2.5 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.6)] shrink-0" title="Alerta Roja / Crítica"></span>';
-        } else if (item.alertaStock === 'amarilla' || (hasMin && stock <= Number(min))) {
-            badgeDot = '<span class="size-2.5 rounded-full bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.6)] shrink-0" title="Alerta Amarilla / Bajo Mínimo"></span>';
-        } else if (hasMin) {
+        if (alertState?.level === 'roja') {
+            badgeDot = '<span class="size-2.5 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.6)] shrink-0" title="En Stock Crítico (Alerta Roja)"></span>';
+        } else if (alertState?.level === 'amarilla') {
+            badgeDot = '<span class="size-2.5 rounded-full bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.6)] shrink-0" title="Bajo Recomendado (Alerta Amarilla)"></span>';
+        } else if (configured) {
             badgeDot = '<span class="size-2.5 rounded-full bg-emerald-500 shrink-0" title="Alarma configurada (Stock OK)"></span>';
         }
 
@@ -313,9 +407,17 @@ const renderCatalogList = () => {
             ? `<span class="px-1.5 py-0.5 rounded text-[8px] font-black uppercase bg-slate-200/80 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-300 dark:border-slate-700">${item.material}</span>`
             : '';
 
-        const minBadge = hasMin
-            ? `<span class="px-2 py-0.5 rounded text-[9px] font-black uppercase bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">Mín: ${min}</span>`
-            : `<span class="px-2 py-0.5 rounded text-[9px] font-bold uppercase bg-slate-100 dark:bg-slate-800/80 text-slate-400">Sin alarma</span>`;
+        const badgesArr = [];
+        if (hasMin) {
+            badgesArr.push(`<span class="px-2 py-0.5 rounded text-[9px] font-black uppercase bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">Rec: ${min}</span>`);
+        }
+        if (hasCrit) {
+            badgesArr.push(`<span class="px-2 py-0.5 rounded text-[9px] font-black uppercase bg-rose-500/10 text-rose-500 border border-rose-500/20">Crít: ${crit}</span>`);
+        }
+        if (!hasMin && !hasCrit) {
+            badgesArr.push(`<span class="px-2 py-0.5 rounded text-[9px] font-bold uppercase bg-slate-100 dark:bg-slate-800/80 text-slate-400">Sin alarma</span>`);
+        }
+        const configBadges = badgesArr.join('');
 
         const selectedClasses = isSelected
             ? 'bg-villalba-blue/10 dark:bg-villalba-blue/20 border-l-4 border-l-villalba-blue'
@@ -330,7 +432,7 @@ const renderCatalogList = () => {
                             <span class="text-xs font-black text-slate-800 dark:text-white uppercase tracking-widest">${item.codigo}</span>
                             ${matBadge}
                             <span class="text-[9px] font-black uppercase text-slate-500 dark:text-slate-400">Stock: ${stock}</span>
-                            ${minBadge}
+                            ${configBadges}
                         </div>
                         <span class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase leading-tight truncate mt-0.5">${item.descripcion}</span>
                     </div>
@@ -350,18 +452,28 @@ const seleccionarItem = (item) => {
     const lblDesc = document.getElementById('item-desc');
     const btnQuitar = document.getElementById('btn-quitar-alerta');
     const cantInput = document.getElementById('cantidad-reposicion');
+    const critInput = document.getElementById('cantidad-critica');
 
     lblCodigo.textContent = item.codigo;
 
     const minStock = item.stockMinimo ?? item.minimo;
+    const hasMin = minStock !== undefined && minStock !== null && Number(minStock) > 0;
+    const critStock = item.stockCritico;
+    const hasCrit = critStock !== undefined && critStock !== null && String(critStock).trim() !== '' && Number(critStock) >= 0;
+
     const matInfo = item.material ? ` • MATERIAL: ${item.material}` : '';
-    if (minStock !== undefined && minStock !== null && Number(minStock) > 0) {
-        lblDesc.innerHTML = `${item.descripcion} <span class="block mt-1 text-[10px] font-black text-amber-500 uppercase tracking-wider">STOCK ACTUAL: ${item.stock || 0} UDS | MÍNIMO CONFIGURADO: ${minStock} UDS${matInfo}</span>`;
-        cantInput.value = minStock;
+    const extraInfo = [];
+    if (hasMin) extraInfo.push(`RECOMENDADO: ${minStock} UDS`);
+    if (hasCrit) extraInfo.push(`CRÍTICO: ${critStock} UDS`);
+
+    if (extraInfo.length > 0) {
+        lblDesc.innerHTML = `${item.descripcion} <span class="block mt-1 text-[10px] font-black text-amber-500 uppercase tracking-wider">STOCK ACTUAL: ${item.stock || 0} UDS | ${extraInfo.join(' | ')}${matInfo}</span>`;
     } else {
         lblDesc.innerHTML = `${item.descripcion} <span class="block mt-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">STOCK ACTUAL: ${item.stock || 0} UDS${matInfo}</span>`;
-        cantInput.value = '';
     }
+
+    cantInput.value = hasMin ? minStock : '';
+    if (critInput) critInput.value = hasCrit ? critStock : '';
 
     panelSeleccionado.classList.remove('hidden');
 
@@ -383,6 +495,7 @@ const initSearch = () => {
     const panelSeleccionado = document.getElementById('item-seleccionado');
     const btnCerrarSeleccion = document.getElementById('btn-cerrar-seleccion');
     const btnQuitar = document.getElementById('btn-quitar-alerta');
+    const btnGuardarAmbas = document.getElementById('btn-guardar-ambas');
 
     input.addEventListener('input', () => {
         applyCatalogFilters(true);
@@ -437,6 +550,9 @@ const initSearch = () => {
     // Botones de Acción
     document.getElementById('btn-alerta-amarilla').addEventListener('click', () => setAlerta('amarilla'));
     document.getElementById('btn-alerta-roja').addEventListener('click', () => setAlerta('roja'));
+    if (btnGuardarAmbas) {
+        btnGuardarAmbas.addEventListener('click', () => setAlerta('ambas'));
+    }
     btnQuitar.addEventListener('click', () => setAlerta(null));
 };
 
@@ -445,25 +561,75 @@ const setAlerta = async (nivel) => {
 
     const btnAmarillo = document.getElementById('btn-alerta-amarilla');
     const btnRojo = document.getElementById('btn-alerta-roja');
+    const btnGuardarAmbas = document.getElementById('btn-guardar-ambas');
     const panel = document.getElementById('item-seleccionado');
     const oldHtmlA = btnAmarillo.innerHTML;
     const oldHtmlR = btnRojo.innerHTML;
+    const oldHtmlG = btnGuardarAmbas ? btnGuardarAmbas.innerHTML : '';
 
     if (nivel === 'amarilla') btnAmarillo.innerHTML = '<span class="material-symbols-outlined animate-spin">sync</span>';
     if (nivel === 'roja') btnRojo.innerHTML = '<span class="material-symbols-outlined animate-spin">sync</span>';
+    if (nivel === 'ambas' && btnGuardarAmbas) btnGuardarAmbas.innerHTML = '<span class="material-symbols-outlined animate-spin text-[15px]">sync</span> Guardando...';
     panel.style.pointerEvents = 'none';
     panel.style.opacity = '0.7';
 
     try {
-        const cantInput = document.getElementById('cantidad-reposicion').value;
-        const cant = parseInt(cantInput, 10) > 0 ? parseInt(cantInput, 10) : 1;
+        const cantRaw = document.getElementById('cantidad-reposicion').value.trim();
+        const critRaw = (document.getElementById('cantidad-critica')?.value || '').trim();
+
+        const parsedMin = cantRaw !== '' && !isNaN(parseInt(cantRaw, 10)) ? Math.max(0, parseInt(cantRaw, 10)) : null;
+        const parsedCrit = critRaw !== '' && !isNaN(parseInt(critRaw, 10)) ? Math.max(0, parseInt(critRaw, 10)) : null;
+
+        let finalMin = null;
+        let finalCrit = null;
+        let finalAlertaStock = null;
+
+        if (nivel !== null) {
+            if (nivel === 'amarilla') {
+                finalMin = parsedMin !== null && parsedMin > 0 ? parsedMin : 1;
+                finalCrit = parsedCrit !== null ? parsedCrit : null;
+                finalAlertaStock = 'amarilla';
+            } else if (nivel === 'roja') {
+                // Si completó el campo crítico, usamos ese como crítico (y mantenemos el recomendado si lo puso).
+                // Si sólo completó el primer campo (recomendado) y tocó Roja, usamos ese valor como crítico.
+                if (parsedCrit !== null) {
+                    finalCrit = parsedCrit;
+                    finalMin = parsedMin !== null && parsedMin > 0 ? parsedMin : null;
+                } else if (parsedMin !== null && parsedMin > 0) {
+                    finalCrit = parsedMin;
+                    finalMin = parsedMin;
+                } else {
+                    finalCrit = 1;
+                    finalMin = 1;
+                }
+                finalAlertaStock = 'roja';
+            } else if (nivel === 'ambas') {
+                finalMin = parsedMin !== null && parsedMin > 0 ? parsedMin : null;
+                finalCrit = parsedCrit !== null ? parsedCrit : null;
+                if (finalMin === null && finalCrit === null) {
+                    finalMin = 1;
+                }
+                finalAlertaStock = finalCrit !== null && finalMin === null ? 'roja' : 'amarilla';
+            }
+        }
+
         const targetCode = itemSeleccionado.codigo;
 
         // 1. Actualizar Documento Individual en deposito_catalogo
         const itemRef = doc(db, `deposito_catalogo_${selectedWarehouse}`, targetCode);
         const itemUpdate = nivel
-            ? { alertaStock: nivel, stockMinimo: cant, minimo: cant }
-            : { alertaStock: null, stockMinimo: null, minimo: null };
+            ? {
+                alertaStock: finalAlertaStock,
+                stockMinimo: finalMin,
+                minimo: finalMin,
+                stockCritico: finalCrit
+            }
+            : {
+                alertaStock: null,
+                stockMinimo: null,
+                minimo: null,
+                stockCritico: null
+            };
         await setDoc(itemRef, itemUpdate, { merge: true });
 
         // 2. Actualizar en memoria y en Master Document (leyendo la versión más reciente para no pisar stock)
@@ -477,13 +643,24 @@ const setAlerta = async (nivel) => {
             const idx = arr.findIndex(i => i && i.codigo === targetCode);
             if (idx !== -1) {
                 if (nivel) {
-                    arr[idx].alertaStock = nivel;
-                    arr[idx].stockMinimo = cant;
-                    arr[idx].minimo = cant;
+                    arr[idx].alertaStock = finalAlertaStock;
+                    if (finalMin !== null) {
+                        arr[idx].stockMinimo = finalMin;
+                        arr[idx].minimo = finalMin;
+                    } else {
+                        delete arr[idx].stockMinimo;
+                        delete arr[idx].minimo;
+                    }
+                    if (finalCrit !== null) {
+                        arr[idx].stockCritico = finalCrit;
+                    } else {
+                        delete arr[idx].stockCritico;
+                    }
                 } else {
                     delete arr[idx].alertaStock;
                     delete arr[idx].stockMinimo;
                     delete arr[idx].minimo;
+                    delete arr[idx].stockCritico;
                 }
             }
         };
@@ -500,9 +677,11 @@ const setAlerta = async (nivel) => {
         }));
 
         // Éxito
-        showToast(nivel ? `Alerta ${nivel.toUpperCase()} guardada (${targetCode})` : `Alerta removida (${targetCode})`);
+        showToast(nivel ? `Configuración de alerta guardada (${targetCode})` : `Alerta removida (${targetCode})`);
         document.getElementById('item-seleccionado').classList.add('hidden');
         document.getElementById('cantidad-reposicion').value = '';
+        const critEl = document.getElementById('cantidad-critica');
+        if (critEl) critEl.value = '';
         itemSeleccionado = null;
 
         applyCatalogFilters(false);
@@ -514,6 +693,7 @@ const setAlerta = async (nivel) => {
     } finally {
         btnAmarillo.innerHTML = oldHtmlA;
         btnRojo.innerHTML = oldHtmlR;
+        if (btnGuardarAmbas) btnGuardarAmbas.innerHTML = oldHtmlG;
         panel.style.pointerEvents = 'auto';
         panel.style.opacity = '1';
     }
@@ -523,10 +703,12 @@ const renderAlertasActivas = () => {
     const tbody = document.getElementById('alertas-tbody');
     const contador = document.getElementById('contador-alertas');
     
-    const itemsConAlerta = depositoItemsCache.filter(i => {
-        const min = i.stockMinimo ?? i.minimo;
-        const tieneBajoStock = min !== undefined && min !== null && Number(min) > 0 && (Number(i.stock) || 0) <= Number(min);
-        return i.alertaStock === 'amarilla' || i.alertaStock === 'roja' || tieneBajoStock;
+    const itemsConAlerta = [];
+    depositoItemsCache.forEach(item => {
+        const evalResult = evaluateStockAlert(item, item.stock);
+        if (evalResult) {
+            itemsConAlerta.push({ item, evalResult });
+        }
     });
     
     contador.textContent = `${itemsConAlerta.length} ÍTEMS`;
@@ -545,32 +727,41 @@ const renderAlertasActivas = () => {
         return;
     }
 
-    // Sort: Rojas first, then Amarillas
+    // Sort: Rojas (Críticas) first, then Amarillas (Medias)
     itemsConAlerta.sort((a, b) => {
-        const nivelA = a.alertaStock || ((Number(a.stock) || 0) <= 0 ? 'roja' : 'amarilla');
-        const nivelB = b.alertaStock || ((Number(b.stock) || 0) <= 0 ? 'roja' : 'amarilla');
+        const nivelA = a.evalResult.level;
+        const nivelB = b.evalResult.level;
         if (nivelA === 'roja' && nivelB !== 'roja') return -1;
         if (nivelA !== 'roja' && nivelB === 'roja') return 1;
-        return a.codigo.localeCompare(b.codigo);
+        return a.item.codigo.localeCompare(b.item.codigo);
     });
 
-    tbody.innerHTML = itemsConAlerta.map(item => {
+    tbody.innerHTML = itemsConAlerta.map(({ item, evalResult }) => {
         const min = item.stockMinimo ?? item.minimo;
-        const nivelEfectivo = item.alertaStock || ((Number(item.stock) || 0) <= 0 ? 'roja' : 'amarilla');
-        const theme = THEME[nivelEfectivo] || THEME.amarilla;
+        const hasMin = min !== undefined && min !== null && Number(min) > 0;
+        const crit = item.stockCritico;
+        const hasCrit = crit !== undefined && crit !== null && String(crit).trim() !== '' && Number(crit) >= 0;
+        const theme = THEME[evalResult.level] || THEME.amarilla;
+
+        const thresholdsText = [];
+        if (hasMin) thresholdsText.push(`Rec: ${min}`);
+        if (hasCrit) thresholdsText.push(`Crít: ${crit}`);
+        const badgeRight = thresholdsText.length > 0
+            ? `<span class="text-[9px] font-black uppercase px-2 py-0.5 rounded ${evalResult.level === 'roja' ? 'bg-rose-500/10 text-rose-500 border border-rose-500/20' : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'}">Stock: ${item.stock || 0} (${thresholdsText.join(' | ')})</span>`
+            : `<span class="text-[9px] font-black uppercase px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500">Stock: ${item.stock || 0}</span>`;
         
         return `
             <tr data-codigo="${item.codigo}" class="alerta-activa-row group hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer" title="Clic para editar esta alerta">
-                <td class="py-4 px-4 border-b border-slate-100 dark:border-slate-800/80 w-[120px]">
+                <td class="py-4 px-4 border-b border-slate-100 dark:border-slate-800/80 w-[140px]">
                     <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border ${theme.border} ${theme.bg} ${theme.text}">
                         <span class="material-symbols-outlined text-[14px]">${theme.icon}</span>
                         <span class="text-[9px] font-black uppercase tracking-widest">${theme.label}</span>
                     </div>
                 </td>
                 <td class="py-4 px-4 border-b border-slate-100 dark:border-slate-800/80">
-                    <div class="flex items-center justify-between gap-2">
+                    <div class="flex items-center justify-between gap-2 flex-wrap">
                         <p class="text-xs font-black text-slate-800 dark:text-white tracking-widest leading-none">${item.codigo}</p>
-                        ${min !== undefined && min !== null ? `<span class="text-[9px] font-black uppercase px-2 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">Stock: ${item.stock || 0} / Mín: ${min}</span>` : `<span class="text-[9px] font-black uppercase px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500">Stock: ${item.stock || 0}</span>`}
+                        ${badgeRight}
                     </div>
                     <p class="text-[10px] font-bold text-slate-500 uppercase mt-1 truncate max-w-[200px] sm:max-w-md">${item.descripcion}</p>
                 </td>

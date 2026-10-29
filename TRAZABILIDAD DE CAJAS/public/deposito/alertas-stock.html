@@ -162,23 +162,39 @@
                                 </button>
                             </div>
                             
-                            <div class="space-y-1.5">
-                                <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Stock Mínimo / Cantidad a reponer</label>
-                                <input type="number" id="cantidad-reposicion" min="1" placeholder="Ej: 20" class="w-full h-11 px-4 bg-white dark:bg-black/30 border border-slate-200 dark:border-white/10 rounded-xl text-sm font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-villalba-blue/50 transition-all">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div class="space-y-1">
+                                    <label for="cantidad-reposicion" class="flex items-center gap-1 text-[10px] font-black text-amber-600 dark:text-amber-400 uppercase tracking-widest px-1">
+                                        <span class="size-2 rounded-full bg-amber-500"></span>
+                                        Alerta Media (Recomendado)
+                                    </label>
+                                    <input type="number" id="cantidad-reposicion" min="1" placeholder="Ej: 20 (Bajo recomendado)" class="w-full h-11 px-3.5 bg-white dark:bg-black/30 border border-amber-500/40 rounded-xl text-sm font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50 transition-all">
+                                </div>
+                                <div class="space-y-1">
+                                    <label for="cantidad-critica" class="flex items-center gap-1 text-[10px] font-black text-rose-500 uppercase tracking-widest px-1">
+                                        <span class="size-2 rounded-full bg-rose-500"></span>
+                                        Alerta Crítica (Stock Crítico)
+                                    </label>
+                                    <input type="number" id="cantidad-critica" min="0" placeholder="Ej: 5 (Stock crítico)" class="w-full h-11 px-3.5 bg-white dark:bg-black/30 border border-rose-500/40 rounded-xl text-sm font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/50 transition-all">
+                                </div>
                             </div>
 
                             <div class="grid grid-cols-2 gap-3 pt-1">
                                 <button id="btn-alerta-amarilla" class="flex flex-col items-center justify-center p-3 rounded-xl border border-yellow-500/30 bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 hover:bg-yellow-500 hover:text-white transition-all group cursor-pointer">
                                     <span class="material-symbols-outlined mb-0.5 group-hover:scale-110 transition-transform">warning</span>
-                                    <span class="text-[10px] font-black uppercase tracking-widest text-center">Amarilla<br>(Prioridad Media)</span>
+                                    <span class="text-[10px] font-black uppercase tracking-widest text-center">Amarilla<br>(Alerta Media)</span>
                                 </button>
                                 <button id="btn-alerta-roja" class="flex flex-col items-center justify-center p-3 rounded-xl border border-rose-500/30 bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white transition-all group cursor-pointer">
                                     <span class="material-symbols-outlined mb-0.5 group-hover:scale-110 transition-transform">error</span>
-                                    <span class="text-[10px] font-black uppercase tracking-widest text-center">Roja<br>(Prioridad Alta)</span>
+                                    <span class="text-[10px] font-black uppercase tracking-widest text-center">Roja<br>(Stock Crítico)</span>
                                 </button>
                             </div>
+                            <button id="btn-guardar-ambas" class="w-full py-2.5 rounded-xl bg-villalba-blue hover:bg-blue-600 text-white font-black text-[10px] uppercase tracking-widest transition-all shadow-md shadow-blue-500/20 flex items-center justify-center gap-1.5 cursor-pointer">
+                                <span class="material-symbols-outlined text-[15px]">save</span>
+                                Guardar Configuración de Alertas
+                            </button>
                             <button id="btn-quitar-alerta" class="w-full py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-400 font-bold text-[10px] uppercase tracking-widest hover:bg-rose-500/10 hover:text-rose-500 hover:border-rose-500/30 transition-colors hidden cursor-pointer">
-                                Quitar Alerta / Stock Mínimo
+                                Quitar Alertas Configuradas
                             </button>
                         </div>
 
@@ -246,7 +262,7 @@
         </div>
     </div>
 
-    <script type="module" src="js/alertas-stock.js?v=1.3"></script>
+    <script type="module" src="js/alertas-stock.js?v=1.4"></script>
     <script type="module" src="../js/global-sidebar.js?v=1.2"></script>
     <script type="module">import "../js/theme.js";</script>
 </body>
