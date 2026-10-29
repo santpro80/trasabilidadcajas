@@ -19,6 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const editAppPedidos = document.getElementById('edit-app-pedidos');
     const editAppTrazabilidad = document.getElementById('edit-app-trazabilidad');
     const editAppDeposito = document.getElementById('edit-app-deposito');
+    const editAppFlujos = document.getElementById('edit-app-flujos');
     const editRoleDeposito = document.getElementById('edit-role-deposito');
     const depositoRoleContainer = document.getElementById('deposito-role-container');
     const editRolePedidos = document.getElementById('edit-role-pedidos');
@@ -180,6 +181,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 depositoRoleContainer.style.display = editAppDeposito.checked ? 'block' : 'none';
             }
         }
+        if (editAppFlujos) {
+            editAppFlujos.checked = Array.isArray(user.apps) && user.apps.includes('flujos');
+        }
         if (editRoleDeposito) {
             editRoleDeposito.value = user.role_deposito || 'operario';
         }
@@ -234,6 +238,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     updatedApps = updatedApps.filter(a => a !== 'deposito');
                 }
             }
+            if (editAppFlujos) {
+                if (editAppFlujos.checked && !updatedApps.includes('flujos')) {
+                    updatedApps.push('flujos');
+                } else if (!editAppFlujos.checked && updatedApps.includes('flujos')) {
+                    updatedApps = updatedApps.filter(a => a !== 'flujos');
+                }
+            }
 
             const newRoleDeposito = editRoleDeposito ? editRoleDeposito.value : null;
 
@@ -260,6 +271,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 
                 await updateDoc(userRef, updates);
+
+                // Si el usuario editado es el propio usuario logueado, actualizar localStorage y sidebar al instante
+                if (auth.currentUser && selectedUserId === auth.currentUser.uid) {
+                    localStorage.setItem('userApps', JSON.stringify(updatedApps));
+                    if (typeof window.refreshGlobalSidebar === 'function') {
+                        window.refreshGlobalSidebar();
+                    }
+                }
 
                 // Actualizar cache local para reflejar el cambio sin recargar
                 if (cachedUser) {

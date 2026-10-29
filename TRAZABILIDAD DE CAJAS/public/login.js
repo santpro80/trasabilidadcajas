@@ -74,6 +74,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     window.location.href = 'pedidos-internos/menu.html';
                 } else if (userApps.length === 1 && userApps[0] === 'deposito') {
                     window.location.href = 'deposito/menu.html';
+                } else if (userApps.length === 1 && userApps[0] === 'flujos') {
+                    window.location.href = 'flujos/index.html';
                 } else {
                     // Flujo normal de Trazabilidad
                     if (userRole === 'supervisor') {

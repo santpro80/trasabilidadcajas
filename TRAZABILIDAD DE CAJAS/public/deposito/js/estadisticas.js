@@ -134,8 +134,8 @@ const normalizeMovementDoc = (docSnap) => {
     };
 };
 
-const formatSyncStatus = (syncTimeMs, totalMovs) => {
-    if (!syncTimeMs) return `${totalMovs} movimientos en caché`;
+const formatSyncStatus = (syncTimeMs) => {
+    if (!syncTimeMs) return `Caché local activo`;
     const diffSec = Math.max(0, Math.floor((Date.now() - syncTimeMs) / 1000));
     let haceStr = ' recién';
     if (diffSec >= 60 && diffSec < 3600) {
@@ -143,11 +143,11 @@ const formatSyncStatus = (syncTimeMs, totalMovs) => {
     } else if (diffSec >= 3600) {
         haceStr = ` hace ${Math.floor(diffSec / 3600)} h`;
     }
-    return `Caché activo (${totalMovs.toLocaleString('es-AR')} movs • act.${haceStr})`;
+    return `Caché activo • act.${haceStr}`;
 };
 
 const updateCacheStatusLabels = (customText = null) => {
-    const text = customText || formatSyncStatus(lastCacheSyncAt, allWarehouseMovements.length);
+    const text = customText || formatSyncStatus(lastCacheSyncAt);
     const topStatus = document.getElementById('top-cache-status');
     const codeStatus = document.getElementById('code-cache-status');
     if (topStatus) topStatus.textContent = text;
@@ -794,35 +794,22 @@ const updateTopPeriodSelectorsVisibility = () => {
     const periodKey = document.getElementById('top-periodo-select')?.value || 'all';
     const mesContainer = document.getElementById('top-mes-container');
     const anioContainer = document.getElementById('top-anio-container');
-    const searchCol = document.getElementById('top-search-col');
 
     if (periodKey === 'month') {
         mesContainer?.classList.remove('hidden');
         mesContainer?.classList.add('flex');
         anioContainer?.classList.remove('hidden');
         anioContainer?.classList.add('flex');
-        if (searchCol) {
-            searchCol.classList.remove('md:col-span-8', 'md:col-span-6');
-            searchCol.classList.add('md:col-span-4');
-        }
     } else if (periodKey === 'year') {
         mesContainer?.classList.add('hidden');
         mesContainer?.classList.remove('flex');
         anioContainer?.classList.remove('hidden');
         anioContainer?.classList.add('flex');
-        if (searchCol) {
-            searchCol.classList.remove('md:col-span-8', 'md:col-span-4');
-            searchCol.classList.add('md:col-span-6');
-        }
     } else {
         mesContainer?.classList.add('hidden');
         mesContainer?.classList.remove('flex');
         anioContainer?.classList.add('hidden');
         anioContainer?.classList.remove('flex');
-        if (searchCol) {
-            searchCol.classList.remove('md:col-span-4', 'md:col-span-6');
-            searchCol.classList.add('md:col-span-8');
-        }
     }
 };
 
@@ -922,7 +909,6 @@ const computeAndRenderTopProducts = () => {
     });
 
     const statsByCode = new Map();
-    let totalEgresosMovs = 0;
     let totalEgresosUnidades = 0;
 
     allWarehouseMovements.forEach(mov => {
@@ -934,7 +920,6 @@ const computeAndRenderTopProducts = () => {
         const codigo = (mov.codigo || '').trim().toUpperCase();
         if (!codigo) return;
 
-        totalEgresosMovs++;
         totalEgresosUnidades += cantidad;
 
         let entry = statsByCode.get(codigo);
@@ -969,11 +954,9 @@ const computeAndRenderTopProducts = () => {
     // Actualizar KPIs
     const kpiProductos = document.getElementById('kpi-top-productos');
     const kpiUnidades = document.getElementById('kpi-top-unidades');
-    const kpiMovimientos = document.getElementById('kpi-top-movimientos');
 
     if (kpiProductos) kpiProductos.textContent = currentTopRanking.length.toLocaleString('es-AR');
     if (kpiUnidades) kpiUnidades.textContent = totalEgresosUnidades.toLocaleString('es-AR');
-    if (kpiMovimientos) kpiMovimientos.textContent = totalEgresosMovs.toLocaleString('es-AR');
 
     renderTopProductsChart();
     renderTopProductsTable();
@@ -1017,7 +1000,7 @@ const renderTopProductsChart = () => {
                         afterLabel: (context) => {
                             const item = top15[context.dataIndex];
                             if (!item) return '';
-                            return `${item.descripcion} (${item.totalSalidas} salidas)`;
+                            return item.descripcion;
                         }
                     }
                 }
@@ -1049,14 +1032,14 @@ const renderTopProductsTable = () => {
     }
 
     if (filtered.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" class="py-12 text-center text-slate-400 font-bold uppercase tracking-widest text-xs">No se encontraron productos con salidas registradas para este filtro</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" class="py-12 text-center text-slate-400 font-bold uppercase tracking-widest text-xs">No se encontraron productos con salidas registradas para este filtro</td></tr>';
         loadMoreContainer?.classList.add('hidden');
         return;
     }
 
     const visibleItems = filtered.slice(0, currentTopLimit);
 
-    tbody.innerHTML = visibleItems.map((item, idx) => {
+    tbody.innerHTML = visibleItems.map((item) => {
         const rank = currentTopRanking.indexOf(item) + 1;
         let rankBadge = `<span class="inline-flex items-center justify-center size-6 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-black text-[11px]">${rank}</span>`;
         if (rank === 1) {
@@ -1076,9 +1059,6 @@ const renderTopProductsTable = () => {
                 <td class="py-3 px-4 text-center">${rankBadge}</td>
                 <td class="py-3 px-4 font-black text-blue-600 dark:text-blue-400 tracking-wider whitespace-nowrap">${item.codigo}</td>
                 <td class="py-3 px-4 font-bold text-slate-700 dark:text-slate-200 uppercase max-w-xs truncate" title="${item.descripcion}">${item.descripcion}</td>
-                <td class="py-3 px-4 text-center">
-                    <span class="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 font-black text-slate-700 dark:text-slate-300">${item.totalSalidas}</span>
-                </td>
                 <td class="py-3 px-4 text-center">
                     <span class="px-3 py-1 rounded-lg bg-rose-500/10 text-rose-500 border border-rose-500/20 font-black text-sm">${item.totalUnidades}</span>
                 </td>
@@ -1142,7 +1122,7 @@ const exportTopProductsCSV = () => {
     }
 
     let csvContent = '\uFEFF'; // BOM UTF-8 para Excel
-    csvContent += 'RANKING;CODIGO;DESCRIPCION;MOVIMIENTOS DE SALIDA;UNIDADES QUE SALIERON;ULTIMA SALIDA\r\n';
+    csvContent += 'RANKING;CODIGO;DESCRIPCION;UNIDADES QUE SALIERON;ULTIMA SALIDA\r\n';
 
     currentTopRanking.forEach((item, index) => {
         const rank = index + 1;
@@ -1151,7 +1131,7 @@ const exportTopProductsCSV = () => {
         const fechaStr = item.ultimaSalidaMs > 0
             ? new Date(item.ultimaSalidaMs).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' })
             : '';
-        csvContent += `${rank};${cleanCode};${cleanDesc};${item.totalSalidas};${item.totalUnidades};"${fechaStr}"\r\n`;
+        csvContent += `${rank};${cleanCode};${cleanDesc};${item.totalUnidades};"${fechaStr}"\r\n`;
     });
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });

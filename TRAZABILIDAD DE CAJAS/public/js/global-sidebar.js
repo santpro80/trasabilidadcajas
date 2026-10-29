@@ -101,7 +101,7 @@ export function initGlobalSidebar() {
         `;
     }
 
-    if (userApps.includes('flujos') || userRoleTrazabilidad === 'supervisor' || isFlujosContext) {
+    if (userApps.includes('flujos')) {
         appsHtml += `
             <button onclick="window.location.href='${baseRoot}flujos/index.html'" class="flex flex-col items-center gap-2 p-3 rounded-xl ${isFlujosContext ? 'bg-indigo-500/20 border-indigo-500/40 shadow-lg shadow-indigo-500/10' : 'bg-slate-200/50 dark:bg-slate-800/40 border-slate-300 dark:border-slate-800'} border cursor-pointer lg:hover:-translate-y-1 transition-all">
                 <div class="size-10 rounded-xl bg-gradient-to-br from-indigo-500 to-cyan-500 flex items-center justify-center">
@@ -283,20 +283,29 @@ export function initGlobalSidebar() {
         }
     };
 
+    window.refreshGlobalSidebar = () => {
+        document.getElementById('global-sidebar-overlay')?.remove();
+        document.getElementById('global-side-drawer')?.remove();
+        initGlobalSidebar();
+    };
+
     // Keyboard ESC shortcut
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
-            const drawer = document.getElementById('global-side-drawer');
-            if (drawer && drawer.style.display === 'flex') {
-                toggleGlobalSidebar();
-            } else {
-                const targetUrl = isPedidosContext ? baseRoot + 'pedidos-internos/menu.html' : isDepositoContext ? baseRoot + 'deposito/menu.html' : baseRoot + userRoleTrazabilidad + '/menu.html';
-                if (!window.location.pathname.endsWith('menu.html')) {
-                    window.location.href = targetUrl;
+    if (!window._globalSidebarKeydownBound) {
+        window._globalSidebarKeydownBound = true;
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                const drawer = document.getElementById('global-side-drawer');
+                if (drawer && drawer.style.display === 'flex') {
+                    toggleGlobalSidebar();
+                } else {
+                    const targetUrl = isPedidosContext ? baseRoot + 'pedidos-internos/menu.html' : isDepositoContext ? baseRoot + 'deposito/menu.html' : baseRoot + userRoleTrazabilidad + '/menu.html';
+                    if (!window.location.pathname.endsWith('menu.html')) {
+                        window.location.href = targetUrl;
+                    }
                 }
             }
-        }
-    });
+        });
+    }
 
     // 7. Persistent "What's New" Modal v2.1 (Desactivado)
     const currentVersion = 'v2_1';

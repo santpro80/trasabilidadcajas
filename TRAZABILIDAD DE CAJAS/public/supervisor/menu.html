@@ -366,16 +366,21 @@
         // App switcher is now handled by global-sidebar.js
 
         // Mostrar botoneras dinámicamente según rol
-        const manageMenuVisibility = (role, user) => {
+        const manageMenuVisibility = (role, user, userApps = []) => {
             const isSupervisor = role === 'supervisor';
             const isMantenimiento = role === 'mantenimiento';
 
             const unhide = (id) => { const el = document.getElementById(id); if (el) el.classList.remove('auth-hidden'); }
+            const hide = (id) => { const el = document.getElementById(id); if (el) el.classList.add('auth-hidden'); }
 
             // Básicos (todos los logueados)
             unhide('btn-cuenta');
             unhide('btn-tickets');
-            unhide('btn-flujos');
+            if (Array.isArray(userApps) && userApps.includes('flujos')) {
+                unhide('btn-flujos');
+            } else {
+                hide('btn-flujos');
+            }
             if (!isMantenimiento) unhide('btn-cajas');
             unhide('btn-reportar-problema');
             unhide('btn-notifications');
@@ -405,9 +410,15 @@
                 try {
                     const userDocRef = doc(db, "users", user.uid);
                     const userDocSnap = await getDoc(userDocRef);
+                    let userApps = [];
                     if (userDocSnap.exists()) {
                         const userData = userDocSnap.data();
                         currentUserRole = userData.role || 'supervisor';
+                        userApps = Array.isArray(userData.apps) ? userData.apps : [];
+                        localStorage.setItem('userApps', JSON.stringify(userApps));
+                        if (typeof window.refreshGlobalSidebar === 'function') {
+                            window.refreshGlobalSidebar();
+                        }
                         const headerName = document.getElementById('header-user-name');
                         if (headerName) headerName.textContent = userData.name || user.email;
                     } else {
@@ -415,11 +426,11 @@
                         const headerName = document.getElementById('header-user-name');
                         if (headerName) headerName.textContent = user.email;
                     }
-                    manageMenuVisibility(currentUserRole, user);
+                    manageMenuVisibility(currentUserRole, user, userApps);
                     setupTicketNotifications(db, collection, query, where, onSnapshot, user, currentUserRole);
                 } catch (error) {
                     console.error("Error al obtener datos:", error);
-                    manageMenuVisibility('supervisor', null);
+                    manageMenuVisibility('supervisor', null, []);
                 }
             } else {
                 window.location.href = '../login.html';

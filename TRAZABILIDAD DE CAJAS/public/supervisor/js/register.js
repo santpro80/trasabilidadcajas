@@ -27,6 +27,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const depositoConfig = document.getElementById('deposito-config');
     const roleDeposito = document.getElementById('role-deposito');
 
+    // Flujos fields
+    const chkFlujos = document.getElementById('chk-flujos');
+
     const messageArea = document.getElementById('message-area');
     const submitBtn = document.getElementById('submit-btn');
 
@@ -63,11 +66,21 @@ document.addEventListener('DOMContentLoaded', () => {
             depositoConfig.style.display = 'none';
             document.getElementById('item-deposito').classList.remove('selected');
         }
+
+        if (chkFlujos) {
+            const itemFlujos = document.getElementById('item-flujos');
+            if (chkFlujos.checked) {
+                itemFlujos?.classList.add('selected');
+            } else {
+                itemFlujos?.classList.remove('selected');
+            }
+        }
     };
 
     chkTrazabilidad.addEventListener('change', toggleConfig);
     chkPedidos.addEventListener('change', toggleConfig);
     chkDeposito.addEventListener('change', toggleConfig);
+    if (chkFlujos) chkFlujos.addEventListener('change', toggleConfig);
 
     roleTrazabilidad.addEventListener('change', () => {
         supervisorPasswordGroup.style.display = roleTrazabilidad.value === 'supervisor' ? 'block' : 'none';
@@ -109,6 +122,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (chkTrazabilidad.checked) selectedApps.push('trazabilidad');
         if (chkPedidos.checked) selectedApps.push('pedidos');
         if (chkDeposito.checked) selectedApps.push('deposito');
+        if (chkFlujos && chkFlujos.checked) selectedApps.push('flujos');
 
         if (selectedApps.length === 0) {
             showMessage('Error: Debes seleccionar al menos una aplicación.');

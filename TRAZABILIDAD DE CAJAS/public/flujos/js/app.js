@@ -1,10 +1,37 @@
 // app.js - Bootstrap del Módulo Flujos Sandbox
 
+import { auth, db, onAuthStateChanged, doc, getDoc } from '../../supervisor/js/firebase-config.js';
 import { state } from './state.js?v=2.3';
 import { FlowchartRenderer } from './renderer.js?v=2.3';
 import { FlowchartUI } from './ui.js?v=2.3';
 
 function initFlujos() {
+  // Verificar que el usuario tenga habilitado el módulo de Flujos en su configuración
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) {
+      window.location.href = '../login.html';
+      return;
+    }
+    try {
+      const userSnap = await getDoc(doc(db, 'users', user.uid));
+      if (userSnap.exists()) {
+        const userData = userSnap.data();
+        const userApps = Array.isArray(userData.apps) ? userData.apps : [];
+        localStorage.setItem('userApps', JSON.stringify(userApps));
+        if (typeof window.refreshGlobalSidebar === 'function') {
+          window.refreshGlobalSidebar();
+        }
+        if (!userApps.includes('flujos')) {
+          const roleFolder = userData.role === 'supervisor' ? 'supervisor' : userData.role === 'mantenimiento' ? 'mantenimiento' : 'operario';
+          window.location.href = `../${roleFolder}/menu.html`;
+          return;
+        }
+      }
+    } catch (err) {
+      console.error('Error verificando permisos de Flujos:', err);
+    }
+  });
+
   const container = document.getElementById('canvas-container');
   const svg = document.getElementById('canvas-svg');
   const nodesContainer = document.getElementById('canvas-nodes-layer');
