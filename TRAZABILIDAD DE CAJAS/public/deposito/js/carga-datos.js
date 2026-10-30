@@ -348,7 +348,8 @@ const updateStockAlertBadge = (item) => {
     }
 
     const availableStock = getAvailableStockForCode(item.codigo);
-    const alertData = evaluateStockAlert(item, availableStock);
+    const esEgreso = document.getElementById('tipo-movimiento')?.value === 'Egreso';
+    const alertData = esEgreso ? evaluateStockAlert(item, availableStock) : null;
 
     badge.classList.remove('hidden');
     badge.classList.add('flex');
@@ -552,7 +553,8 @@ const initAutocomplete = () => {
                 const matHtml = item.material ? `<span class="px-1.5 py-0.5 rounded text-[9px] font-black uppercase bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 ml-2 border border-slate-300 dark:border-slate-700">${item.material}</span>` : '';
 
                 const avail = getAvailableStockForCode(item.codigo);
-                const alertEval = evaluateStockAlert(item, avail);
+                const esEgreso = document.getElementById('tipo-movimiento')?.value === 'Egreso';
+                const alertEval = esEgreso ? evaluateStockAlert(item, avail) : null;
                 let alertDot = '';
                 if (alertEval?.level === 'critica') {
                     alertDot = `<span class="px-1.5 py-0.5 rounded text-[8px] font-black uppercase bg-rose-500/15 text-rose-500 border border-rose-500/30 ml-2">STOCK CRÍTICO (${avail})</span>`;
@@ -578,7 +580,7 @@ const initAutocomplete = () => {
                     updateStockAlertBadge(item);
 
                     const currentAvail = getAvailableStockForCode(item.codigo);
-                    if (currentAvail <= 0) {
+                    if (document.getElementById('tipo-movimiento')?.value === 'Egreso' && currentAvail <= 0) {
                         playWarningBeep();
                         showToastMessage(`¡Alerta! Este ítem tiene 0 stock.`, true);
                         detalleInput.value = `[¡SIN STOCK!] ${item.descripcion}`;
@@ -621,7 +623,7 @@ const initAutocomplete = () => {
                  updateStockAlertBadge(exactMatch);
 
                  const currentAvail = getAvailableStockForCode(exactMatch.codigo);
-                 if (currentAvail <= 0) {
+                 if (document.getElementById('tipo-movimiento')?.value === 'Egreso' && currentAvail <= 0) {
                      playWarningBeep();
                      showToastMessage(`¡Alerta! Este ítem tiene 0 stock.`, true);
                      detalleInput.value = `[¡SIN STOCK!] ${exactMatch.descripcion}`;
@@ -779,7 +781,7 @@ const renderStagedItems = () => {
 
         const itemCache = depositoItemsCache.find(i => i.codigo === m.codigo);
         const resultingStock = getAvailableStockForCode(m.codigo);
-        const alertEval = itemCache ? evaluateStockAlert(itemCache, resultingStock) : null;
+        const alertEval = (!esIngreso && itemCache) ? evaluateStockAlert(itemCache, resultingStock) : null;
 
         let stockAlertPill = '';
         if (alertEval?.level === 'critica') {
@@ -843,6 +845,17 @@ const initForm = () => {
     const statusMsg = document.getElementById('status-msg');
     const btnConfirmar = document.getElementById('btn-confirmar-todos');
     const inputs = form.querySelectorAll('input');
+
+    const tipoSelect = document.getElementById('tipo-movimiento');
+    if (tipoSelect) {
+        tipoSelect.addEventListener('change', () => {
+            const currentCode = document.getElementById('codigo-pieza')?.value.trim().toUpperCase();
+            if (currentCode) {
+                const found = depositoItemsCache.find(i => i.codigo === currentCode);
+                if (found) updateStockAlertBadge(found);
+            }
+        });
+    }
 
     // Manejar ENTER en los inputs
     inputs.forEach(input => {
@@ -910,10 +923,12 @@ const initForm = () => {
 
         renderStagedItems();
 
-        // Evaluar si el ítem está por debajo de las alertas configuradas (Media / Amarilla o Crítica / Roja)
-        const stockAlert = evaluateStockAlert(itemCache, resultingStock);
-        if (stockAlert) {
-            showStockLevelAlertModal(itemCache, stockAlert);
+        // Evaluar si el ítem está por debajo de las alertas configuradas (solo cuando es Egreso)
+        if (tipo === 'Egreso') {
+            const stockAlert = evaluateStockAlert(itemCache, resultingStock);
+            if (stockAlert) {
+                showStockLevelAlertModal(itemCache, stockAlert);
+            }
         }
         document.getElementById('codigo-pieza').focus();
     });
