@@ -235,6 +235,8 @@ const evaluateStockAlert = (item, resultingStock) => {
     return null;
 };
 
+let stockAlertToastTimeout = null;
+
 const showStockLevelAlertModal = (item, alertData) => {
     const modal = document.getElementById('stockLevelAlertModal');
     const card = document.getElementById('stock-alert-card');
@@ -242,96 +244,82 @@ const showStockLevelAlertModal = (item, alertData) => {
     const iconBox = document.getElementById('stock-alert-icon-box');
     const icon = document.getElementById('stock-alert-icon');
     const title = document.getElementById('stock-alert-title');
-    const subtitle = document.getElementById('stock-alert-subtitle');
-    const lblCodigo = document.getElementById('stock-alert-codigo');
-    const lblDesc = document.getElementById('stock-alert-desc');
-    const lblActual = document.getElementById('stock-alert-actual');
-    const rowMin = document.getElementById('stock-alert-row-min');
-    const lblMin = document.getElementById('stock-alert-min');
-    const rowCrit = document.getElementById('stock-alert-row-crit');
-    const lblCrit = document.getElementById('stock-alert-crit');
+    const lblCodigoDesc = document.getElementById('stock-alert-codigo-desc');
+    const metricsBox = document.getElementById('stock-alert-metrics');
     const closeBtn = document.getElementById('closeStockLevelAlertBtn');
 
-    if (!modal || !item || !alertData) return;
+    if (!modal || !card || !item || !alertData) return;
+
+    if (stockAlertToastTimeout) {
+        clearTimeout(stockAlertToastTimeout);
+        stockAlertToastTimeout = null;
+    }
 
     const isCritica = alertData.level === 'critica';
 
-    lblCodigo.textContent = item.codigo || '--';
-    lblDesc.textContent = item.descripcion || 'Sin descripción';
-    lblActual.textContent = `${alertData.stockActual} UDS`;
+    lblCodigoDesc.textContent = `${item.codigo || '--'} • ${item.descripcion || 'Sin descripción'}`;
+
+    const metricPills = [];
+    if (isCritica) {
+        metricPills.push(`<span style="background: rgba(244,63,94,0.2); color: #fda4af; border: 1px solid rgba(244,63,94,0.4);" class="px-2 py-0.5 rounded">Stock: ${alertData.stockActual} UDS</span>`);
+    } else {
+        metricPills.push(`<span style="background: rgba(245,158,11,0.2); color: #fde68a; border: 1px solid rgba(245,158,11,0.4);" class="px-2 py-0.5 rounded">Stock: ${alertData.stockActual} UDS</span>`);
+    }
 
     if (alertData.umbralRecomendado !== null && alertData.umbralRecomendado !== undefined) {
-        rowMin.classList.remove('hidden');
-        rowMin.classList.add('flex');
-        lblMin.textContent = `${alertData.umbralRecomendado} UDS`;
-    } else {
-        rowMin.classList.add('hidden');
-        rowMin.classList.remove('flex');
+        metricPills.push(`<span style="background: rgba(255,255,255,0.08); color: #cbd5e1;" class="px-2 py-0.5 rounded">Recomendado: ${alertData.umbralRecomendado} UDS</span>`);
     }
-
     if (alertData.umbralCritico !== null && alertData.umbralCritico !== undefined) {
-        rowCrit.classList.remove('hidden');
-        rowCrit.classList.add('flex');
-        lblCrit.textContent = `${alertData.umbralCritico} UDS`;
-    } else {
-        rowCrit.classList.add('hidden');
-        rowCrit.classList.remove('flex');
+        metricPills.push(`<span style="background: rgba(244,63,94,0.15); color: #fda4af;" class="px-2 py-0.5 rounded">Crítico: ${alertData.umbralCritico} UDS</span>`);
     }
+    metricsBox.innerHTML = metricPills.join('');
 
     if (isCritica) {
         playWarningBeep();
-        modal.className = "fixed inset-0 bg-rose-950/80 backdrop-blur-md z-[115] flex items-center justify-center p-4 opacity-0 transition-opacity duration-300";
-        card.className = "bg-white dark:bg-surface-dark border-2 border-rose-500 rounded-[2rem] p-7 sm:p-8 max-w-md w-full shadow-2xl relative transform scale-95 transition-transform duration-300 flex flex-col items-center text-center";
-        pill.className = "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest mb-4 border bg-rose-500/15 text-rose-500 border-rose-500/30";
-        pill.textContent = "ALERTA CRÍTICA • NIVEL ROJO";
-        iconBox.className = "size-16 rounded-2xl bg-rose-500/20 text-rose-500 flex items-center justify-center mb-4 animate-pulse";
+        card.style.cssText = "background: rgba(15, 23, 42, 0.97); border: 2px solid #f43f5e; box-shadow: 0 20px 35px -5px rgba(244, 63, 94, 0.45); backdrop-filter: blur(12px);";
+        pill.style.cssText = "background: rgba(244, 63, 94, 0.2); color: #fb7185; border: 1px solid rgba(244, 63, 94, 0.4);";
+        pill.textContent = "ALERTA CRÍTICA";
+        iconBox.style.cssText = "background: rgba(244, 63, 94, 0.2); color: #f43f5e;";
         icon.textContent = "error";
-        title.className = "text-2xl font-black text-rose-600 dark:text-rose-400 uppercase tracking-wider mb-2";
+        title.style.cssText = "color: #fb7185;";
         title.textContent = "¡STOCK CRÍTICO!";
-        subtitle.textContent = "El ítem se encuentra por debajo de la alerta crítica configurada. Requiere reposición urgente.";
-        lblActual.className = "text-sm font-black text-rose-500";
-        closeBtn.className = "w-full py-3.5 bg-rose-500 hover:bg-rose-600 text-white rounded-xl font-black uppercase tracking-widest text-xs transition-all active:scale-95 shadow-lg shadow-rose-500/25 cursor-pointer";
+        lblCodigoDesc.style.cssText = "color: #e2e8f0;";
+        if (closeBtn) closeBtn.style.cssText = "color: #94a3b8;";
     } else {
         playMediumAlertBeep();
-        modal.className = "fixed inset-0 bg-amber-950/75 backdrop-blur-md z-[115] flex items-center justify-center p-4 opacity-0 transition-opacity duration-300";
-        card.className = "bg-white dark:bg-surface-dark border-2 border-amber-500 rounded-[2rem] p-7 sm:p-8 max-w-md w-full shadow-2xl relative transform scale-95 transition-transform duration-300 flex flex-col items-center text-center";
-        pill.className = "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest mb-4 border bg-amber-500/15 text-amber-500 border-amber-500/30";
-        pill.textContent = "ALERTA MEDIA • NIVEL AMARILLO";
-        iconBox.className = "size-16 rounded-2xl bg-amber-500/15 text-amber-500 flex items-center justify-center mb-4 animate-pulse";
+        card.style.cssText = "background: rgba(15, 23, 42, 0.97); border: 2px solid #f59e0b; box-shadow: 0 20px 35px -5px rgba(245, 158, 11, 0.35); backdrop-filter: blur(12px);";
+        pill.style.cssText = "background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4);";
+        pill.textContent = "ALERTA MEDIA";
+        iconBox.style.cssText = "background: rgba(245, 158, 11, 0.2); color: #f59e0b;";
         icon.textContent = "warning";
-        title.className = "text-xl font-black text-amber-500 uppercase tracking-wider mb-2";
-        title.textContent = "¡Ítem por debajo de lo recomendado!";
-        subtitle.textContent = "El stock de este ítem quedó por debajo del nivel recomendado según la configuración de alertas.";
-        lblActual.className = "text-sm font-black text-amber-500";
-        closeBtn.className = "w-full py-3.5 bg-amber-500 hover:bg-amber-600 text-slate-950 rounded-xl font-black uppercase tracking-widest text-xs transition-all active:scale-95 shadow-lg shadow-amber-500/25 cursor-pointer";
+        title.style.cssText = "color: #fbbf24;";
+        title.textContent = "Ítem por debajo de lo recomendado";
+        lblCodigoDesc.style.cssText = "color: #e2e8f0;";
+        if (closeBtn) closeBtn.style.cssText = "color: #94a3b8;";
     }
 
+    modal.classList.remove('hidden');
     void modal.offsetWidth;
     modal.classList.remove('opacity-0');
-    card.classList.remove('scale-95');
-    card.classList.add('scale-100');
 
-    setTimeout(() => {
-        if (closeBtn) closeBtn.focus();
-    }, 60);
+    stockAlertToastTimeout = setTimeout(() => {
+        closeStockLevelAlertModal();
+    }, 5500);
 };
 
 const closeStockLevelAlertModal = () => {
     const modal = document.getElementById('stockLevelAlertModal');
-    const card = document.getElementById('stock-alert-card');
     if (!modal) return;
 
-    modal.classList.add('opacity-0');
-    if (card) {
-        card.classList.remove('scale-100');
-        card.classList.add('scale-95');
+    if (stockAlertToastTimeout) {
+        clearTimeout(stockAlertToastTimeout);
+        stockAlertToastTimeout = null;
     }
+
+    modal.classList.add('opacity-0');
 
     setTimeout(() => {
         modal.classList.add('hidden');
-        modal.classList.remove('flex');
-        const codigoInput = document.getElementById('codigo-pieza');
-        if (codigoInput) codigoInput.focus();
     }, 280);
 };
 
@@ -956,9 +944,8 @@ const initForm = () => {
         const stockAlert = evaluateStockAlert(itemCache, resultingStock);
         if (stockAlert) {
             showStockLevelAlertModal(itemCache, stockAlert);
-        } else {
-            document.getElementById('codigo-pieza').focus();
         }
+        document.getElementById('codigo-pieza').focus();
     });
 
     // Confirmación final (BATCH)
