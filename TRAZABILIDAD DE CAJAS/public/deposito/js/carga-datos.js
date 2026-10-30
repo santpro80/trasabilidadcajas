@@ -240,13 +240,8 @@ let stockAlertToastTimeout = null;
 const showStockLevelAlertModal = (item, alertData) => {
     const modal = document.getElementById('stockLevelAlertModal');
     const card = document.getElementById('stock-alert-card');
-    const pill = document.getElementById('stock-alert-pill');
-    const iconBox = document.getElementById('stock-alert-icon-box');
     const icon = document.getElementById('stock-alert-icon');
     const title = document.getElementById('stock-alert-title');
-    const lblCodigoDesc = document.getElementById('stock-alert-codigo-desc');
-    const metricsBox = document.getElementById('stock-alert-metrics');
-    const closeBtn = document.getElementById('closeStockLevelAlertBtn');
 
     if (!modal || !card || !item || !alertData) return;
 
@@ -257,45 +252,20 @@ const showStockLevelAlertModal = (item, alertData) => {
 
     const isCritica = alertData.level === 'critica';
 
-    lblCodigoDesc.textContent = `${item.codigo || '--'} • ${item.descripcion || 'Sin descripción'}`;
-
-    const metricPills = [];
-    if (isCritica) {
-        metricPills.push(`<span style="background: rgba(244,63,94,0.2); color: #fda4af; border: 1px solid rgba(244,63,94,0.4);" class="px-2 py-0.5 rounded">Stock: ${alertData.stockActual} UDS</span>`);
-    } else {
-        metricPills.push(`<span style="background: rgba(245,158,11,0.2); color: #fde68a; border: 1px solid rgba(245,158,11,0.4);" class="px-2 py-0.5 rounded">Stock: ${alertData.stockActual} UDS</span>`);
-    }
-
-    if (alertData.umbralRecomendado !== null && alertData.umbralRecomendado !== undefined) {
-        metricPills.push(`<span style="background: rgba(255,255,255,0.08); color: #cbd5e1;" class="px-2 py-0.5 rounded">Recomendado: ${alertData.umbralRecomendado} UDS</span>`);
-    }
-    if (alertData.umbralCritico !== null && alertData.umbralCritico !== undefined) {
-        metricPills.push(`<span style="background: rgba(244,63,94,0.15); color: #fda4af;" class="px-2 py-0.5 rounded">Crítico: ${alertData.umbralCritico} UDS</span>`);
-    }
-    metricsBox.innerHTML = metricPills.join('');
-
     if (isCritica) {
         playWarningBeep();
-        card.style.cssText = "background: rgba(15, 23, 42, 0.97); border: 2px solid #f43f5e; box-shadow: 0 20px 35px -5px rgba(244, 63, 94, 0.45); backdrop-filter: blur(12px);";
-        pill.style.cssText = "background: rgba(244, 63, 94, 0.2); color: #fb7185; border: 1px solid rgba(244, 63, 94, 0.4);";
-        pill.textContent = "ALERTA CRÍTICA";
-        iconBox.style.cssText = "background: rgba(244, 63, 94, 0.2); color: #f43f5e;";
+        card.style.cssText = "background: rgba(15, 23, 42, 0.97); border: 2px solid #f43f5e; box-shadow: 0 15px 30px -5px rgba(244, 63, 94, 0.45); backdrop-filter: blur(12px);";
+        icon.style.cssText = "color: #f43f5e;";
         icon.textContent = "error";
         title.style.cssText = "color: #fb7185;";
-        title.textContent = "¡STOCK CRÍTICO!";
-        lblCodigoDesc.style.cssText = "color: #e2e8f0;";
-        if (closeBtn) closeBtn.style.cssText = "color: #94a3b8;";
+        title.textContent = "STOCK CRÍTICO";
     } else {
         playMediumAlertBeep();
-        card.style.cssText = "background: rgba(15, 23, 42, 0.97); border: 2px solid #f59e0b; box-shadow: 0 20px 35px -5px rgba(245, 158, 11, 0.35); backdrop-filter: blur(12px);";
-        pill.style.cssText = "background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4);";
-        pill.textContent = "ALERTA MEDIA";
-        iconBox.style.cssText = "background: rgba(245, 158, 11, 0.2); color: #f59e0b;";
+        card.style.cssText = "background: rgba(15, 23, 42, 0.97); border: 2px solid #f59e0b; box-shadow: 0 15px 30px -5px rgba(245, 158, 11, 0.35); backdrop-filter: blur(12px);";
+        icon.style.cssText = "color: #f59e0b;";
         icon.textContent = "warning";
         title.style.cssText = "color: #fbbf24;";
-        title.textContent = "Ítem por debajo de lo recomendado";
-        lblCodigoDesc.style.cssText = "color: #e2e8f0;";
-        if (closeBtn) closeBtn.style.cssText = "color: #94a3b8;";
+        title.textContent = "ALARMA STOCK BAJO DE LO RECOMENDADO";
     }
 
     modal.classList.remove('hidden');
@@ -304,7 +274,7 @@ const showStockLevelAlertModal = (item, alertData) => {
 
     stockAlertToastTimeout = setTimeout(() => {
         closeStockLevelAlertModal();
-    }, 5500);
+    }, 4000);
 };
 
 const closeStockLevelAlertModal = () => {

@@ -302,27 +302,12 @@
     </div>
 
     <!-- Aviso No Invasivo de Alerta de Stock (Amarilla: Bajo Recomendado / Roja: Stock Crítico) -->
-    <div id="stockLevelAlertModal" style="z-index: 9998; max-width: 410px; width: calc(100vw - 2rem);" class="fixed top-20 right-4 md:right-8 hidden opacity-0 transition-all duration-300 pointer-events-auto">
-        <div id="stock-alert-card" class="rounded-2xl p-4 shadow-2xl border-2 flex items-start gap-3.5 relative">
-            <div id="stock-alert-icon-box" class="size-11 rounded-xl flex items-center justify-center shrink-0 mt-0.5">
-                <span id="stock-alert-icon" class="material-symbols-outlined text-2xl">warning</span>
-            </div>
-            <div class="flex-1 min-w-0 pr-5 text-left">
-                <span id="stock-alert-pill" class="inline-block text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded mb-1">
-                    ALERTA MEDIA
-                </span>
-                <h4 id="stock-alert-title" class="text-xs sm:text-sm font-black uppercase tracking-wide leading-tight">
-                    Ítem por debajo de lo recomendado
-                </h4>
-                <p id="stock-alert-codigo-desc" class="text-[11px] font-bold mt-1 truncate">
-                    --
-                </p>
-                <div id="stock-alert-metrics" class="flex items-center flex-wrap gap-2 mt-2 text-[10px] font-black uppercase tracking-wider">
-                </div>
-            </div>
-            <button id="closeStockLevelAlertBtn" type="button" class="absolute top-2.5 right-2.5 size-7 rounded-lg flex items-center justify-center opacity-75 hover:opacity-100 transition-opacity cursor-pointer" title="Cerrar aviso">
-                <span class="material-symbols-outlined text-[16px]">close</span>
-            </button>
+    <div id="stockLevelAlertModal" style="z-index: 9998;" class="fixed top-20 right-4 md:right-8 hidden opacity-0 transition-all duration-300 pointer-events-none">
+        <div id="stock-alert-card" class="rounded-xl px-5 py-3.5 shadow-2xl flex items-center gap-3">
+            <span id="stock-alert-icon" class="material-symbols-outlined text-xl">warning</span>
+            <span id="stock-alert-title" class="text-xs font-black uppercase tracking-widest">
+                ALARMA STOCK BAJO DE LO RECOMENDADO
+            </span>
         </div>
     </div>
 
@@ -386,7 +371,7 @@
         </div>
     </div>
 
-    <script type="module" src="js/carga-datos.js?v=1.4"></script>
+    <script type="module" src="js/carga-datos.js?v=1.5"></script>
     <script type="module" src="../js/global-sidebar.js?v=1.2"></script>
     <script type="module">import "../js/theme.js";</script>
 </body>
