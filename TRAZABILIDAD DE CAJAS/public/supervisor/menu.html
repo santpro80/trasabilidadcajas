@@ -96,13 +96,43 @@
                 <div class="max-w-5xl w-full mx-auto">
                     <div
                         class="bg-white dark:bg-transparent dark:border dark:border-white/5 shadow-sm dark:shadow-none rounded-[2rem] p-6 lg:p-10 w-full mb-10">
-                        <div class="mb-8 lg:mb-10 text-left">
-                            <h1
-                                class="text-3xl lg:text-4xl font-black text-villalba-blue dark:text-white tracking-tight mb-2">
-                                Panel Supervisor</h1>
-                            <p
-                                class="text-sm tracking-widest uppercase text-slate-500 dark:text-slate-400 font-bold mb-0">
-                                Trazabilidad de Cajas - Administración</p>
+                        <div class="mb-8 lg:mb-10 text-left flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                            <div>
+                                <h1
+                                    class="text-3xl lg:text-4xl font-black text-villalba-blue dark:text-white tracking-tight mb-2">
+                                    Panel Supervisor</h1>
+                                <p
+                                    class="text-sm tracking-widest uppercase text-slate-500 dark:text-slate-400 font-bold mb-0">
+                                    Trazabilidad de Cajas - Administración</p>
+                            </div>
+                            <div id="onedrive-supervisor-box" class="auth-hidden flex items-center gap-2 self-start sm:self-center">
+                                <span id="onedrive-status-pill" class="px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 border border-emerald-500/30 bg-emerald-500/10 text-emerald-500">
+                                    <span id="onedrive-status-icon" class="material-symbols-outlined text-[15px]">cloud_done</span>
+                                    <span id="onedrive-status-text">OneDrive: Verificando...</span>
+                                </span>
+                                <button id="btn-toggle-od-panel" type="button" class="px-2.5 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-wider bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-white/10 transition-colors cursor-pointer" title="Actualizar token de OneDrive manualmente">
+                                    Token
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Panel de aviso / actualización rápida de Token OneDrive (Oculto salvo aviso o clic) -->
+                        <div id="onedrive-alert-banner" class="hidden mb-8 p-4 rounded-2xl border border-amber-500/40 bg-amber-500/10 text-left">
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+                                <div class="flex items-start gap-2.5">
+                                    <span class="material-symbols-outlined text-amber-500 text-xl mt-0.5">warning</span>
+                                    <div>
+                                        <h4 id="od-banner-title" class="text-xs font-black uppercase tracking-wider text-amber-500">Configuración de Token OneDrive</h4>
+                                        <p id="od-banner-desc" class="text-[11px] text-slate-600 dark:text-slate-300 mt-0.5">El token se auto-renueva en Firebase cada vez que se usa. Si algún día vence o necesitas cambiarlo, pégalo aquí para actualizarlo en todas las PCs al instante.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex flex-col sm:flex-row gap-2">
+                                <input id="od-new-token-input" type="text" placeholder="Pegar nuevo Refresh Token (M.C501...)" class="flex-1 px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-xs font-mono text-slate-800 dark:text-white outline-none">
+                                <button id="btn-save-od-token" type="button" class="px-4 py-2 rounded-xl bg-villalba-blue hover:bg-blue-600 text-white text-xs font-black uppercase tracking-wider transition-colors cursor-pointer">
+                                    Guardar en Firebase
+                                </button>
+                            </div>
                         </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
@@ -346,9 +376,163 @@
     </div>
 
     <script type="module">
-        import { auth, db, onAuthStateChanged, signOut, doc, getDoc, collection, query, where, onSnapshot } from './js/firebase-config.js';
+        import { auth, db, onAuthStateChanged, signOut, doc, getDoc, setDoc, collection, query, where, onSnapshot } from './js/firebase-config.js';
         import { setupTicketNotifications } from './js/global-notifications.js';
         import { requestNotificationPermission } from './js/fcm-setup.js';
+
+        const OD_CLOUD_FUNCTION_URL = "https://us-central1-cajas-secuela.cloudfunctions.net/refrescarTokenOneDrive";
+        const OD_INITIAL_TOKEN = "M.C501_BL2.0.U.MsaArtifacts.-CqObiN744T10f4vcaQjWbLIt!IpYYGVMKpbBQKxbqh4HyaAgUGSKPz*Lmmt8nqEm3u5UG8HKMJouHsZEtQyI8rjD*4rG4EHey!TxTedIQIeuigRDdXMUBKi8FKKAEuVpV34lrfAkzpbIvcaOajL9Ibr4OqhEcIw0P3IYoXRIIp!7j*SDXGGpRBeqn7SpiUes7QR!k2EAJn*2muW1Bvu1maQ*6gSzW3Z!64CNca6WfBaUHuLHfJiHHeTqJAGrYsxwBl3qwHtFb4nJRL0C2b3E2z9VjJ5ujaY9J3au9NpmfKhhQ3PDVcG9GGAMRd!WISvJvjZfYACN3SG5ogMuzxKAPU7jyVGnmtgcXNfTmOy7xzRt";
+        const OD_SEED_TIMESTAMP = new Date("2026-11-03T12:00:00Z").getTime();
+
+        const updateODStatusUI = (state, message, showBanner = false, bannerMessage = '') => {
+            const pill = document.getElementById('onedrive-status-pill');
+            const icon = document.getElementById('onedrive-status-icon');
+            const text = document.getElementById('onedrive-status-text');
+            const banner = document.getElementById('onedrive-alert-banner');
+            const bannerDesc = document.getElementById('od-banner-desc');
+            if (!pill || !icon || !text) return;
+
+            if (state === 'ok') {
+                pill.className = "px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 border border-emerald-500/30 bg-emerald-500/10 text-emerald-500";
+                icon.textContent = "cloud_done";
+            } else if (state === 'warn') {
+                pill.className = "px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 border border-amber-500/40 bg-amber-500/15 text-amber-500";
+                icon.textContent = "warning";
+            } else {
+                pill.className = "px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 border border-rose-500/40 bg-rose-500/15 text-rose-500 animate-pulse";
+                icon.textContent = "error";
+            }
+            text.textContent = message;
+
+            if (banner && showBanner) {
+                banner.classList.remove('hidden');
+                if (bannerDesc && bannerMessage) bannerDesc.textContent = bannerMessage;
+            }
+        };
+
+        const checkAndAutoRenewOneDrive = async () => {
+            try {
+                const odRef = doc(db, 'system', 'onedrive_config');
+                const snap = await getDoc(odRef);
+                let tokenToUse = localStorage.getItem('od_refresh_token') || OD_INITIAL_TOKEN;
+                let lastUpdated = 0;
+
+                if (snap.exists()) {
+                    const data = snap.data() || {};
+                    if (data.refreshToken && (data.seedToken === OD_INITIAL_TOKEN || data.manualOverride === true)) {
+                        tokenToUse = data.refreshToken;
+                        lastUpdated = Number(data.updatedAt) || 0;
+                    }
+                }
+
+                const now = Date.now();
+                const hoursSinceUpdate = lastUpdated ? (now - lastUpdated) / (1000 * 60 * 60) : 999;
+
+                // Si se renovó hace menos de 12 horas, no gastamos llamada extra y marcamos activo
+                if (lastUpdated > 0 && hoursSinceUpdate < 12) {
+                    updateODStatusUI('ok', 'OneDrive: Activo');
+                    return;
+                }
+
+                // Auto-renovamos en segundo plano cada 12 hs para estirar siempre la validez en Firebase
+                const res = await fetch(OD_CLOUD_FUNCTION_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ refreshToken: tokenToUse })
+                });
+                let json = await res.json();
+
+                // Si falló con el guardado, intentamos con el token inicial del código
+                if (json.error && tokenToUse !== OD_INITIAL_TOKEN) {
+                    const retryRes = await fetch(OD_CLOUD_FUNCTION_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ refreshToken: OD_INITIAL_TOKEN })
+                    });
+                    json = await retryRes.json();
+                }
+
+                if (json.error) {
+                    updateODStatusUI(
+                        'error',
+                        'OneDrive: Token Vencido',
+                        true,
+                        '⚠️ El token de OneDrive venció o fue rechazado por Microsoft. Pegá un nuevo token acá abajo para restaurar la subida de reportes para todos los usuarios sin tocar el código.'
+                    );
+                    return;
+                }
+
+                const freshToken = json.refresh_token || tokenToUse;
+                localStorage.setItem('od_refresh_token', freshToken);
+                localStorage.setItem('od_initial_token_seed', OD_INITIAL_TOKEN);
+
+                await setDoc(odRef, {
+                    refreshToken: freshToken,
+                    seedToken: OD_INITIAL_TOKEN,
+                    updatedAt: Date.now(),
+                    updatedIso: new Date().toISOString()
+                }, { merge: true });
+
+                const daysSinceSeed = Math.floor((Date.now() - OD_SEED_TIMESTAMP) / (1000 * 60 * 60 * 24));
+                if (daysSinceSeed >= 80) {
+                    updateODStatusUI(
+                        'warn',
+                        `OneDrive: Activo (${daysSinceSeed}d)`,
+                        true,
+                        `🔔 Aviso preventivo: Pasaron ${daysSinceSeed} días desde la última carga manual del token. Aunque se sigue auto-renovando en Firebase, te recomendamos tener un token nuevo a mano antes de cumplir los 90 días.`
+                    );
+                } else {
+                    updateODStatusUI('ok', 'OneDrive: Activo');
+                }
+            } catch (e) {
+                console.warn('Chequeo silencioso de OneDrive omitido:', e);
+            }
+        };
+
+        document.getElementById('btn-toggle-od-panel')?.addEventListener('click', () => {
+            document.getElementById('onedrive-alert-banner')?.classList.toggle('hidden');
+        });
+
+        document.getElementById('btn-save-od-token')?.addEventListener('click', async () => {
+            const input = document.getElementById('od-new-token-input');
+            const btn = document.getElementById('btn-save-od-token');
+            const newTok = (input?.value || '').trim();
+            if (!newTok) {
+                alert('Pegá un token válido primero.');
+                return;
+            }
+            btn.disabled = true;
+            btn.textContent = 'Verificando...';
+            try {
+                const res = await fetch(OD_CLOUD_FUNCTION_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ refreshToken: newTok })
+                });
+                const json = await res.json();
+                if (json.error) {
+                    alert('El token ingresado fue rechazado por Microsoft. Verificá que esté completo.');
+                    return;
+                }
+                const finalTok = json.refresh_token || newTok;
+                await setDoc(doc(db, 'system', 'onedrive_config'), {
+                    refreshToken: finalTok,
+                    seedToken: OD_INITIAL_TOKEN,
+                    manualOverride: true,
+                    updatedAt: Date.now(),
+                    updatedIso: new Date().toISOString()
+                }, { merge: true });
+                localStorage.setItem('od_refresh_token', finalTok);
+                input.value = '';
+                document.getElementById('onedrive-alert-banner')?.classList.add('hidden');
+                updateODStatusUI('ok', 'OneDrive: Actualizado');
+            } catch (err) {
+                alert('Error al guardar el token: ' + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Guardar en Firebase';
+            }
+        });
 
         // Elementos UI
         let currentUserRole = 'supervisor';
@@ -395,9 +579,11 @@
                 const superIds = [
                     'btn-catalogo-items', 'btn-historial', 'btn-informe-diario', 'btn-importar-datos',
                     'btn-registrar-usuario', 'btn-gestion-usuarios', 'btn-estadisticas',
-                    'btn-estados-cajas', 'btn-buscar-prestamo', 'btn-buscar-reporte'
+                    'btn-estados-cajas', 'btn-buscar-prestamo', 'btn-buscar-reporte',
+                    'onedrive-supervisor-box'
                 ];
                 superIds.forEach(id => unhide(id));
+                checkAndAutoRenewOneDrive();
             }
             const uidUsuarioEspecial = "k2PzZ3iXA4YNrhBADWj2DC6Or202";
             if (user && user.uid === uidUsuarioEspecial) {

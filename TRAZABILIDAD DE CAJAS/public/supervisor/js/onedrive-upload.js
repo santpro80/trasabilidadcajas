@@ -4,10 +4,41 @@ const CLOUD_FUNCTION_URL = "https://us-central1-cajas-secuela.cloudfunctions.net
 const OD_CONFIG = {
     clientId: "56c7f9c1-d4df-41f8-af09-3c3561ccb35a",
     // Asegúrate de que este sea el TOKEN NUEVO que generaste recién con PowerShell
-    initialRefreshToken: "M.C501_BL2.0.U.MsaArtifacts.-CqObiN744T10f4vcaQjWbLIt!IpYYGVMKpbBQKxbqh4HyaAgUGSKPz*Lmmt8nqEm3u5UG8HKMJouHsZEtQyI8rjD*4rG4EHey!TxTedIQIeuigRDdXMUBKi8FKKAEuVpV34lrfAkzpbIvcaOajL9Ibr4OqhEcIw0P3IYoXRIIp!7j*SDXGGpRBeqn7SpiUes7QR!k2EAJn*2muW1Bvu1maQ*6gSzW3Z!64CNca6WfBaUHuLHfJiHHeTqJAGrYsxwBl3qwHtFb4nJRL0C2b3E2z9VjJ5ujaY9J3au9NpmfKhhQ3PDVcG9GGAMRd!WISvJvjZfYACN3SG5ogMuzxKAPU7jyVGnmtgcXNfTmOy7xzRt"
+    initialRefreshToken: "M.C501_BL2.0.U.MsaArtifacts.-CqObiN744T10f4vcaQjWbLIt!IpYYGVMKpbBQKxbqh4HyaAgUGSKPz*Lmmt8nqEm3u5UG8HKMJouHsZEtQyI8rjD*4rG4EHey!TxTedIQIeuigRDdXMUBKi8FKKAEuVpV34lrfAkzpbIvcaOajL9Ibr4OqhEcIw0P3IYoXRIIp!7j*SDXGGpRBeqn7SpiUes7QR!k2EAJn*2muW1Bvu1maQ*6gSzW3Z!64CNca6WfBaUHuLHfJiHHeTqJAGrYsxwBl3qwHtFb4nJRL0C2b3E2z9VjJ5ujaY9J3au9NpmfKhhQ3PDVcG9GGAMRd!WISvJvjZfYACN3SG5ogMuzxKAPU7jyVGnmtgcXNfTmOy7xzRt",
+    tokenSeedDate: "2026-11-03"
+};
+
+async function leerTokenDesdeFirebase() {
+    try {
+        const { db, doc, getDoc } = await import('./firebase-config.js');
+        const snap = await getDoc(doc(db, 'system', 'onedrive_config'));
+        if (snap.exists()) {
+            const d = snap.data();
+            if (d && d.refreshToken) {
+                return d;
+            }
+        }
+    } catch (_) {
+        // Fallback silencioso a localStorage / initialRefreshToken
+    }
+    return null;
 }
 
-async function getODAccessToken() {
+async function guardarTokenEnFirebase(newRefreshToken) {
+    try {
+        const { db, doc, setDoc } = await import('./firebase-config.js');
+        await setDoc(doc(db, 'system', 'onedrive_config'), {
+            refreshToken: newRefreshToken,
+            seedToken: OD_CONFIG.initialRefreshToken,
+            updatedAt: Date.now(),
+            updatedIso: new Date().toISOString()
+        }, { merge: true });
+    } catch (_) {
+        // Fallback silencioso para no afectar nunca la subida del reporte
+    }
+}
+
+async function getODAccessToken(forceInitial = false) {
     // Si el initialRefreshToken del código fue actualizado, limpiamos el token viejo de localStorage
     const savedInitialSeed = localStorage.getItem("od_initial_token_seed");
     if (savedInitialSeed !== OD_CONFIG.initialRefreshToken) {
@@ -15,10 +46,25 @@ async function getODAccessToken() {
         localStorage.setItem("od_initial_token_seed", OD_CONFIG.initialRefreshToken);
     }
 
-    // 1. Buscamos si tenemos un token guardado (el que se renovó ayer)
-    let currentRefreshToken = localStorage.getItem("od_refresh_token");
+    let currentRefreshToken = null;
 
-    // 2. Si no hay nada guardado en el navegador, usamos el inicial del código
+    if (!forceInitial) {
+        // 1. Intentamos leer primero el último token auto-renovado compartido en Firebase
+        const fbData = await leerTokenDesdeFirebase();
+        if (fbData && fbData.refreshToken && (fbData.seedToken === OD_CONFIG.initialRefreshToken || fbData.manualOverride === true)) {
+            currentRefreshToken = fbData.refreshToken;
+            try {
+                localStorage.setItem("od_refresh_token", currentRefreshToken);
+            } catch (_) {}
+        }
+
+        // 2. Si no hubo token en Firebase, buscamos en localStorage
+        if (!currentRefreshToken) {
+            currentRefreshToken = localStorage.getItem("od_refresh_token");
+        }
+    }
+
+    // 3. Si no hay nada guardado o se pidió forzar el inicial, usamos el del código
     if (!currentRefreshToken) {
         currentRefreshToken = OD_CONFIG.initialRefreshToken;
     }
@@ -33,36 +79,28 @@ async function getODAccessToken() {
         const data = await response.json();
         
         if (data.error) {
-            // Si el token guardado en el navegador falló...
-            if (currentRefreshToken !== OD_CONFIG.initialRefreshToken) {
+            // Si el token compartido/guardado falló, probamos inmediatamente con el initialRefreshToken del código
+            if (!forceInitial && currentRefreshToken !== OD_CONFIG.initialRefreshToken) {
                 console.warn("⚠️ Token guardado vencido. Intentando recuperar con el token inicial...");
-                // Lo borramos para obligar a usar el inicial en el próximo intento recursivo
                 localStorage.removeItem("od_refresh_token");
-                return getODAccessToken(); 
+                return getODAccessToken(true); 
             }
             // Si llegamos aquí, es que ni el guardado ni el inicial funcionan.
-            throw new Error("❌ Error fatal: Ambos tokens han caducado. Actualiza initialRefreshToken en el código.");
+            throw new Error("❌ Error fatal: Ambos tokens han caducado. Actualiza el token de OneDrive desde el Panel Supervisor.");
         }
 
-        // --- RENOVACIÓN AUTOMÁTICA (CON VERIFICACIÓN DE GUARDADO) ---
+        // --- RENOVACIÓN AUTOMÁTICA (LOCALSTORAGE + FIREBASE COMPARTIDO) ---
         if (data.refresh_token) {
-            console.log("🔄 Microsoft nos dio un token nuevo. Intentando guardar...");
+            console.log("🔄 Microsoft nos dio un token nuevo. Guardando en LocalStorage y Firebase...");
             
             try {
-                // 1. Guardamos
                 localStorage.setItem("od_refresh_token", data.refresh_token);
-                
-                // 2. LEEMOS INMEDIATAMENTE para verificar
-                const testRead = localStorage.getItem("od_refresh_token");
-                
-                if (testRead === data.refresh_token) {
-                    console.log("✅ Token guardado correctamente en LocalStorage. ¡El sistema es autónomo!");
-                } else {
-                    console.error("⚠️ ALERTA CRÍTICA: El navegador NO está guardando el token. Revisa si estás en Modo Incógnito o Configuración de Cookies.");
-                }
             } catch (storageError) {
                 console.error("❌ Error escribiendo en localStorage:", storageError);
             }
+
+            // Guardamos en segundo plano en Firebase para que todos los usuarios usen el token renovado
+            guardarTokenEnFirebase(data.refresh_token);
         }
         // -----------------------------------------------------------
 
